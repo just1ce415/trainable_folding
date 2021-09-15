@@ -381,27 +381,29 @@ def target_group_featurize(case_dict, group_dict):
     }
 
 
-def hhpred_template_lig_to_features(mol_tpl: Chem.Mol, mol_tar: Chem.Mol, m_tpl, m_tar):
+def hhpred_template_lig_to_features(mol_tpl: Chem.Mol, mol_3d_tpl: Chem.Mol, mol_tar: Chem.Mol, m_tpl, m_tar):
     num_atoms_tar = mol_tar.GetNumAtoms()
-    feats = ligand_featurize(mol_tpl, mol_tpl)
+    feats = ligand_featurize(mol_tpl, mol_3d_tpl)
+    coords = np.zeros((feats['atom_feats'].shape[0], 3))
+    coords[list(feats['matches'][0])] = feats['coords']
+    atom_present = np.zeros(feats['atom_feats'].shape[0])
+    atom_present[list(feats['matches'][0])] = 1
 
+    # shape + 1 because of a new symbol gap "-"
     dilated_atom_feats = np.zeros((num_atoms_tar, feats['atom_feats'].shape[-1] + 1))
     dilated_atom_feats[:, -1] = 1
     dilated_atom_feats[list(m_tar), :-1] = feats['atom_feats'][list(m_tpl)]
     dilated_atom_feats[list(m_tar), -1] = 0
 
-    # ideally we need to do smiles matching and then record here
-    # which atoms don't have coords,
-    # but thats too much work for now
-    atom_present = np.zeros(num_atoms_tar)
-    atom_present[list(m_tar)] = 1
-    atom_present_2d = np.outer(atom_present, atom_present)
+    dilated_atom_present = np.zeros(num_atoms_tar)
+    dilated_atom_present[list(m_tar)] = atom_present[list(m_tpl)]
+    dilated_atom_present_2d = np.outer(dilated_atom_present, dilated_atom_present)
 
     dilated_crd = np.zeros((num_atoms_tar, 3))
-    dilated_crd[list(m_tar)] = feats['coords'][list(m_tpl)]
+    dilated_crd[list(m_tar)] = coords[list(m_tpl)]
 
     dmat = utils.calc_dmat(dilated_crd, dilated_crd)
-    dgram = dmat_to_distogram(dmat, LIG_DISTOGRAM['min'], LIG_DISTOGRAM['max'], LIG_DISTOGRAM['num_bins'], mask=atom_present_2d < 1)
+    dgram = dmat_to_distogram(dmat, LIG_DISTOGRAM['min'], LIG_DISTOGRAM['max'], LIG_DISTOGRAM['num_bins'], mask=dilated_atom_present_2d < 1)
 
     dilated_bonds = np.zeros((num_atoms_tar, num_atoms_tar, feats['bonds_2d'].shape[-1]))
     tar_ids = list(zip(itertools.product(m_tar, m_tar)))
@@ -410,24 +412,24 @@ def hhpred_template_lig_to_features(mol_tpl: Chem.Mol, mol_tar: Chem.Mol, m_tpl,
 
     return {
         'atom_feats_1d': dilated_atom_feats,
-        'atom_present_1d': atom_present,
+        'atom_present_1d': dilated_atom_present,
         'atom_coords_1d': dilated_crd,
         'bond_feats_2d': dilated_bonds,
         'distogram_2d': dgram,
-        'atom_present_2d': atom_present_2d,
+        'atom_present_2d': dilated_atom_present_2d,
         'match_tar': m_tar,
         'match_tpl': m_tpl
     }
 
 
-def hh_template_featurize(tar_mol: Chem.Mol, tar_match, tar_case_dict, tar_group_dict, tar_ligand_id, temp_mol: Chem.Mol, temp_match, temp_dict, temp_case_dict):
+def hh_template_featurize(tar_mol: Chem.Mol, tar_match, tar_case_dict, tar_group_dict, tar_ligand_id, temp_mol: Chem.Mol, temp_mol_3d: Chem.Mol, temp_match, temp_dict, temp_case_dict):
     rec_literal = hhpred_template_rec_to_features(temp_case_dict, tar_case_dict, temp_dict['hhpred'])
     rec_feats = rec_literal_to_numeric(rec_literal)
 
     num_atoms_total = sum([x['num_heavy_atoms'] for x in tar_group_dict['ligands']])
     atom_begin = sum([x['num_heavy_atoms'] for x in tar_group_dict['ligands'][:tar_ligand_id]])
     atom_end = atom_begin + tar_group_dict['ligands'][tar_ligand_id]['num_heavy_atoms']
-    lig_feats = hhpred_template_lig_to_features(temp_mol, tar_mol, temp_match, tar_match)
+    lig_feats = hhpred_template_lig_to_features(temp_mol, temp_mol_3d, tar_mol, temp_match, tar_match)
 
     #print(tar_group_dict)
     #print(tar_group_dict['ligands'][tar_ligand_id])
@@ -515,12 +517,13 @@ def hh_templates_featurize_many(tar_case_dict, case_dicts):
                     for temp_ligand_dict in temp_group_dict['ligands']:
                         if temp_chemid != temp_ligand_dict['chemid']:
                             continue
-                        temp_mol = Chem.MolFromMolFile(DATA_DIR / 'cases' / temp_case_dict['case_name'] / temp_group_dict['name'] / temp_ligand_dict['sdf_id'] + '.mol', removeHs=True)
+                        temp_mol = Chem.MolFromSmiles(temp_ligand_dict['smiles'])
                         assert tar_mol.GetNumAtoms() == tar_mol.GetNumHeavyAtoms()
+                        temp_mol_3d = Chem.MolFromMolFile(DATA_DIR / 'cases' / temp_case_dict['case_name'] / temp_group_dict['name'] / temp_ligand_dict['sdf_id'] + '.mol', removeHs=True)
                         smarts, tar_matches, temp_matches = match_mols(tar_mol, temp_mol)
                         for tar_match in tar_matches:
                             for temp_match in temp_matches:
-                                temp_feats = hh_template_featurize(tar_mol, tar_match, tar_case_dict, tar_group_dict, tar_ligand_id, temp_mol, temp_match, temp_hh_dict, temp_case_dict)
+                                temp_feats = hh_template_featurize(tar_mol, tar_match, tar_case_dict, tar_group_dict, tar_ligand_id, temp_mol, temp_mol_3d, temp_match, temp_hh_dict, temp_case_dict)
                                 temp_feats['tar_match'] = tar_match
                                 temp_feats['temp_match'] = temp_match
                                 temp_feats['smarts'] = smarts
@@ -601,7 +604,6 @@ def fragment_template_featurize(temp_case_dict, group_dict):
 
     lig_feats = fragment_template_group_featurize(temp_case_dict, group_dict)
     lig_1d = np.concatenate([lig_feats['atom_feats_1d'], lig_feats['atom_present_1d'][..., None]], axis=-1)
-    print(lig_feats['atom_present_1d'])
 
     extra = np.tile(lig_feats['atom_feats_1d'], (lig_feats['atom_feats_1d'].shape[0], 1, 1))
     ll_2d = np.concatenate([
@@ -648,8 +650,10 @@ def example():
     #print(hh_template_featurize(tar_case_dict, tar_group_dict, tar_ligand_id, template_dict, template_case_dict, template_mol_file))
 
     cases = OrderedDict((x.dirname().basename(), utils.read_json(x)) for x in tqdm(sorted(DATA_DIR.glob('cases/*/case.json'))))
-    for k, v in tqdm(list(cases.items())[115:]):
-        print(len(hh_templates_featurize_many(v, cases)))
+    for k, v in tqdm(list(cases.items())[:]):
+        temps = hh_templates_featurize_many(v, cases)
+        if temps:
+            print(temps[0])
 
 
 def example2():
@@ -659,4 +663,4 @@ def example2():
 
 
 if __name__ == '__main__':
-    example2()
+    example()
