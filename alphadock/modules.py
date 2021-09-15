@@ -2,90 +2,13 @@ import torch
 from torch import nn
 import torch.functional as F
 import math
-
-
-config = {
-    'rec_in_c': 64,
-    'lig_in_c': 64,
-    'cep_in_c': 64,
-    'template': {
-        'num_feats': 10
-    },
-    'rep_1d': {
-        'num_c': 64
-    },
-    'rep_2d': {
-        'num_c': 64
-    },
-    'Evoformer': {
-        'num_blocks': 2,
-        'EvoformerIteration': {
-            'RowAttentionWithPairBias': {
-                'attention_num_c': 32,
-                'num_heads': 8
-            },
-            'LigColumnAttention': {
-                'attention_num_c': 32,
-                'num_heads': 8
-            },
-            'LigTransition': {
-                'n': 4
-            },
-            'RecTransition': {
-                'n': 4
-            },
-            'OuterProductMean': {
-                'mid_c': 32
-            },
-            'TriangleMultiplicationIngoing': {
-                'mid_c': 128,
-            },
-            'TriangleMultiplicationOutgoing': {
-                'mid_c': 128,
-            },
-            'TriangleAttentionStartingNode': {
-                'attention_num_c': 32,
-                'num_heads': 4
-            },
-            'TriangleAttentionEndingNode': {
-                'attention_num_c': 32,
-                'num_heads': 4
-            },
-            'PairTransition': {
-                'n': 4
-            }
-        }
-    },
-    'TemplatePairStack': {
-        'num_iter': 2,
-        'TemplatePairStackIteration': {
-            'TriangleAttentionStartingNode': {
-                'attention_num_c': 32,
-                'num_heads': 4
-            },
-            'TriangleAttentionEndingNode': {
-                'attention_num_c': 32,
-                'num_heads': 4
-            },
-            'TriangleMultiplicationOutgoing': {
-                'mid_c': 128
-            },
-            'TriangleMultiplicationIngoing': {
-                'mid_c': 128
-            },
-            'PairTransition': {
-                'n': 2
-            }
-        }
-    },
-    'TemplatePointwiseAttention': {
-        'attention_num_c': 32,
-        'num_heads': 4
-    }
-}
+from config import config
 
 
 class RowAttentionWithPairBias(nn.Module):
+    '''
+    TODO: add gating
+    '''
     def __init__(self, config, global_config):
         super().__init__()
 
@@ -108,6 +31,7 @@ class RowAttentionWithPairBias(nn.Module):
         self.rec_rec_project = nn.Linear(pair_rep_num_c, num_heads, bias=False)
         self.lig_lig_project = nn.Linear(pair_rep_num_c, num_heads, bias=False)
         self.rec_lig_project = nn.Linear(pair_rep_num_c, num_heads, bias=False)
+        self.lig_rec_project = nn.Linear(pair_rep_num_c, num_heads, bias=False)
 
         self.rec_final = nn.Linear(attn_num_c * num_heads, rec_num_c)
         self.lig_final = nn.Linear(attn_num_c * num_heads, lig_num_c)
@@ -149,7 +73,7 @@ class RowAttentionWithPairBias(nn.Module):
         rec_rec_bias = self.rec_rec_project(rec_rec).view(*rec_rec.shape[:-1], self.num_heads) * factor
         lig_lig_bias = self.lig_lig_project(lig_lig).view(*lig_lig.shape[:-1], self.num_heads) * factor
         rec_lig_bias = self.rec_lig_project(rec_lig).view(*rec_lig.shape[:-1], self.num_heads) * factor
-        lig_rec_bias = self.rec_lig_project(lig_rec).view(*lig_rec.shape[:-1], self.num_heads) * factor
+        lig_rec_bias = self.lig_rec_project(lig_rec).view(*lig_rec.shape[:-1], self.num_heads) * factor
 
         #print(rec_rec_aff.shape)
         #print(rec_rec_bias.shape)
@@ -168,6 +92,9 @@ class RowAttentionWithPairBias(nn.Module):
 
 
 class LigColumnAttention(nn.Module):
+    '''
+    TODO: add gating
+    '''
     def __init__(self, config, global_config):
         super().__init__()
 
@@ -227,6 +154,7 @@ class OuterProductMean(nn.Module):
         self.l_l2 = nn.Linear(in_c, mid_c)
         self.rr_final = nn.Linear(mid_c * mid_c, out_c)
         self.rl_final = nn.Linear(mid_c * mid_c, out_c)
+        self.lr_final = nn.Linear(mid_c * mid_c, out_c)
         self.ll_final = nn.Linear(mid_c * mid_c, out_c)
         self.mid_c = mid_c
         self.out_c = out_c
@@ -246,7 +174,7 @@ class OuterProductMean(nn.Module):
         pw_update = torch.zeros_like(pw_rep)
         pw_update[:, :num_res, :num_res] = self.rr_final(rr.view(*rr.shape[:-2], self.mid_c * self.mid_c))
         pw_update[:, :num_res, num_res:] = self.rl_final(rl.view(*rl.shape[:-2], self.mid_c * self.mid_c))
-        pw_update[:, num_res:, :num_res] = self.rl_final(lr.view(*lr.shape[:-2], self.mid_c * self.mid_c))
+        pw_update[:, num_res:, :num_res] = self.lr_final(lr.view(*lr.shape[:-2], self.mid_c * self.mid_c))
         pw_update[:, num_res:, num_res:] = self.ll_final(ll.view(*ll.shape[:-2], self.mid_c * self.mid_c))
         return pw_update
 
@@ -435,6 +363,43 @@ class TemplatePointwiseAttention(nn.Module):
         return out
 
 
+class CEPPairStack(nn.Module):
+    def __init__(self, config, global_config):
+        super().__init__()
+        self.t2d_proj = nn.Linear(global_config['cep_in_c'], global_config['rep_2d']['num_c'])
+        self.layers = nn.ModuleList([TemplatePairStackIteration(config['TemplatePairStackIteration'], global_config) for _ in range(config['num_iter'])])
+        self.norm = nn.LayerNorm(global_config['rep_2d']['num_c'])
+
+    def forward(self, t_feats, t_crops, t_maps):
+        x = self.t2d_proj(t_feats)
+        #assert t_feats.shape[0] == 1
+        x = x.flatten(end_dim=1)
+        t_crops = t_crops.flatten(end_dim=1)
+        t_maps = t_maps.flatten(end_dim=1)
+
+        out_list = []
+        assert x.shape[0] == t_crops.shape[0]
+        for t_id, (num_res, num_atoms) in enumerate(t_crops):
+            t_size = num_res + num_atoms
+            t_map = t_maps[t_id]
+            temp = x[t_id:t_id+1, :t_size, :t_size]
+            for l in self.layers:
+                temp = l(temp.clone())
+            temp = self.norm(temp)[0, num_res:, num_res:]
+
+            t_out = torch.zeros((t_map.shape[0], t_map.shape[0], temp.shape[2]))
+            r_atoms = torch.where(t_map > -1)[0]
+            t_atoms = t_map[t_map > -1]
+            r_prod = torch.cartesian_prod(r_atoms, r_atoms)
+            t_prod = torch.cartesian_prod(t_atoms, t_atoms)
+            t_out[r_prod[:, 0], r_prod[:, 1]] = temp[t_prod[:, 0], t_prod[:, 1]]
+            out_list.append(t_out)
+
+        out = torch.stack(out_list)
+        out = out.view(t_feats.shape[0], t_feats.shape[1], *out.shape[1:])
+        return out
+
+
 class EvoformerIteration(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
@@ -477,34 +442,28 @@ class Evoformer(torch.nn.Module):
         return x
 
 
-class InputEmbedder(torch.nn.Module):
+class InitPairRepresentation(torch.nn.Module):
     def __init__(self, global_config):
         super().__init__()
 
         lig_in_c = global_config['lig_in_c']
         rec_in_c = global_config['rec_in_c']
-        cep_in_c = global_config['cep_in_c']
-        l1d_num_c = global_config['rep_1d']['num_c']
-        r1d_num_c = global_config['rep_1d']['num_c']
+        lig_in2d_c = global_config['lig_in2d_c']
+        rec_in2d_c = global_config['rec_in2d_c']
         pair_num_c = global_config['rep_2d']['num_c']
-
-        self.l_feat = nn.Linear(lig_in_c, l1d_num_c)
-        self.cep_feat = nn.Linear(cep_in_c, l1d_num_c)
-        self.r_feat = nn.Linear(rec_in_c, r1d_num_c)
 
         self.l_proj1 = nn.Linear(lig_in_c, pair_num_c)
         self.l_proj2 = nn.Linear(lig_in_c, pair_num_c)
         self.r_proj1 = nn.Linear(rec_in_c, pair_num_c)
         self.r_proj2 = nn.Linear(rec_in_c, pair_num_c)
 
-    def forward(self, x):
-        l1d, r1d, cep = x['l1d'], x['r1d'], x['cep']
+        self.l2d_proj = nn.Linear(lig_in2d_c, pair_num_c)
+        self.r2d_proj = nn.Linear(rec_in2d_c, pair_num_c)
 
-        l_feat = self.l_feat(l1d)
-        cep_feat = self.cep_feat(cep)
-        l1d_rep = l_feat.unsqueeze(1) + cep_feat
-        r1d_rep = self.r_feat(r1d)
+    def forward(self, feats):
+        l1d, l2d, r1d, r2d = feats['l1d'], feats['l2d'], feats['r1d'], feats['r2d']
 
+        # create pair representation
         l_proj1 = self.l_proj1(l1d)
         l_proj2 = self.l_proj2(l1d)
         r_proj1 = self.r_proj1(r1d)
@@ -513,6 +472,10 @@ class InputEmbedder(torch.nn.Module):
         rl_pair = r_proj1.unsqueeze(2) + l_proj2.unsqueeze(1)
         lr_pair = l_proj1.unsqueeze(2) + r_proj2.unsqueeze(1)
         rr_pair = r_proj1.unsqueeze(2) + r_proj2.unsqueeze(1)
+
+        # TODO: maybe do something more sophisticated ?
+        ll_pair += self.l2d_proj(l2d)
+        rr_pair += self.r2d_proj(r2d)
 
         num_batch = r1d.shape[0]
         num_res = r1d.shape[1]
@@ -525,21 +488,77 @@ class InputEmbedder(torch.nn.Module):
         pair[:, num_res:, :num_res] = lr_pair
         pair[:, num_res:, num_res:] = ll_pair
 
-        return {'l1d': l1d_rep, 'r1d': r1d_rep, 'pair': pair}
+        return pair
+
+
+class InputEmbedder(torch.nn.Module):
+    def __init__(self, config, global_config):
+        super().__init__()
+
+        lig_in_c = global_config['lig_in_c']
+        rec_in_c = global_config['rec_in_c']
+        cep_in_c = global_config['cep_in_c']
+        l1d_num_c = global_config['rep_1d']['num_c']
+        r1d_num_c = global_config['rep_1d']['num_c']
+
+        self.l_feat = nn.Linear(lig_in_c, l1d_num_c)
+        self.cep_feat = nn.Linear(cep_in_c, l1d_num_c)
+        self.r_feat = nn.Linear(rec_in_c, r1d_num_c)
+
+        self.InitPairRepresentation = InitPairRepresentation(global_config)
+        self.CEPPairStack = CEPPairStack(config['CEPPairStack'], global_config)
+        self.CEPPointwiseAttention = TemplatePointwiseAttention(config['CEPPointwiseAttention'], global_config)
+        self.TemplatePairStack = TemplatePairStack(config['TemplatePairStack'], global_config)
+        self.TemplatePointwiseAttention = TemplatePointwiseAttention(config['TemplatePointwiseAttention'], global_config)
+
+    def forward(self, feats):
+        # create pair representation
+        pair = self.InitPairRepresentation(feats)
+
+        # CEP embedding
+        num_res = feats['r1d'].shape[1]
+        cep_2d = self.CEPPairStack(feats['cep_feats_2d'], feats['cep_crops'], feats['cep_maps'])
+        cep_1d = cep_2d.mean(3)
+        cep_embedding = self.CEPPointwiseAttention(pair[:, num_res:, num_res:], cep_2d)
+
+        # make template embedding
+        t2d = self.TemplatePairStack(feats['template_feats_2d'])
+        template_embedding = self.TemplatePointwiseAttention(pair.clone(), t2d)
+
+        # add embeddings to the pair rep
+        pair += template_embedding
+        pair[:, num_res:, num_res:] += cep_embedding
+
+        r1d_rep = self.r_feat(feats['r1d'])
+        # add linear rec template feats
+
+        # make 1d rep
+        l_feat = self.l_feat(feats['l1d'])
+        rep_1d = cep_1d + l_feat.unsqueeze(1)
+        # concat linear lig template feats
+
+        return {'l1d': rep_1d, 'r1d': r1d_rep, 'pair': pair}
+
+
+class RecyclingEmbedder(torch.nn.Module):
+    def __init__(self, global_config):
+        super().__init__()
+        self.m_norm = nn.LayerNorm(global_config['cep_num_c'])
+        self.z_norm = nn.LayerNorm(global_config['rep_2d']['num_c'])
+        self.d_linear = nn.Linear(global_config['rec_dist_num_bins'], global_config['rep_2d']['num_c'])
+
+    def forward(self, x):
+        pass
 
 
 class EvoformerWithEmbedding(torch.nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        self.InputEmbedder = InputEmbedder(global_config)
-        self.TemplatePairStack = TemplatePairStack(config['TemplatePairStack'], global_config)
-        self.TemplatePointwiseAttention = TemplatePointwiseAttention(config['TemplatePointwiseAttention'], global_config)
+        self.InputEmbedder = InputEmbedder(config['InputEmbedder'], global_config)
         self.Evoformer = Evoformer(config['Evoformer'], global_config)
 
-    def forward(self, feats):
+    def forward(self, feats: dict, recycled=None):
         x = self.InputEmbedder(feats)
-        t2d = self.TemplatePairStack(feats['template_feats_2d'])
-        x['pair'] += self.TemplatePointwiseAttention(x['pair'].clone(), t2d)
         x = self.Evoformer(x)
         return x
 
@@ -547,10 +566,13 @@ class EvoformerWithEmbedding(torch.nn.Module):
 def example():
     with torch.autograd.set_detect_anomaly(True):
         model = EvoformerWithEmbedding(config, config)
+        maps = [-1, -1, 0, 1, 2, -1, -1, -1, -1, -1]
         input = {
             'l1d': torch.zeros((1, 10, config['lig_in_c'])),
             'r1d': torch.zeros((1, 100, config['rec_in_c'])),
-            'cep': torch.zeros((1, 5, 10, config['cep_in_c'])),
+            'cep_feats_2d': torch.zeros((1, 3, 130, 130, config['cep_in_c'])),
+            'cep_crops': torch.tensor([[[10, 5], [15, 7], [5, 8]]]),
+            'cep_maps': torch.tensor([[maps, maps, maps]]),
             'template_feats_2d':  torch.zeros((1, 4, 110, 110, config['template']['num_feats'])),
         }
         print(model(input)['pair'].sum().backward())
