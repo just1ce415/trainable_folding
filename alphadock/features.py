@@ -10,13 +10,14 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 from functools import partial
 from collections import OrderedDict
+import typing
 
 from amino_acids import d_3aa
 from config import DATA_DIR
 import utils
 
+from config import DTYPE_FLOAT, DTYPE_INT
 
-DTYPE_FLOAT = np.float32
 
 ELEMENTS = {x[1]: x[0] for x in enumerate(['I', 'S', 'F', 'N', 'C', 'CL', 'BR', 'O', 'P', 'X'])}
 
@@ -264,7 +265,7 @@ def hhpred_template_rec_to_features(tpl_dict, tar_dict, hhpred_dict):
 def dmat_to_distogram(dmat, dmin, dmax, num_bins, mask=None):
     shape = dmat.shape
     dmat = dmat.copy().flatten()
-    dgram = np.zeros((len(dmat), num_bins))
+    dgram = np.zeros((len(dmat), num_bins), dtype=DTYPE_FLOAT)
     bin_size = (dmax - dmin) / num_bins
     dmat -= dmin
     bin_ids = (dmat // bin_size).astype(int)
@@ -322,9 +323,9 @@ def target_rec_featurize(case_dict):
     rec_1d = np.concatenate([rec_feats['aatype'], rec_feats['crd_mask'][..., None], rec_feats['crd_beta_mask'][..., None]], axis=-1)
     rec_2d = np.concatenate([rec_feats['distogram_2d'], rec_feats['crd_beta_mask_2d'][..., None]], axis=-1)
     return {
-        'rec_1d': rec_1d,
-        'rec_2d': rec_2d,
-        'relpos_2d': rec_feats['resi_2d']
+        'rec_1d': rec_1d.astype(DTYPE_FLOAT),
+        'rec_2d': rec_2d.astype(DTYPE_FLOAT),
+        'rec_relpos': rec_feats['resi_2d'].astype(DTYPE_FLOAT)
     }
 
 
@@ -368,16 +369,16 @@ def target_group_featurize(case_dict, group_dict):
         group_feats.append(ligand_featurize(mol))
 
     group_1d = np.concatenate([x['atom_feats'] for x in group_feats], axis=0)
-    group_2d = np.zeros(group_1d.shape[0], group_1d.shape[0], group_feats[0]['bonds_2d'])
+    group_2d = np.zeros((group_1d.shape[0], group_1d.shape[0], group_feats[0]['bonds_2d'].shape[-1]))
     start = 0
     for lig_feats in group_feats:
         lig_size = lig_feats['atom_feats'].shape[0]
-        group_2d[start:start+lig_size, start:start+lig_size] = lig_feats['bond_2d']
+        group_2d[start:start+lig_size, start:start+lig_size] = lig_feats['bonds_2d']
         start += lig_size
 
     return {
-        'lig_1d': group_1d,
-        'lig_2d': group_2d
+        'lig_1d': group_1d.astype(DTYPE_FLOAT),
+        'lig_2d': group_2d.astype(DTYPE_FLOAT)
     }
 
 
@@ -627,14 +628,101 @@ def fragment_template_featurize(temp_case_dict, group_dict):
     lr_2d = rl_2d.transpose([1, 0, 2])
 
     out = {
-        'lig_1d': lig_1d,
-        'rec_1d': rec_1d,
-        'll_2d': ll_2d,
-        'rr_2d': rr_2d,
-        'rl_2d': rl_2d,
-        'lr_2d': lr_2d
+        'lig_1d': lig_1d.astype(DTYPE_FLOAT),
+        'rec_1d': rec_1d.astype(DTYPE_FLOAT),
+        'll_2d': ll_2d.astype(DTYPE_FLOAT),
+        'rr_2d': rr_2d.astype(DTYPE_FLOAT),
+        'rl_2d': rl_2d.astype(DTYPE_FLOAT),
+        'lr_2d': lr_2d.astype(DTYPE_FLOAT)
     }
     return out
+
+
+def stack_with_padding(arrays: typing.List[np.ndarray]):
+    padded_shape = np.stack([x.shape for x in arrays]).max(0)
+    padded_arrays = []
+    for array in arrays:
+        padding = [(0, y - x) for x, y in zip(array.shape, padded_shape)]
+        padded_arrays.append(np.pad(array, padding))
+    return np.stack(padded_arrays)
+
+
+def fragment_template_list_featurize(tar_group_dict, templates):
+    tar_mols = [Chem.MolFromSmiles(x['smiles']) for x in tar_group_dict['ligands']]
+    tar_size = sum([x.GetNumHeavyAtoms() for x in tar_mols])
+
+    frag_feats_list = []
+
+    for tpl_id, tpl in enumerate(templates):
+        tpl_dir = DATA_DIR / 'cases' / tpl['tpl_chain']
+        tpl_case_dict = utils.read_json(tpl_dir / 'case.json')
+        tpl_group_dict = tpl_case_dict['ligand_groups'][tpl['tpl_group_id']]
+        assert tpl_group_dict['name'] == tpl['tpl_group']
+
+        assert tpl_group_dict['ligands'][tpl['tpl_lig_id']]['chemid'] == tpl['tpl_chemid']
+        tar_mol = tar_mols[tpl['tar_lig_id']]
+        tpl_mol = Chem.MolFromSmiles(tpl_group_dict['ligands'][tpl['tpl_lig_id']]['smiles'])
+        smarts_mol = Chem.MolFromSmarts(tpl['match']['mcs_smarts'])
+        tar_matches = tar_mol.GetSubstructMatches(smarts_mol, uniquify=False)
+        tpl_matches = tpl_mol.GetSubstructMatches(smarts_mol, uniquify=False)
+        assert len(tar_matches) > 0
+        assert len(tpl_matches) > 0
+
+        tar_id_shift = 0
+        for tar_mol in tar_mols[:tpl['tar_lig_id']]:
+            tar_id_shift += tar_mol.GetNumHeavyAtoms()
+
+        tpl_id_shift = 0
+        for tpl_lig in tpl_group_dict['ligands'][:tpl['tpl_lig_id']]:
+            tpl_id_shift += Chem.MolFromSmiles(tpl_lig['smiles']).GetNumHeavyAtoms()
+
+        matches = []
+        for tar_m in tar_matches:
+            tar_m = np.array(tar_m, dtype=np.int32) + tar_id_shift
+            for tpl_m in tpl_matches:
+                tpl_m = np.array(tpl_m, dtype=np.int32) + tpl_id_shift
+                match = np.full(tar_size, -1)
+                match[tar_m] = tpl_m
+                matches.append(match.astype(DTYPE_INT))
+
+        frag_feats = fragment_template_featurize(tpl_case_dict, tpl_group_dict)
+        frag_feats['matches'] = matches
+        frag_feats['tpl_id'] = tpl_id
+        frag_feats_list.append(frag_feats)
+
+    output = {
+        'lig_1d': [],
+        'rec_1d': [],
+        'll_2d': [],
+        'rr_2d': [],
+        'rl_2d': [],
+        'lr_2d': [],
+        'num_res': [],
+        'num_atoms': [],
+        'fragment_mapping': [],
+        'tpl_id': []
+    }
+
+    for frag_feats in frag_feats_list:
+        #print('matches', len(frag_feats['matches']))
+        for match in frag_feats['matches']:
+            output['lig_1d'].append(frag_feats['lig_1d'])
+            output['rec_1d'].append(frag_feats['rec_1d'])
+            output['ll_2d'].append(frag_feats['ll_2d'])
+            output['rr_2d'].append(frag_feats['rr_2d'])
+            output['rl_2d'].append(frag_feats['rl_2d'])
+            output['lr_2d'].append(frag_feats['lr_2d'])
+            output['tpl_id'].append(frag_feats['tpl_id'])
+            output['fragment_mapping'].append(match)
+            output['num_res'].append(len(frag_feats['rec_1d']))
+            output['num_atoms'].append(len(frag_feats['lig_1d']))
+
+    if len(output['lig_1d']) > 0:
+        output = {k: stack_with_padding(v) if isinstance(v[0], np.ndarray) else np.array(v, dtype=DTYPE_INT) for k, v in output.items()}
+    else:
+        output = None
+
+    return output
 
 
 def example():
@@ -659,8 +747,15 @@ def example():
 def example2():
     case_dict = utils.read_json(DATA_DIR / 'cases/3HCF_A/case.json')
     group_dict = case_dict['ligand_groups'][1]
-    print(fragment_template_featurize(case_dict, group_dict))
+    #print(fragment_template_featurize(case_dict, group_dict))
+    print([(k, v.shape) for k, v in target_rec_featurize(case_dict).items()])
+    print([(k, v.shape) for k, v in target_group_featurize(case_dict, group_dict).items()])
+    print([(k, v.shape) for k, v in list(fragment_template_featurize(case_dict, group_dict).items())[:]])
+
+
+def example3():
+    pass
 
 
 if __name__ == '__main__':
-    example()
+    example2()

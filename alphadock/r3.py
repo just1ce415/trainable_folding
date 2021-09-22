@@ -11,6 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+####################################################################
+# THE FILE WAS MODIFIED TO USE PYTORCH INSTEAD OF THE ORIGINAL JAX #
+####################################################################
 
 """Transformations for 3D coordinates.
 
@@ -33,9 +37,9 @@ unintended use of these cores on both GPUs and TPUs.
 
 import collections
 from typing import List
-from alphafold.model import quat_affine
-import jax.numpy as jnp
-import tree
+import quat_affine
+import torch
+
 
 # Array of 3-component vectors, stored as individual array for
 # each component.
@@ -52,7 +56,7 @@ Rigids = collections.namedtuple('Rigids', ['rot', 'trans'])
 
 
 def squared_difference(x, y):
-    return jnp.square(x - y)
+    return torch.square(x - y)
 
 
 def invert_rigids(r: Rigids) -> Rigids:
@@ -96,7 +100,7 @@ def rigids_from_3_points(
     return Rigids(rot=m, trans=origin)
 
 
-def rigids_from_list(l: List[jnp.ndarray]) -> Rigids:
+def rigids_from_list(l: List[torch.tensor]) -> Rigids:
     """Converts flat list of arrays to rigid transformations."""
     assert len(l) == 12
     return Rigids(Rots(*(l[:9])), Vecs(*(l[9:])))
@@ -109,7 +113,7 @@ def rigids_from_quataffine(a: quat_affine.QuatAffine) -> Rigids:
 
 
 def rigids_from_tensor4x4(
-        m: jnp.ndarray  # shape (..., 4, 4)
+        m: torch.Tensor  # shape (..., 4, 4)
 ) -> Rigids:  # shape (...)
     """Construct Rigids object from an 4x4 array.
 
@@ -130,7 +134,7 @@ def rigids_from_tensor4x4(
 
 
 def rigids_from_tensor_flat9(
-        m: jnp.ndarray  # shape (..., 9)
+        m: torch.Tensor  # shape (..., 9)
 ) -> Rigids:  # shape (...)
     """Flat9 encoding: first two columns of rotation matrix + translation."""
     assert m.shape[-1] == 9
@@ -142,11 +146,11 @@ def rigids_from_tensor_flat9(
 
 
 def rigids_from_tensor_flat12(
-        m: jnp.ndarray  # shape (..., 12)
+        m: torch.Tensor  # shape (..., 12)
 ) -> Rigids:  # shape (...)
     """Flat12 encoding: rotation matrix (9 floats) + translation (3 floats)."""
     assert m.shape[-1] == 12
-    x = jnp.moveaxis(m, -1, 0)  # Unstack
+    x = torch.moveaxis(m, -1, 0)  # Unstack
     return Rigids(Rots(*x[:9]), Vecs(*x[9:]))
 
 
@@ -167,7 +171,7 @@ def rigids_mul_vecs(r: Rigids, v: Vecs) -> Vecs:
     return vecs_add(rots_mul_vecs(r.rot, v), r.trans)
 
 
-def rigids_to_list(r: Rigids) -> List[jnp.ndarray]:
+def rigids_to_list(r: Rigids) -> List[torch.Tensor]:
     """Turn Rigids into flat list, inverse of 'rigids_from_list'."""
     return list(r.rot) + list(r.trans)
 
@@ -184,22 +188,22 @@ def rigids_to_quataffine(r: Rigids) -> quat_affine.QuatAffine:
 
 def rigids_to_tensor_flat9(
         r: Rigids  # shape (...)
-) -> jnp.ndarray:  # shape (..., 9)
+) -> torch.Tensor:  # shape (..., 9)
     """Flat9 encoding: first two columns of rotation matrix + translation."""
-    return jnp.stack(
+    return torch.stack(
         [r.rot.xx, r.rot.yx, r.rot.zx, r.rot.xy, r.rot.yy, r.rot.zy]
-        + list(r.trans), axis=-1)
+        + list(r.trans), dim=-1)
 
 
 def rigids_to_tensor_flat12(
         r: Rigids  # shape (...)
-) -> jnp.ndarray:  # shape (..., 12)
+) -> torch.Tensor:  # shape (..., 12)
     """Flat12 encoding: rotation matrix (9 floats) + translation (3 floats)."""
-    return jnp.stack(list(r.rot) + list(r.trans), axis=-1)
+    return torch.stack(list(r.rot) + list(r.trans), dim=-1)
 
 
 def rots_from_tensor3x3(
-        m: jnp.ndarray,  # shape (..., 3, 3)
+        m: torch.Tensor,  # shape (..., 3, 3)
 ) -> Rots:  # shape (...)
     """Convert rotations represented as (3, 3) array to Rots."""
     assert m.shape[-1] == 3
@@ -257,7 +261,7 @@ def vecs_add(v1: Vecs, v2: Vecs) -> Vecs:
     return Vecs(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z)
 
 
-def vecs_dot_vecs(v1: Vecs, v2: Vecs) -> jnp.ndarray:
+def vecs_dot_vecs(v1: Vecs, v2: Vecs) -> torch.Tensor:
     """Dot product of vectors 'v1' and 'v2'."""
     return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
 
@@ -269,7 +273,7 @@ def vecs_cross_vecs(v1: Vecs, v2: Vecs) -> Vecs:
                 v1.x * v2.y - v1.y * v2.x)
 
 
-def vecs_from_tensor(x: jnp.ndarray  # shape (..., 3)
+def vecs_from_tensor(x: torch.Tensor  # shape (..., 3)
                      ) -> Vecs:  # shape (...)
     """Converts from tensor of shape (3,) to Vecs."""
     num_components = x.shape[-1]
@@ -290,7 +294,7 @@ def vecs_robust_normalize(v: Vecs, epsilon: float = 1e-8) -> Vecs:
     return Vecs(v.x / norms, v.y / norms, v.z / norms)
 
 
-def vecs_robust_norm(v: Vecs, epsilon: float = 1e-8) -> jnp.ndarray:
+def vecs_robust_norm(v: Vecs, epsilon: float = 1e-8) -> torch.Tensor:
     """Computes norm of vectors 'v'.
 
     Args:
@@ -299,7 +303,7 @@ def vecs_robust_norm(v: Vecs, epsilon: float = 1e-8) -> jnp.ndarray:
     Returns:
       norm of 'v'
     """
-    return jnp.sqrt(jnp.square(v.x) + jnp.square(v.y) + jnp.square(v.z) + epsilon)
+    return torch.sqrt(torch.square(v.x) + torch.square(v.y) + torch.square(v.z) + epsilon)
 
 
 def vecs_sub(v1: Vecs, v2: Vecs) -> Vecs:
@@ -307,7 +311,7 @@ def vecs_sub(v1: Vecs, v2: Vecs) -> Vecs:
     return Vecs(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z)
 
 
-def vecs_squared_distance(v1: Vecs, v2: Vecs) -> jnp.ndarray:
+def vecs_squared_distance(v1: Vecs, v2: Vecs) -> torch.Tensor:
     """Computes squared euclidean difference between 'v1' and 'v2'."""
     return (squared_difference(v1.x, v2.x) +
             squared_difference(v1.y, v2.y) +
@@ -315,6 +319,6 @@ def vecs_squared_distance(v1: Vecs, v2: Vecs) -> jnp.ndarray:
 
 
 def vecs_to_tensor(v: Vecs  # shape (...)
-                   ) -> jnp.ndarray:  # shape(..., 3)
+                   ) -> torch.Tensor:  # shape(..., 3)
     """Converts 'v' to tensor with shape 3, inverse of 'vecs_from_tensor'."""
-    return jnp.stack([v.x, v.y, v.z], axis=-1)
+    return torch.stack([v.x, v.y, v.z], dim=-1)

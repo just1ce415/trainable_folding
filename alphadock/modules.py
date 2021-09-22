@@ -2,7 +2,6 @@ import torch
 from torch import nn
 import torch.functional as F
 import math
-from config import config
 
 
 class RowAttentionWithPairBias(nn.Module):
@@ -318,21 +317,33 @@ class TemplatePairStackIteration(nn.Module):
 class TemplatePairStack(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        self.t2d_proj = nn.Linear(global_config['template']['num_feats'], global_config['rep_2d']['num_c'])
+        self.rr_proj = nn.Linear(global_config['hh_rr'], global_config['rep_2d']['num_c'])
+        self.ll_proj = nn.Linear(global_config['hh_ll'], global_config['rep_2d']['num_c'])
+        self.rl_proj = nn.Linear(global_config['hh_rl'], global_config['rep_2d']['num_c'])
+        self.lr_proj = nn.Linear(global_config['hh_lr'], global_config['rep_2d']['num_c'])
+
         self.layers = nn.ModuleList([TemplatePairStackIteration(config['TemplatePairStackIteration'], global_config) for _ in range(config['num_iter'])])
         self.norm = nn.LayerNorm(global_config['rep_2d']['num_c'])
 
-    def forward(self, t_feats):
-        x = self.t2d_proj(t_feats)
-        shape = x.shape
-        x = x.flatten(end_dim=1)
+    def forward(self, inputs):
+        rr = self.rr_proj(inputs['rr_2d']).squeeze(0)
+        rl = self.rl_proj(inputs['rl_2d']).squeeze(0)
+        lr = self.lr_proj(inputs['lr_2d']).squeeze(0)
+        ll = self.ll_proj(inputs['ll_2d']).squeeze(0)
+
+        num_temp = rr.shape[0]
+        num_res = rr.shape[1]
+        num_atoms = ll.shape[1]
+        out = torch.zeros((num_temp, num_res+num_atoms, num_res+num_atoms, rr.shape[-1]), device=rr.device, dtype=rr.dtype)
+
+        out[:, :num_res, :num_res] = rr
+        out[:, :num_res, num_res:] = rl
+        out[:, num_res:, :num_res] = lr
+        out[:, num_res:, num_res:] = ll
 
         for l in self.layers:
-            x = l(x)
-        x = self.norm(x)
-
-        x = x.view(*shape)
-        return x
+            out = l(out)
+        return self.norm(out).unsqueeze(0)
 
 
 class TemplatePointwiseAttention(nn.Module):
@@ -363,41 +374,86 @@ class TemplatePointwiseAttention(nn.Module):
         return out
 
 
+#def map_template_to_target(feat_1d, feat_2d, mapping, add_gap_feature=True):
+#    assert len(feat_1d.shape) == 3
+#    size = mapping
+#    out = torch.zeros()
+
+
 class CEPPairStack(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        self.t2d_proj = nn.Linear(global_config['cep_in_c'], global_config['rep_2d']['num_c'])
+        self.rr_proj = nn.Linear(global_config['frag_rr'], global_config['rep_2d']['num_c'])
+        self.ll_proj = nn.Linear(global_config['frag_ll'], global_config['rep_2d']['num_c'])
+        self.rl_proj = nn.Linear(global_config['frag_rl'], global_config['rep_2d']['num_c'])
+        self.lr_proj = nn.Linear(global_config['frag_lr'], global_config['rep_2d']['num_c'])
+
+        self.l_proj = nn.Linear(global_config['frag_lig'], global_config['rep_1d']['num_c'])
+
         self.layers = nn.ModuleList([TemplatePairStackIteration(config['TemplatePairStackIteration'], global_config) for _ in range(config['num_iter'])])
         self.norm = nn.LayerNorm(global_config['rep_2d']['num_c'])
 
-    def forward(self, t_feats, t_crops, t_maps):
-        x = self.t2d_proj(t_feats)
-        #assert t_feats.shape[0] == 1
-        x = x.flatten(end_dim=1)
-        t_crops = t_crops.flatten(end_dim=1)
-        t_maps = t_maps.flatten(end_dim=1)
+    def forward(self, inputs):
+        assert inputs['rr_2d'].shape[0] == 1
 
-        out_list = []
-        assert x.shape[0] == t_crops.shape[0]
-        for t_id, (num_res, num_atoms) in enumerate(t_crops):
-            t_size = num_res + num_atoms
-            t_map = t_maps[t_id]
-            temp = x[t_id:t_id+1, :t_size, :t_size]
+        rr = self.rr_proj(inputs['rr_2d']).squeeze(0)
+        rl = self.rl_proj(inputs['rl_2d']).squeeze(0)
+        lr = self.lr_proj(inputs['lr_2d']).squeeze(0)
+        ll = self.ll_proj(inputs['ll_2d']).squeeze(0)
+
+        lig_1d = self.l_proj(inputs['lig_1d']).squeeze(0)
+
+        num_res = inputs['num_res'].squeeze(0)
+        num_atoms = inputs['num_atoms'].squeeze(0)
+        mapping = inputs['fragment_mapping'].squeeze(0)
+
+        out_2d_list = []
+        out_1d_list = []
+
+        for frag_id in range(mapping.shape[0]):
+            frag_num_res = num_res[frag_id]
+            frag_num_atoms = num_atoms[frag_id]
+            out_size = frag_num_res + frag_num_atoms
+
+            out_2d = torch.zeros((1, out_size, out_size, rr.shape[-1]), device=rr.device, dtype=rr.dtype)
+            out_2d[0, :frag_num_res, :frag_num_res] = rr[frag_id, :frag_num_res, :frag_num_res]
+            out_2d[0, :frag_num_res, frag_num_res:] = rl[frag_id, :frag_num_res, :frag_num_atoms]
+            out_2d[0, frag_num_res:, :frag_num_res] = lr[frag_id, :frag_num_atoms, :frag_num_res]
+            out_2d[0, frag_num_res:, frag_num_res:] = ll[frag_id, :frag_num_atoms, :frag_num_atoms]
+
             for l in self.layers:
-                temp = l(temp.clone())
-            temp = self.norm(temp)[0, num_res:, num_res:]
+                out_2d = l(out_2d.clone())
+            out_2d = self.norm(out_2d)
+            out_2d = out_2d[0, frag_num_res:, frag_num_res:]
 
-            t_out = torch.zeros((t_map.shape[0], t_map.shape[0], temp.shape[2]))
-            r_atoms = torch.where(t_map > -1)[0]
-            t_atoms = t_map[t_map > -1]
-            r_prod = torch.cartesian_prod(r_atoms, r_atoms)
-            t_prod = torch.cartesian_prod(t_atoms, t_atoms)
-            t_out[r_prod[:, 0], r_prod[:, 1]] = temp[t_prod[:, 0], t_prod[:, 1]]
-            out_list.append(t_out)
+            frag_map = mapping[frag_id]
+            out_2d_mapped = torch.zeros((frag_map.shape[0], frag_map.shape[0], out_2d.shape[-1]), device=out_2d.device, dtype=out_2d.dtype)
 
-        out = torch.stack(out_list)
-        out = out.view(t_feats.shape[0], t_feats.shape[1], *out.shape[1:])
-        return out
+            # TODO: replace with torch.gather or take
+            # fill ones for gap pairs
+            target_gap_atoms = torch.where(frag_map == -1)[0]
+            target_gap_pairs = torch.cartesian_prod(target_gap_atoms, target_gap_atoms)
+            out_2d_mapped[target_gap_pairs[:, 0], target_gap_pairs[:, 1], -1] = 1
+
+            target_atoms = torch.where(frag_map > -1)[0]
+            template_atoms = frag_map[frag_map > -1]
+            target_pairs = torch.cartesian_prod(target_atoms, target_atoms)
+            template_pairs = torch.cartesian_prod(template_atoms, template_atoms)
+            out_2d_mapped[target_pairs[:, 0], target_pairs[:, 1]] = out_2d[template_pairs[:, 0], template_pairs[:, 1]]
+            out_2d_list.append(out_2d_mapped)
+
+            out_1d_mapped = torch.zeros((frag_map.shape[0], lig_1d.shape[-1]), device=lig_1d.device, dtype=lig_1d.dtype)
+            out_1d_mapped[target_gap_atoms, -1] = 1
+            out_1d_mapped[target_atoms] = lig_1d[frag_id, template_atoms]
+            out_1d_list.append(out_1d_mapped)
+
+        out_2d = torch.stack(out_2d_list).unsqueeze(0)
+        out_1d = torch.stack(out_1d_list).unsqueeze(0)
+
+        return {
+            'frag_1d': out_1d,
+            'frag_2d': out_2d
+        }
 
 
 class EvoformerIteration(nn.Module):
@@ -414,6 +470,7 @@ class EvoformerIteration(nn.Module):
         self.TriangleAttentionEndingNode = TriangleAttentionEndingNode(config['TriangleAttentionEndingNode'], global_config)
         self.PairTransition = Transition(global_config['rep_2d']['num_c'], config['PairTransition']['n'])
 
+    # TODO: add dropout
     def forward(self, x):
         r1d, l1d, pair = x['r1d'], x['l1d'], x['pair']
         a, b = self.RowAttentionWithPairBias(r1d.clone(), l1d.clone(), pair.clone())
@@ -434,7 +491,7 @@ class EvoformerIteration(nn.Module):
 class Evoformer(torch.nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        self.layers = nn.ModuleList([EvoformerIteration(config['EvoformerIteration'], global_config) for x in range(config['num_blocks'])])
+        self.layers = nn.ModuleList([EvoformerIteration(config['EvoformerIteration'], global_config) for x in range(config['num_iter'])])
 
     def forward(self, x):
         for l in self.layers:
@@ -450,18 +507,20 @@ class InitPairRepresentation(torch.nn.Module):
         rec_in_c = global_config['rec_in_c']
         lig_in2d_c = global_config['lig_in2d_c']
         rec_in2d_c = global_config['rec_in2d_c']
+        relpos_c = global_config['rec_relpos_c']
         pair_num_c = global_config['rep_2d']['num_c']
 
         self.l_proj1 = nn.Linear(lig_in_c, pair_num_c)
         self.l_proj2 = nn.Linear(lig_in_c, pair_num_c)
         self.r_proj1 = nn.Linear(rec_in_c, pair_num_c)
         self.r_proj2 = nn.Linear(rec_in_c, pair_num_c)
+        self.relpos_proj = nn.Linear(relpos_c, pair_num_c)
 
         self.l2d_proj = nn.Linear(lig_in2d_c, pair_num_c)
         self.r2d_proj = nn.Linear(rec_in2d_c, pair_num_c)
 
     def forward(self, feats):
-        l1d, l2d, r1d, r2d = feats['l1d'], feats['l2d'], feats['r1d'], feats['r2d']
+        l1d, l2d, r1d, r2d, relpos = feats['lig_1d'], feats['lig_2d'], feats['rec_1d'], feats['rec_2d'], feats['rec_relpos']
 
         # create pair representation
         l_proj1 = self.l_proj1(l1d)
@@ -476,6 +535,9 @@ class InitPairRepresentation(torch.nn.Module):
         # TODO: maybe do something more sophisticated ?
         ll_pair += self.l2d_proj(l2d)
         rr_pair += self.r2d_proj(r2d)
+
+        # add relpos
+        rr_pair += self.relpos_proj(relpos)
 
         num_batch = r1d.shape[0]
         num_res = r1d.shape[1]
@@ -497,12 +559,10 @@ class InputEmbedder(torch.nn.Module):
 
         lig_in_c = global_config['lig_in_c']
         rec_in_c = global_config['rec_in_c']
-        cep_in_c = global_config['cep_in_c']
         l1d_num_c = global_config['rep_1d']['num_c']
         r1d_num_c = global_config['rep_1d']['num_c']
 
         self.l_feat = nn.Linear(lig_in_c, l1d_num_c)
-        self.cep_feat = nn.Linear(cep_in_c, l1d_num_c)
         self.r_feat = nn.Linear(rec_in_c, r1d_num_c)
 
         self.InitPairRepresentation = InitPairRepresentation(global_config)
@@ -511,33 +571,40 @@ class InputEmbedder(torch.nn.Module):
         self.TemplatePairStack = TemplatePairStack(config['TemplatePairStack'], global_config)
         self.TemplatePointwiseAttention = TemplatePointwiseAttention(config['TemplatePointwiseAttention'], global_config)
 
-    def forward(self, feats):
+    def forward(self, inputs):
         # create pair representation
-        pair = self.InitPairRepresentation(feats)
+        pair = self.InitPairRepresentation(inputs['target'])
 
         # CEP embedding
-        num_res = feats['r1d'].shape[1]
-        cep_2d = self.CEPPairStack(feats['cep_feats_2d'], feats['cep_crops'], feats['cep_maps'])
-        cep_1d = cep_2d.mean(3)
-        cep_embedding = self.CEPPointwiseAttention(pair[:, num_res:, num_res:], cep_2d)
+        num_res = inputs['target']['rec_1d'].shape[1]
+        if 'fragments' in inputs:
+            cep = self.CEPPairStack(inputs['fragments'])
+            cep_embedding = self.CEPPointwiseAttention(pair[:, num_res:, num_res:], cep['frag_2d'])
 
         # make template embedding
-        t2d = self.TemplatePairStack(feats['template_feats_2d'])
-        template_embedding = self.TemplatePointwiseAttention(pair.clone(), t2d)
+        if 'hhpred' in inputs:
+            hh_2d = self.TemplatePairStack(inputs['hhpred'])
+            template_embedding = self.TemplatePointwiseAttention(pair.clone(), hh_2d)
 
         # add embeddings to the pair rep
-        pair += template_embedding
-        pair[:, num_res:, num_res:] += cep_embedding
+        if 'hhpred' in inputs:
+            pair += template_embedding
 
-        r1d_rep = self.r_feat(feats['r1d'])
-        # add linear rec template feats
+        if 'fragments' in inputs:
+            pair[:, num_res:, num_res:] += cep_embedding
+
+        rep_rec_1d = self.r_feat(inputs['target']['rec_1d'])
+        # TODO: add linear rec template feats. In the future check if we can use rec profiles from cep layer
 
         # make 1d rep
-        l_feat = self.l_feat(feats['l1d'])
-        rep_1d = cep_1d + l_feat.unsqueeze(1)
-        # concat linear lig template feats
+        l_feat = self.l_feat(inputs['target']['lig_1d'])
+        if 'fragments' in inputs:
+            rep_lig_1d = cep['frag_1d'] + cep['frag_2d'].mean(3) + l_feat.unsqueeze(1)
+        else:
+            rep_lig_1d = l_feat.unsqueeze(1)
+        # TODO: concat linear lig template feats
 
-        return {'l1d': rep_1d, 'r1d': r1d_rep, 'pair': pair}
+        return {'l1d': rep_lig_1d, 'r1d': rep_rec_1d, 'pair': pair}
 
 
 class RecyclingEmbedder(torch.nn.Module):
@@ -581,5 +648,80 @@ def example():
     print('Num params:', pytorch_total_params)
 
 
+def example2():
+    from config import config
+
+    with torch.autograd.set_detect_anomaly(True):
+        model = InputEmbedder(config['InputEmbedder'], config)
+        num_res = 20
+        num_atoms = 10
+        num_hh = 3
+        num_frag = 3
+        num_frag_atoms = 20
+        num_frag_res = 30
+
+        mapping = -torch.ones((1, num_frag, num_atoms), dtype=int)
+        mapping[0, 0, [3, 6, 7]] = torch.tensor([1, 2, 0])
+        mapping[0, 1, [3, 6, 7, 9]] = torch.tensor([1, 2, 0, 3])
+        mapping[0, 2, [3, 6, 4, 9, 2]] = torch.tensor([1, 2, 0, 3, 4])
+
+        sample = {
+            'target': {
+                'lig_1d': torch.zeros((1, num_atoms, config['lig_in_c'])),
+                'lig_2d': torch.zeros((1, num_atoms, num_atoms, config['lig_in2d_c'])),  # bonds
+                'rec_1d': torch.zeros((1, num_res, config['rec_in_c'])),  # residue feats
+                'rec_2d': torch.zeros((1, num_res, num_res, config['rec_in2d_c'])),  # distogram, cbeta_2d
+                'rec_relpos': torch.zeros((1, num_res, num_res, config['rec_relpos_c'])),
+            },
+
+            'hhpred': {
+                'lig_1d': torch.zeros((1, num_hh, num_atoms, config['hh_lig'])),
+                'rec_1d': torch.zeros((1, num_hh, num_res, config['hh_rec'])),
+                'rr_2d': torch.zeros((1, num_hh, num_res, num_res, config['hh_rr'])),
+                'rl_2d': torch.zeros((1, num_hh, num_res, num_atoms, config['hh_rl'])),
+                'lr_2d': torch.zeros((1, num_hh, num_atoms, num_res, config['hh_lr'])),
+                'll_2d': torch.zeros((1, num_hh, num_atoms, num_atoms, config['hh_ll'])),
+            },
+
+            'fragments': {
+                'lig_1d': torch.zeros((1, num_frag, num_frag_atoms, config['frag_lig'])),
+                'rec_1d': torch.zeros((1, num_frag, num_frag_res, config['frag_rec'])),
+                'rr_2d': torch.zeros((1, num_frag, num_frag_res, num_frag_res, config['frag_rr'])),
+                'rl_2d': torch.zeros((1, num_frag, num_frag_res, num_frag_atoms, config['frag_rl'])),
+                'lr_2d': torch.zeros((1, num_frag, num_frag_atoms, num_frag_res, config['frag_lr'])),
+                'll_2d': torch.zeros((1, num_frag, num_frag_atoms, num_frag_atoms, config['frag_ll'])),
+                'num_atoms': torch.tensor([[3, 4, 5]]),
+                'num_res': torch.tensor([[10, 11, 12]]),
+                'fragment_mapping': mapping
+            }
+        }
+        model = InputEmbedder(config['InputEmbedder'], config)
+        print([(k, v.shape) for k, v in model(sample).items()])
+
+
+def example3():
+    from config import config, DATA_DIR
+    with torch.no_grad():
+        model = InputEmbedder(config['InputEmbedder'], config).half().cuda()
+
+        pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        print('Num params:', pytorch_total_params)
+
+        from dataset import DockingDataset
+        ds = DockingDataset(DATA_DIR, 'train_split/debug.json')
+        #print(ds[0])
+        item = ds[0]
+
+        for k1, v1 in item.items():
+            print(k1)
+            for k2, v2 in v1.items():
+                v1[k2] = torch.as_tensor(v2)[None].cuda()
+                print('    ', k2, v1[k2].shape, v1[k2].dtype)
+
+        print(item['fragments']['num_res'])
+        print(item['fragments']['num_atoms'])
+        print(model(item))
+
+
 if __name__ == '__main__':
-    example()
+    example3()

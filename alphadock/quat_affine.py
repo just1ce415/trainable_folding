@@ -11,6 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+####################################################################
+# THE FILE WAS MODIFIED TO USE PYTORCH INSTEAD OF THE ORIGINAL JAX #
+####################################################################
 
 """Quaternion geometry modules.
 
@@ -35,12 +39,14 @@ actually used are executed.
 import functools
 from typing import Tuple
 
-import jax
-import jax.numpy as jnp
+import torch
 import numpy as np
 
+from config import DTYPE_FLOAT
+
+
 # pylint: disable=bad-whitespace
-QUAT_TO_ROT = np.zeros((4, 4, 3, 3), dtype=np.float32)
+QUAT_TO_ROT = np.zeros((4, 4, 3, 3), dtype=DTYPE_FLOAT)
 
 QUAT_TO_ROT[0, 0] = [[ 1, 0, 0], [ 0, 1, 0], [ 0, 0, 1]]  # rr
 QUAT_TO_ROT[1, 1] = [[ 1, 0, 0], [ 0,-1, 0], [ 0, 0,-1]]  # ii
@@ -55,7 +61,9 @@ QUAT_TO_ROT[0, 1] = [[ 0, 0, 0], [ 0, 0,-2], [ 0, 2, 0]]  # ir
 QUAT_TO_ROT[0, 2] = [[ 0, 0, 2], [ 0, 0, 0], [-2, 0, 0]]  # jr
 QUAT_TO_ROT[0, 3] = [[ 0,-2, 0], [ 2, 0, 0], [ 0, 0, 0]]  # kr
 
-QUAT_MULTIPLY = np.zeros((4, 4, 4), dtype=np.float32)
+QUAT_TO_ROT = torch.tensor(QUAT_TO_ROT)
+
+QUAT_MULTIPLY = np.zeros((4, 4, 4), dtype=DTYPE_FLOAT)
 QUAT_MULTIPLY[:, :, 0] = [[ 1, 0, 0, 0],
                           [ 0,-1, 0, 0],
                           [ 0, 0,-1, 0],
@@ -76,6 +84,8 @@ QUAT_MULTIPLY[:, :, 3] = [[ 0, 0, 0, 1],
                           [ 0,-1, 0, 0],
                           [ 1, 0, 0, 0]]
 
+QUAT_MULTIPLY = torch.tensor(QUAT_MULTIPLY)
+
 QUAT_MULTIPLY_BY_VEC = QUAT_MULTIPLY[:, 1:, :]
 # pylint: enable=bad-whitespace
 
@@ -95,7 +105,7 @@ def rot_to_quat(rot, unstack_inputs=False):
       Quaternion as (..., 4) tensor.
     """
     if unstack_inputs:
-        rot = [jnp.moveaxis(x, -1, 0) for x in jnp.moveaxis(rot, -2, 0)]
+        rot = [torch.moveaxis(x, -1, 0) for x in torch.moveaxis(rot, -2, 0)]
 
     [[xx, xy, xz], [yx, yy, yz], [zx, zy, zz]] = rot
 
@@ -106,36 +116,36 @@ def rot_to_quat(rot, unstack_inputs=False):
          [      yx - xy,      xz + zx,      yz + zy, zz - xx - yy,]]
     # pylint: enable=bad-whitespace
 
-    k = (1./3.) * jnp.stack([jnp.stack(x, axis=-1) for x in k],
-                            axis=-2)
+    k = (1./3.) * torch.stack([torch.stack(x, dim=-1) for x in k], dim=-2)
 
     # Get eigenvalues in non-decreasing order and associated.
-    _, qs = jnp.linalg.eigh(k)
+    _, qs = torch.linalg.eigh(k)
     return qs[..., -1]
 
 
 def rot_list_to_tensor(rot_list):
     """Convert list of lists to rotation tensor."""
-    return jnp.stack(
-        [jnp.stack(rot_list[0], axis=-1),
-         jnp.stack(rot_list[1], axis=-1),
-         jnp.stack(rot_list[2], axis=-1)],
-        axis=-2)
+    return torch.stack(
+        [torch.stack(rot_list[0], dim=-1),
+         torch.stack(rot_list[1], dim=-1),
+         torch.stack(rot_list[2], dim=-1)],
+        dim=-2)
 
 
 def vec_list_to_tensor(vec_list):
     """Convert list to vector tensor."""
-    return jnp.stack(vec_list, axis=-1)
+    return torch.stack(vec_list, dim=-1)
 
 
 def quat_to_rot(normalized_quat):
     """Convert a normalized quaternion to a rotation matrix."""
-    rot_tensor = jnp.sum(
-        np.reshape(QUAT_TO_ROT, (4, 4, 9)) *
+
+    rot_tensor = torch.sum(
+        torch.reshape(QUAT_TO_ROT.clone().to(normalized_quat.device), (4, 4, 9)) *
         normalized_quat[..., :, None, None] *
         normalized_quat[..., None, :, None],
-        axis=(-3, -2))
-    rot = jnp.moveaxis(rot_tensor, -1, 0)  # Unstack.
+        dim=(-3, -2))
+    rot = torch.moveaxis(rot_tensor, -1, 0)  # Unstack.
     return [[rot[0], rot[1], rot[2]],
             [rot[3], rot[4], rot[5]],
             [rot[6], rot[7], rot[8]]]
@@ -143,20 +153,20 @@ def quat_to_rot(normalized_quat):
 
 def quat_multiply_by_vec(quat, vec):
     """Multiply a quaternion by a pure-vector quaternion."""
-    return jnp.sum(
-        QUAT_MULTIPLY_BY_VEC *
+    return torch.sum(
+        QUAT_MULTIPLY_BY_VEC.clone().to(quat.device) *
         quat[..., :, None, None] *
         vec[..., None, :, None],
-        axis=(-3, -2))
+        dim=(-3, -2))
 
 
 def quat_multiply(quat1, quat2):
     """Multiply a quaternion by another quaternion."""
-    return jnp.sum(
-        QUAT_MULTIPLY *
+    return torch.sum(
+        QUAT_MULTIPLY.clone().to(quat1.device) *
         quat1[..., :, None, None] *
         quat2[..., None, :, None],
-        axis=(-3, -2))
+        dim=(-3, -2))
 
 
 def apply_rot_to_vec(rot, vec, unstack=False):
@@ -173,6 +183,7 @@ def apply_rot_to_vec(rot, vec, unstack=False):
 def apply_inverse_rot_to_vec(rot, vec):
     """Multiply the inverse of a rotation matrix by a vector."""
     # Inverse rotation is just transpose
+    #print('adfdfff', vec[0].shape)
     return [rot[0][0] * vec[0] + rot[1][0] * vec[1] + rot[2][0] * vec[2],
             rot[0][1] * vec[0] + rot[1][1] * vec[1] + rot[2][1] * vec[2],
             rot[0][2] * vec[0] + rot[1][2] * vec[1] + rot[2][2] * vec[2]]
@@ -200,13 +211,12 @@ class QuatAffine(object):
 
         if unstack_inputs:
             if rotation is not None:
-                rotation = [jnp.moveaxis(x, -1, 0)   # Unstack.
-                            for x in jnp.moveaxis(rotation, -2, 0)]  # Unstack.
-            translation = jnp.moveaxis(translation, -1, 0)  # Unstack.
+                rotation = [torch.moveaxis(x, -1, 0)   # Unstack.
+                            for x in torch.moveaxis(rotation, -2, 0)]  # Unstack.
+            translation = torch.moveaxis(translation, -1, 0)  # Unstack.
 
         if normalize and quaternion is not None:
-            quaternion = quaternion / jnp.linalg.norm(quaternion, axis=-1,
-                                                      keepdims=True)
+            quaternion = quaternion / torch.linalg.norm(quaternion, axis=-1, keepdims=True)
 
         if rotation is None:
             rotation = quat_to_rot(quaternion)
@@ -219,10 +229,10 @@ class QuatAffine(object):
         assert len(self.translation) == 3
 
     def to_tensor(self):
-        return jnp.concatenate(
+        return torch.cat(
             [self.quaternion] +
-            [jnp.expand_dims(x, axis=-1) for x in self.translation],
-            axis=-1)
+            [torch.unsqueeze(x, dim=-1) for x in self.translation],
+            dim=-1)
 
     def apply_tensor_fn(self, tensor_fn):
         """Return a new QuatAffine with tensor_fn applied (e.g. stop_gradient)."""
@@ -251,7 +261,7 @@ class QuatAffine(object):
 
     @classmethod
     def from_tensor(cls, tensor, normalize=False):
-        quaternion, tx, ty, tz = jnp.split(tensor, [4, 5, 6], axis=-1)
+        quaternion, tx, ty, tz = torch.tensor_split(tensor, [4, 5, 6], dim=-1)
         return cls(quaternion,
                    [tx[..., 0], ty[..., 0], tz[..., 0]],
                    normalize=normalize)
@@ -267,24 +277,23 @@ class QuatAffine(object):
         Returns:
           New QuatAffine object.
         """
-        vector_quaternion_update, x, y, z = jnp.split(update, [3, 4, 5], axis=-1)
-        trans_update = [jnp.squeeze(x, axis=-1),
-                        jnp.squeeze(y, axis=-1),
-                        jnp.squeeze(z, axis=-1)]
+        vector_quaternion_update, x, y, z = torch.tensor_split(update, [3, 4, 5], dim=-1)
+        trans_update = [torch.squeeze(x, dim=-1),
+                        torch.squeeze(y, dim=-1),
+                        torch.squeeze(z, dim=-1)]
 
-        new_quaternion = (self.quaternion +
-                          quat_multiply_by_vec(self.quaternion,
-                                               vector_quaternion_update))
-
+        new_quaternion = (self.quaternion + quat_multiply_by_vec(self.quaternion, vector_quaternion_update))
         trans_update = apply_rot_to_vec(self.rotation, trans_update)
+
         new_translation = [
             self.translation[0] + trans_update[0],
             self.translation[1] + trans_update[1],
             self.translation[2] + trans_update[2]]
 
-        return QuatAffine(new_quaternion, new_translation)
+        out = QuatAffine(new_quaternion, new_translation)
+        return out
 
-    def apply_to_point(self, point, extra_dims=0):
+    def apply_to_point(self, point):
         """Apply affine to a point.
 
         Args:
@@ -299,10 +308,15 @@ class QuatAffine(object):
         """
         rotation = self.rotation
         translation = self.translation
+
+        #assert len(rotation[0][0].shape) == 1
+        #assert len(translation[0].shape) == 1
+        assert list(rotation[0][0].shape) == list(point[0].shape[:len(rotation[0][0].shape)]), (rotation[0][0].shape, point[0].shape)
+        extra_dims = len(point[0].shape) - len(rotation[0][0].shape)
+
         for _ in range(extra_dims):
-            expand_fn = functools.partial(jnp.expand_dims, axis=-1)
-            rotation = jax.tree_map(expand_fn, rotation)
-            translation = jax.tree_map(expand_fn, translation)
+            rotation = [[torch.unsqueeze(x, dim=-1) for x in row] for row in rotation]
+            translation = [torch.unsqueeze(x, dim=-1) for x in translation]
 
         rot_point = apply_rot_to_vec(rotation, point)
         return [
@@ -310,7 +324,7 @@ class QuatAffine(object):
             rot_point[1] + translation[1],
             rot_point[2] + translation[2]]
 
-    def invert_point(self, transformed_point, extra_dims=0):
+    def invert_point(self, transformed_point):
         """Apply inverse of transformation to a point.
 
         Args:
@@ -325,11 +339,18 @@ class QuatAffine(object):
         """
         rotation = self.rotation
         translation = self.translation
-        for _ in range(extra_dims):
-            expand_fn = functools.partial(jnp.expand_dims, axis=-1)
-            rotation = jax.tree_map(expand_fn, rotation)
-            translation = jax.tree_map(expand_fn, translation)
 
+        #assert len(rotation[0][0].shape) == 1
+        #assert len(translation[0].shape) == 1
+        assert list(rotation[0][0].shape) == list(transformed_point[0].shape[:len(rotation[0][0].shape)]), (rotation[0][0].shape, transformed_point[0].shape)
+        extra_dims = len(transformed_point[0].shape) - len(rotation[0][0].shape)
+
+        for _ in range(extra_dims):
+            rotation = [[torch.unsqueeze(x, dim=-1) for x in row] for row in rotation]
+            translation = [torch.unsqueeze(x, dim=-1) for x in translation]
+
+        #print('a', transformed_point[0].shape)
+        #print('b', translation[0].shape)
         rot_point = [
             transformed_point[0] - translation[0],
             transformed_point[1] - translation[1],
@@ -342,24 +363,24 @@ class QuatAffine(object):
 
 
 def _multiply(a, b):
-    return jnp.stack([
-        jnp.array([a[0][0]*b[0][0] + a[0][1]*b[1][0] + a[0][2]*b[2][0],
-                   a[0][0]*b[0][1] + a[0][1]*b[1][1] + a[0][2]*b[2][1],
-                   a[0][0]*b[0][2] + a[0][1]*b[1][2] + a[0][2]*b[2][2]]),
+    return torch.stack([
+        torch.tensor([a[0][0]*b[0][0] + a[0][1]*b[1][0] + a[0][2]*b[2][0],
+                      a[0][0]*b[0][1] + a[0][1]*b[1][1] + a[0][2]*b[2][1],
+                      a[0][0]*b[0][2] + a[0][1]*b[1][2] + a[0][2]*b[2][2]]),
 
-        jnp.array([a[1][0]*b[0][0] + a[1][1]*b[1][0] + a[1][2]*b[2][0],
-                   a[1][0]*b[0][1] + a[1][1]*b[1][1] + a[1][2]*b[2][1],
-                   a[1][0]*b[0][2] + a[1][1]*b[1][2] + a[1][2]*b[2][2]]),
+        torch.tensor([a[1][0]*b[0][0] + a[1][1]*b[1][0] + a[1][2]*b[2][0],
+                      a[1][0]*b[0][1] + a[1][1]*b[1][1] + a[1][2]*b[2][1],
+                      a[1][0]*b[0][2] + a[1][1]*b[1][2] + a[1][2]*b[2][2]]),
 
-        jnp.array([a[2][0]*b[0][0] + a[2][1]*b[1][0] + a[2][2]*b[2][0],
-                   a[2][0]*b[0][1] + a[2][1]*b[1][1] + a[2][2]*b[2][1],
-                   a[2][0]*b[0][2] + a[2][1]*b[1][2] + a[2][2]*b[2][2]])])
+        torch.tensor([a[2][0]*b[0][0] + a[2][1]*b[1][0] + a[2][2]*b[2][0],
+                      a[2][0]*b[0][1] + a[2][1]*b[1][1] + a[2][2]*b[2][1],
+                      a[2][0]*b[0][2] + a[2][1]*b[1][2] + a[2][2]*b[2][2]])])
 
 
 def make_canonical_transform(
-        n_xyz: jnp.ndarray,
-        ca_xyz: jnp.ndarray,
-        c_xyz: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        n_xyz: torch.tensor,
+        ca_xyz: torch.tensor,
+        c_xyz: torch.tensor) -> Tuple[torch.tensor, torch.tensor]:
     """Returns translation and rotation matrices to canonicalize residue atoms.
 
     Note that this method does not take care of symmetries. If you provide the
@@ -394,44 +415,44 @@ def make_canonical_transform(
     # Place C on the x-axis.
     c_x, c_y, c_z = [c_xyz[:, i] for i in range(3)]
     # Rotate by angle c1 in the x-y plane (around the z-axis).
-    sin_c1 = -c_y / jnp.sqrt(1e-20 + c_x**2 + c_y**2)
-    cos_c1 = c_x / jnp.sqrt(1e-20 + c_x**2 + c_y**2)
-    zeros = jnp.zeros_like(sin_c1)
-    ones = jnp.ones_like(sin_c1)
+    sin_c1 = -c_y / torch.sqrt(1e-20 + c_x**2 + c_y**2)
+    cos_c1 = c_x / torch.sqrt(1e-20 + c_x**2 + c_y**2)
+    zeros = torch.zeros_like(sin_c1)
+    ones = torch.ones_like(sin_c1)
     # pylint: disable=bad-whitespace
-    c1_rot_matrix = jnp.stack([jnp.array([cos_c1, -sin_c1, zeros]),
-                               jnp.array([sin_c1,  cos_c1, zeros]),
-                               jnp.array([zeros,    zeros,  ones])])
+    c1_rot_matrix = torch.stack([torch.tensor([cos_c1, -sin_c1, zeros]),
+                                 torch.tensor([sin_c1,  cos_c1, zeros]),
+                                 torch.tensor([zeros,    zeros,  ones])])
 
     # Rotate by angle c2 in the x-z plane (around the y-axis).
-    sin_c2 = c_z / jnp.sqrt(1e-20 + c_x**2 + c_y**2 + c_z**2)
-    cos_c2 = jnp.sqrt(c_x**2 + c_y**2) / jnp.sqrt(
+    sin_c2 = c_z / torch.sqrt(1e-20 + c_x**2 + c_y**2 + c_z**2)
+    cos_c2 = torch.sqrt(c_x**2 + c_y**2) / torch.sqrt(
         1e-20 + c_x**2 + c_y**2 + c_z**2)
-    c2_rot_matrix = jnp.stack([jnp.array([cos_c2,  zeros, sin_c2]),
-                               jnp.array([zeros,    ones,  zeros]),
-                               jnp.array([-sin_c2, zeros, cos_c2])])
+    c2_rot_matrix = torch.stack([torch.tensor([cos_c2,  zeros, sin_c2]),
+                                 torch.tensor([zeros,    ones,  zeros]),
+                                 torch.tensor([-sin_c2, zeros, cos_c2])])
 
     c_rot_matrix = _multiply(c2_rot_matrix, c1_rot_matrix)
-    n_xyz = jnp.stack(apply_rot_to_vec(c_rot_matrix, n_xyz, unstack=True)).T
+    n_xyz = torch.stack(apply_rot_to_vec(c_rot_matrix, n_xyz, unstack=True)).T
 
     # Place N in the x-y plane.
     _, n_y, n_z = [n_xyz[:, i] for i in range(3)]
     # Rotate by angle alpha in the y-z plane (around the x-axis).
-    sin_n = -n_z / jnp.sqrt(1e-20 + n_y**2 + n_z**2)
-    cos_n = n_y / jnp.sqrt(1e-20 + n_y**2 + n_z**2)
-    n_rot_matrix = jnp.stack([jnp.array([ones,  zeros,  zeros]),
-                              jnp.array([zeros, cos_n, -sin_n]),
-                              jnp.array([zeros, sin_n,  cos_n])])
+    sin_n = -n_z / torch.sqrt(1e-20 + n_y**2 + n_z**2)
+    cos_n = n_y / torch.sqrt(1e-20 + n_y**2 + n_z**2)
+    n_rot_matrix = torch.stack([torch.tensor([ones,  zeros,  zeros]),
+                                torch.tensor([zeros, cos_n, -sin_n]),
+                                torch.tensor([zeros, sin_n,  cos_n])])
     # pylint: enable=bad-whitespace
 
     return (translation,
-            jnp.transpose(_multiply(n_rot_matrix, c_rot_matrix), [2, 0, 1]))
+            torch.transpose(_multiply(n_rot_matrix, c_rot_matrix), [2, 0, 1]))
 
 
 def make_transform_from_reference(
-        n_xyz: jnp.ndarray,
-        ca_xyz: jnp.ndarray,
-        c_xyz: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        n_xyz: torch.tensor,
+        ca_xyz: torch.tensor,
+        c_xyz: torch.tensor) -> Tuple[torch.tensor, torch.tensor]:
     """Returns rotation and translation matrices to convert from reference.
 
     Note that this method does not take care of symmetries. If you provide the

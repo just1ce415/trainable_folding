@@ -11,6 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+####################################################################
+# THE FILE WAS MODIFIED TO USE PYTORCH INSTEAD OF THE ORIGINAL JAX #
+####################################################################
 
 """Ops for all atom representations.
 
@@ -34,17 +38,15 @@ the network to facilitate easier conversion to existing protein datastructures.
 """
 
 from typing import Dict, Optional
-from alphafold.common import residue_constants
-
-from alphafold.model import r3
-from alphafold.model import utils
-import jax
-import jax.numpy as jnp
 import numpy as np
+import torch
+
+import residue_constants
+import r3
 
 
 def squared_difference(x, y):
-    return jnp.square(x - y)
+    return torch.square(x - y)
 
 
 def get_chi_atom_indices():
@@ -69,32 +71,28 @@ def get_chi_atom_indices():
         chi_atom_indices.append(atom_indices)
 
     chi_atom_indices.append([[0, 0, 0, 0]] * 4)  # For UNKNOWN residue.
+    return torch.as_tensor(chi_atom_indices)
 
-    return jnp.asarray(chi_atom_indices)
 
-
-def atom14_to_atom37(atom14_data: jnp.ndarray,  # (N, 14, ...)
-                     batch: Dict[str, jnp.ndarray]
-                     ) -> jnp.ndarray:  # (N, 37, ...)
+def atom14_to_atom37(atom14_data: torch.Tensor,  # (N, 14, ...)
+                     batch: Dict[str, torch.Tensor]
+                     ) -> torch.Tensor:  # (N, 37, ...)
     """Convert atom14 to atom37 representation."""
     assert len(atom14_data.shape) in [2, 3]
     assert 'residx_atom37_to_atom14' in batch
     assert 'atom37_atom_exists' in batch
 
-    atom37_data = utils.batched_gather(atom14_data,
-                                       batch['residx_atom37_to_atom14'],
-                                       batch_dims=1)
+    atom37_data = utils.batched_gather(atom14_data, batch['residx_atom37_to_atom14'], batch_dims=1)
     if len(atom14_data.shape) == 2:
         atom37_data *= batch['atom37_atom_exists']
     elif len(atom14_data.shape) == 3:
-        atom37_data *= batch['atom37_atom_exists'][:, :,
-                       None].astype(atom37_data.dtype)
+        atom37_data *= batch['atom37_atom_exists'][:, :, None].astype(atom37_data.dtype)
     return atom37_data
 
 
 def atom37_to_atom14(
-        atom37_data: jnp.ndarray,  # (N, 37, ...)
-        batch: Dict[str, jnp.ndarray]) -> jnp.ndarray:  # (N, 14, ...)
+        atom37_data: torch.Tensor,  # (N, 37, ...)
+        batch: Dict[str, torch.Tensor]) -> torch.Tensor:  # (N, 14, ...)
     """Convert atom14 to atom37 representation."""
     assert len(atom37_data.shape) in [2, 3]
     assert 'residx_atom14_to_atom37' in batch
@@ -112,10 +110,10 @@ def atom37_to_atom14(
 
 
 def atom37_to_frames(
-        aatype: jnp.ndarray,  # (...)
-        all_atom_positions: jnp.ndarray,  # (..., 37, 3)
-        all_atom_mask: jnp.ndarray,  # (..., 37)
-) -> Dict[str, jnp.ndarray]:
+        aatype: torch.Tensor,  # (...)
+        all_atom_positions: torch.Tensor,  # (..., 37, 3)
+        all_atom_mask: torch.Tensor,  # (..., 37)
+) -> Dict[str, torch.Tensor]:
     """Computes the frames for the up to 8 rigid groups for each residue.
 
     The rigid groups are defined by the possible torsions in a given amino acid.
@@ -152,9 +150,9 @@ def atom37_to_frames(
 
     # If there is a batch axis, just flatten it away, and reshape everything
     # back at the end of the function.
-    aatype = jnp.reshape(aatype, [-1])
-    all_atom_positions = jnp.reshape(all_atom_positions, [-1, 37, 3])
-    all_atom_mask = jnp.reshape(all_atom_mask, [-1, 37])
+    aatype = torch.reshape(aatype, [-1])
+    all_atom_positions = torch.reshape(all_atom_positions, [-1, 37, 3])
+    all_atom_mask = torch.reshape(all_atom_mask, [-1, 37])
 
     # Create an array with the atom names.
     # shape (num_restypes, num_rigidgroups, 3_atoms): (21, 8, 3)
@@ -211,7 +209,7 @@ def atom37_to_frames(
 
     # Compute a mask whether ground truth exists for the group
     gt_atoms_exist = utils.batched_gather(  # shape (N, 8, 3)
-        all_atom_mask.astype(jnp.float32),
+        all_atom_mask.astype(torch.float32),
         residx_rigidgroup_base_atom37_idx,
         batch_dims=1)
     gt_exists = jnp.min(gt_atoms_exist, axis=-1) * group_exists  # (N, 8)
@@ -1013,13 +1011,13 @@ def find_optimal_renaming(
 def frame_aligned_point_error(
         pred_frames: r3.Rigids,  # shape (num_frames)
         target_frames: r3.Rigids,  # shape (num_frames)
-        frames_mask: jnp.ndarray,  # shape (num_frames)
+        frames_mask: torch.Tensor,  # shape (num_frames)
         pred_positions: r3.Vecs,  # shape (num_positions)
         target_positions: r3.Vecs,  # shape (num_positions)
-        positions_mask: jnp.ndarray,  # shape (num_positions)
+        positions_mask: torch.Tensor,  # shape (num_positions)
         length_scale: float,
         l1_clamp_distance: Optional[float] = None,
-        epsilon=1e-4) -> jnp.ndarray:  # shape ()
+        epsilon=1e-4) -> torch.Tensor:  # shape ()
     """Measure point error under different alignments.
 
     Jumper et al. (2021) Suppl. Alg. 28 "computeFAPE"
