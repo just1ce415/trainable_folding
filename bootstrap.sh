@@ -52,6 +52,9 @@ pip install prody==${PRODY_VERSION}
 pip install ray tensorboard hyperopt
 pip install ray[tune]
 
+# for residue_constants.py
+pip install dm-tree
+
 # Install sb-lab-utils
 git clone https://bitbucket.org/bu-structure/sb-lab-utils.git
 cd sb-lab-utils

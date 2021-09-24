@@ -19,7 +19,6 @@ import functools
 from typing import List, Mapping, Tuple
 
 import numpy as np
-import tree
 
 # Internal import (35fd).
 
@@ -527,6 +526,32 @@ restype_name_to_atom14_names = {
 # pylint: enable=bad-whitespace
 
 
+def _make_restype_name_to_atom37_ids():
+    _lookuptable = atom_order.copy()
+    _lookuptable[''] = len(atom_order)
+    res_order = sorted(restype_name_to_atom14_names.keys())
+    _restype_name_to_atom14_names = np.array([restype_name_to_atom14_names[x] for x in res_order], dtype=np.object)
+    return np.vectorize(lambda x: _lookuptable[x])(_restype_name_to_atom14_names)
+
+
+restype_name_to_atom37_ids = _make_restype_name_to_atom37_ids()  #  (N, 14)
+
+
+def _make_restype_name_to_atom14_ids():
+    out = []
+    res_order = sorted(restype_name_to_atom14_names.keys())
+    for restype in res_order:
+        atom_to_pos = dict([(y, x) for x, y in enumerate(restype_name_to_atom14_names[restype])])
+        atoms14 = []
+        for name in atom_types:
+            atoms14.append(atom_to_pos.get(name, len(atom_to_pos)))
+        out.append(atoms14)
+    return np.array(out, dtype=int)
+
+
+restype_name_to_atom14_ids = _make_restype_name_to_atom14_ids()  #  (N, 37)
+
+
 # This is the standard residue order when coding AA type as a number.
 # Reproduce it by taking 3-letter AA codes and sorting them alphabetically.
 restypes = [
@@ -734,8 +759,7 @@ chi_atom_2_one_hot = chi_angle_atom(2)
 
 # An array like chi_angles_atoms but using indices rather than names.
 chi_angles_atom_indices = [chi_angles_atoms[restype_1to3[r]] for r in restypes]
-chi_angles_atom_indices = tree.map_structure(
-    lambda atom_name: atom_order[atom_name], chi_angles_atom_indices)
+chi_angles_atom_indices = [[[atom_order[atom_name] for atom_name in rigid] for rigid in res] for res in chi_angles_atom_indices]
 chi_angles_atom_indices = np.array([
     chi_atoms + ([[0, 0, 0, 0]] * (4 - len(chi_atoms)))
     for chi_atoms in chi_angles_atom_indices])
@@ -783,8 +807,7 @@ def _make_rigid_group_constants():
     """Fill the arrays above."""
     for restype, restype_letter in enumerate(restypes):
         resname = restype_1to3[restype_letter]
-        for atomname, group_idx, atom_position in rigid_group_atom_positions[
-            resname]:
+        for atomname, group_idx, atom_position in rigid_group_atom_positions[resname]:
             atomtype = atom_order[atomname]
             restype_atom37_to_rigid_group[restype, atomtype] = group_idx
             restype_atom37_mask[restype, atomtype] = 1
@@ -793,8 +816,7 @@ def _make_rigid_group_constants():
             atom14idx = restype_name_to_atom14_names[resname].index(atomname)
             restype_atom14_to_rigid_group[restype, atom14idx] = group_idx
             restype_atom14_mask[restype, atom14idx] = 1
-            restype_atom14_rigid_group_positions[restype,
-            atom14idx, :] = atom_position
+            restype_atom14_rigid_group_positions[restype, atom14idx, :] = atom_position
 
     for restype, restype_letter in enumerate(restypes):
         resname = restype_1to3[restype_letter]

@@ -267,9 +267,9 @@ class StructureModule(torch.nn.Module):
         # predict confidence
 
         return {
-            'rec_T_inter': torch.cat(rec_T_inter, dim=0),
-            'lig_T_inter': torch.cat(lig_T_inter, dim=0),
-            'rec_torsions_inter': torch.cat(rec_torsions_inter, dim=0),
+            'rec_T': torch.stack(rec_T_inter, dim=1),
+            'lig_T': torch.stack(lig_T_inter, dim=1),
+            'rec_torsions': torch.stack(rec_torsions_inter, dim=1),
             'lig_1d': x['lig_1d'],
             'rec_1d': x['rec_1d']
         }

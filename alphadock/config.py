@@ -3,24 +3,26 @@ import numpy as np
 
 DATA_DIR = Path(__file__).abspath().dirname().dirname() / 'data_preparation' / 'data'
 
+TEST_DATA_DIR = Path(__file__).abspath().dirname() / 'test_data'
+
 DTYPE_FLOAT = np.float32
 
 DTYPE_INT = np.int64
 
 config = {
-    'rec_in_c': 24,
+    'rec_in_c': 23,
     'lig_in_c': 40,
 
     'lig_in2d_c': 6,
     'rec_in2d_c': 40,
     'rec_relpos_c': 65,
 
-    'frag_rec': 24,
+    'frag_rec': 23,
     'frag_lig': 41,
-    'frag_rr': 84,
+    'frag_rr': 82,
     'frag_ll': 126,
-    'frag_rl': 102,
-    'frag_lr': 102,
+    'frag_rl': 101,
+    'frag_lr': 101,
 
     'hh_rec': 24,
     'hh_lig': 41,
@@ -28,7 +30,8 @@ config = {
     'hh_ll': 126,
     'hh_rl': 102,
     'hh_lr': 102,
-    
+
+    'position_scale': 10,
     'num_torsions': 7,
 
     'template': {

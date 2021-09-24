@@ -15,6 +15,9 @@ import typing
 from amino_acids import d_3aa
 from config import DATA_DIR
 import utils
+import residue_constants
+import all_atom
+import r3
 
 from config import DTYPE_FLOAT, DTYPE_INT
 
@@ -43,7 +46,10 @@ CHIRALITY = {
 
 BOND_TYPE = {'AROMATIC': 0, 'SINGLE': 1, 'DOUBLE': 2, 'TRIPLE': 3}
 
-AATYPE = sorted(d_3aa.keys()) + ['X', '-']
+AATYPE = residue_constants.restype_order
+AATYPE_WITH_X = residue_constants.restype_order_with_x
+AATYPE_WITH_X_AND_GAP = AATYPE_WITH_X.copy()
+AATYPE_WITH_X_AND_GAP['-'] = len(AATYPE_WITH_X)
 
 REC_DISTOGRAM = {
     'min': 3.25,
@@ -157,9 +163,29 @@ def calc_bb_torsions(a, b, c):
     pass
 
 
-def ag_to_features(rec_ag, ag_aln, tar_aln):
+def residue_to_atom14(residue: prody.Residue):
+    ideal_names = residue_constants.restype_name_to_atom14_names.get(residue.getResname().upper() if residue is not None else 'UNK', 'UNK')
+    coords = np.zeros((len(ideal_names), 3), dtype=DTYPE_FLOAT)
+    has_coords = np.zeros(len(ideal_names), dtype=DTYPE_FLOAT)
+
+    if residue is not None:
+        residue = residue.heavy.copy()
+        atom2crd = {a.getName(): a.getCoords() for a in residue}
+        for i, a in enumerate(ideal_names):
+            coords[i] = atom2crd.get(a, np.zeros(3))
+            has_coords[i] = a in atom2crd
+        res_names = [x.getName() for x in residue if x.getName() not in ['OXT']]
+        assert set(res_names).issubset(set(ideal_names)), (ideal_names, res_names)
+
+    return coords, has_coords
+
+
+def ag_to_features(rec_ag, ag_aln, tar_aln, no_mismatch=False):
+    # TODO: add sasa, torsions and AF confidence
+
     feats_1d = OrderedDict(
-        aatype=[],
+        seq_aatype=[],
+        ag_aatype=[],
         crd_mask=[],
         crd_beta_mask=[],
         crd_beta=[],
@@ -167,24 +193,46 @@ def ag_to_features(rec_ag, ag_aln, tar_aln):
         torsions_alt=[],
         torsions_mask=[],
         resi=[],
+        atom14_coords=[],
+        atom14_has_coords=[],
+        has_frame=[]
     )
 
     residues = list(rec_ag.getHierView().iterResidues())
     assert len(residues) == len(ag_aln.replace('-', ''))
 
+    #print(ag_aln)
+    #print(tar_aln)
+
     ag_resi = 0
     tar_resi = 0
     for a, b in zip(ag_aln, tar_aln):
+        assert a in AATYPE_WITH_X_AND_GAP
+        assert b in AATYPE_WITH_X_AND_GAP
         if b != '-':
-            feats_1d['aatype'].append(a)
+            feats_1d['seq_aatype'].append(b)
+            feats_1d['ag_aatype'].append(a)
             residue = None
             if a != '-':
-                residue = residues[ag_resi]
+                if no_mismatch and a != b:
+                    # TODO: decide with to do with mismatching residues when
+                    #       the residues in the structure to do correspond to
+                    #       the entry sequence. Threating them as missing for now
+                    print('Mismatch:', a, b)
+                    residue = None
+                else:
+                    residue = residues[ag_resi]
             feats_1d['crd_mask'].append(residue is not None)
             cbeta = cbeta_atom(residue)
             feats_1d['crd_beta_mask'].append(cbeta is not None)
             feats_1d['crd_beta'].append(None if cbeta is None else cbeta.getCoords())
+            feats_1d['has_frame'].append((residue is not None) and ('CA' in residue) and ('C' in residue) and ('N' in residue))
             feats_1d['resi'].append(tar_resi)
+
+            atom14_coords, atom14_has_coords = residue_to_atom14(residue)
+            feats_1d['atom14_coords'].append(atom14_coords)
+            feats_1d['atom14_has_coords'].append(atom14_has_coords)
+
             tar_resi += 1
 
         if a != '-':
@@ -203,10 +251,10 @@ def rec_to_features(case_dict):
     rec_ag = prody.parsePDB(case_dir / 'AF_orig.pdb')
     #print(utils.global_align(af_seq, entity_seq))
     af_aln, ent_aln = utils.global_align(af_seq, entity_seq)[0][:2]
-    return ag_to_features(rec_ag, af_aln, ent_aln)
+    return ag_to_features(rec_ag, af_aln, ent_aln, no_mismatch=True)
 
 
-def transform_hh_aln(tpl_seq, tar_seq, hhpred_dict):
+def _transform_hh_aln(tpl_seq, tar_seq, hhpred_dict):
     tpl_begin, tpl_end = hhpred_dict['target_range']
     tar_begin, tar_end = hhpred_dict['query_range']
 
@@ -224,7 +272,7 @@ def transform_hh_aln(tpl_seq, tar_seq, hhpred_dict):
     return tpl_aln, tar_aln
 
 
-def repatch_tpl_ag_to_ent_aln(ag_aln, ent_aln, hh_tpl_aln, hh_tar_aln):
+def _repatch_tpl_ag_to_ent_aln(ag_aln, ent_aln, hh_tpl_aln, hh_tar_aln):
     new_ag_aln = []
     new_hh_tar_aln = []
     ent_pos = 0
@@ -251,15 +299,15 @@ def hhpred_template_rec_to_features(tpl_dict, tar_dict, hhpred_dict):
     tpl_ent_seq = tpl_dict['entity_info']['pdbx_seq_one_letter_code_can']
     tar_ent_seq = tar_dict['entity_info']['pdbx_seq_one_letter_code_can']
 
-    tpl_hh_aln, tar_hh_aln = transform_hh_aln(tpl_ent_seq, tar_ent_seq, hhpred_dict)
+    tpl_hh_aln, tar_hh_aln = _transform_hh_aln(tpl_ent_seq, tar_ent_seq, hhpred_dict)
     ent_aln = tpl_dict['entity_info']['entity_aln']
     pdb_aln = tpl_dict['entity_info']['pdb_aln']
 
-    new_pdb_aln, new_tar_aln = repatch_tpl_ag_to_ent_aln(pdb_aln, ent_aln, tpl_hh_aln, tar_hh_aln)
+    new_pdb_aln, new_tar_aln = _repatch_tpl_ag_to_ent_aln(pdb_aln, ent_aln, tpl_hh_aln, tar_hh_aln)
 
     # sanity check
     assert tar_ent_seq == new_tar_aln.replace('-', '')
-    return ag_to_features(tpl_ag, new_pdb_aln, new_tar_aln)
+    return ag_to_features(tpl_ag, new_pdb_aln, new_tar_aln, no_mismatch=False)
 
 
 def dmat_to_distogram(dmat, dmin, dmax, num_bins, mask=None):
@@ -281,13 +329,19 @@ def dmat_to_distogram(dmat, dmin, dmax, num_bins, mask=None):
     return dgram
 
 
-def rec_literal_to_numeric(rec_dict_literal):
-    rec_dict = rec_dict_literal
+def one_hot_aatype(aa, alphabet):
+    out = np.zeros(len(alphabet), dtype=DTYPE_FLOAT)
+    out[alphabet[aa]] = 1
+    return out
 
-    aatype = rec_dict['aatype']
-    rec_dict['aatype'] = [np.zeros(len(AATYPE), dtype=DTYPE_FLOAT) for _ in aatype]
-    for i, vec in enumerate(rec_dict['aatype']):
-        vec[AATYPE.index(aatype[i])] = 1
+
+def rec_literal_to_numeric(rec_dict, seq_include_gap=False):
+    seq_abc = AATYPE_WITH_X_AND_GAP if seq_include_gap else AATYPE_WITH_X
+    seq_aatype_num = [seq_abc[x] for x in rec_dict['seq_aatype']]
+    ag_aatype_num = [AATYPE_WITH_X_AND_GAP[x] for x in rec_dict['ag_aatype']]
+
+    rec_dict['seq_aatype'] = [one_hot_aatype(x, seq_abc) for x in rec_dict['seq_aatype']]
+    rec_dict['ag_aatype'] = [one_hot_aatype(x, AATYPE_WITH_X_AND_GAP) for x in rec_dict['ag_aatype']]
 
     crd = np.stack([np.zeros(3) if x is None else x for x in rec_dict['crd_beta']])
     dmat = utils.calc_dmat(crd, crd)
@@ -307,26 +361,104 @@ def rec_literal_to_numeric(rec_dict_literal):
     dgram[nob_x, nob_y] = 0.0
 
     return {
-        'aatype': np.stack(rec_dict['aatype']),
+        'seq_aatype': np.stack(rec_dict['seq_aatype']),
+        'seq_aatype_num': np.array(seq_aatype_num, dtype=DTYPE_INT),
+        'ag_aatype': np.stack(rec_dict['ag_aatype']),
+        'ag_aatype_num': np.array(ag_aatype_num, dtype=DTYPE_INT),
         'crd_mask': np.array(rec_dict['crd_mask']),
         'crd_beta_mask': np.array(rec_dict['crd_beta_mask']),
         'crd_beta': crd,
         'resi_1d': resi_1d,
         'resi_2d': resi_2d,
         'distogram_2d': dgram,
-        'crd_beta_mask_2d': crd_beta_mask_2d.astype(DTYPE_FLOAT)
+        'crd_beta_mask_2d': crd_beta_mask_2d.astype(DTYPE_FLOAT),
+        'atom14_coords': np.stack(rec_dict['atom14_coords']),
+        'atom14_has_coords': np.stack(rec_dict['atom14_has_coords']),
+        'has_frame': np.array(rec_dict['has_frame'], dtype=DTYPE_INT)
     }
 
 
 def target_rec_featurize(case_dict):
-    rec_feats = rec_literal_to_numeric(rec_to_features(case_dict))
-    rec_1d = np.concatenate([rec_feats['aatype'], rec_feats['crd_mask'][..., None], rec_feats['crd_beta_mask'][..., None]], axis=-1)
+    rec_feats = rec_literal_to_numeric(rec_to_features(case_dict), seq_include_gap=False)
+    rec_1d = np.concatenate([rec_feats['seq_aatype'], rec_feats['crd_mask'][..., None], rec_feats['crd_beta_mask'][..., None]], axis=-1)
     rec_2d = np.concatenate([rec_feats['distogram_2d'], rec_feats['crd_beta_mask_2d'][..., None]], axis=-1)
+
+    renaming_mats = all_atom.RENAMING_MATRICES[rec_feats['seq_aatype_num']]  # (N, 14, 14)
+    atom14_atom_is_ambiguous = (renaming_mats * np.eye(14)[None]).sum(1) == 0
+
     return {
         'rec_1d': rec_1d.astype(DTYPE_FLOAT),
         'rec_2d': rec_2d.astype(DTYPE_FLOAT),
-        'rec_relpos': rec_feats['resi_2d'].astype(DTYPE_FLOAT)
+        'rec_relpos': rec_feats['resi_2d'].astype(DTYPE_FLOAT),
+        'rec_atom14_coords': rec_feats['atom14_coords'].astype(DTYPE_FLOAT),
+        'rec_atom14_has_coords': rec_feats['atom14_has_coords'].astype(DTYPE_FLOAT),
+        'rec_aatype': rec_feats['seq_aatype_num'].astype(DTYPE_INT),
+        'rec_atom14_atom_is_ambiguous': atom14_atom_is_ambiguous.astype(DTYPE_FLOAT),
+        'rec_atom14_atom_exists': residue_constants.restype_atom14_mask[rec_feats['seq_aatype_num']].astype(DTYPE_FLOAT)
     }
+
+
+def ground_truth_featurize(case_dict, group_dict):
+    case_dir = DATA_DIR / 'cases' / case_dict['case_name']
+    rec_ag = prody.parsePDB(case_dir / 'rec_orig.pdb')
+    rec_dict = ag_to_features(
+        rec_ag,
+        case_dict['entity_info']['pdb_aln'],
+        case_dict['entity_info']['entity_aln'],
+        no_mismatch=True
+    )
+
+    rec_dict = rec_literal_to_numeric(rec_dict, seq_include_gap=False)
+
+    #atom14_gt_positions_rigids = r3.Vecs(*[x.squeeze(-1) for x in np.split(rec_dict['rec_atom14_coords'], 3, axis=-1)])
+    atom14_gt_positions = rec_dict['atom14_coords']  # (N, 14, 3)
+    atom14_gt_exists = rec_dict['atom14_has_coords']  # (N, 14)
+    renaming_mats = all_atom.RENAMING_MATRICES[rec_dict['seq_aatype_num']]  # (N, 14, 14)
+    atom14_alt_gt_positions = np.sum(atom14_gt_positions[:, :, None, :] * renaming_mats[:, :, :, None], axis=1)
+    atom14_alt_gt_exists = np.sum(atom14_gt_positions[:, :, None, :] * renaming_mats[:, :, :, None], axis=1)
+
+    # process ligand group
+    group_dir = case_dir / group_dict['name']
+    group_feats = []
+    for lig_dict in group_dict['ligands']:
+        mol = Chem.MolFromSmiles(lig_dict['smiles'])
+        mol_3d = Chem.MolFromMolFile(group_dir / lig_dict['sdf_id'] + '.mol', removeHs=True)
+        group_feats.append(ligand_featurize(mol, mol_3d))
+
+    group_num_atoms = sum([x['atom_feats'].shape[0] for x in group_feats])
+    lig_matches = []
+    lig_coords = []
+    lig_has_coords = []
+    for match_combo in itertools.product(*[x['matches'] for x in group_feats]):
+        group_match = []
+        group_coords = np.zeros((group_num_atoms, 3))
+        group_has_coords = np.zeros(group_num_atoms)
+
+        lig_shift = 0
+        for lig_id, lig_match in enumerate(match_combo):
+            lig_match_shifted = [x + lig_shift for x in lig_match]
+            group_match += lig_match_shifted
+            group_coords[lig_match_shifted, :] = group_feats[lig_id]['coords']
+            group_has_coords[group_match] = 1
+            lig_shift += group_feats[lig_id]['atom_feats'].shape[0]
+
+        lig_matches.append(group_match)
+        lig_coords.append(group_coords)
+        lig_has_coords.append(group_has_coords)
+
+    out = {
+        'gt_aatype': rec_dict['seq_aatype_num'].astype(DTYPE_INT),  # same as for target
+        'gt_atom14_coords': atom14_gt_positions.astype(DTYPE_FLOAT),  # (N_res, 14, 3)
+        'gt_atom14_has_coords': atom14_gt_exists.astype(DTYPE_FLOAT),  # (N_res, 14)
+        'gt_atom14_coords_alt': atom14_alt_gt_positions.astype(DTYPE_FLOAT),  # (N_res, 14, 3)
+        'gt_atom14_has_coords_alt': atom14_alt_gt_exists.astype(DTYPE_FLOAT),  # (N_res, 14)
+
+        'gt_residue_index': np.arange(len(rec_dict['seq_aatype_num']), dtype=DTYPE_INT),  # (N_res)
+        'gt_has_frame': rec_dict['has_frame'].astype(DTYPE_FLOAT),  # (N_res)
+        'gt_lig_coords': np.stack(lig_coords).astype(DTYPE_FLOAT),  # (N_symm, N_atoms, 3)
+        'gt_lig_has_coords': np.stack(lig_has_coords).astype(DTYPE_FLOAT),  # (N_symm, N_atoms)
+    }
+    return out
 
 
 def ligand_featurize(mol, mol_3d=None):
@@ -425,7 +557,7 @@ def hhpred_template_lig_to_features(mol_tpl: Chem.Mol, mol_3d_tpl: Chem.Mol, mol
 
 def hh_template_featurize(tar_mol: Chem.Mol, tar_match, tar_case_dict, tar_group_dict, tar_ligand_id, temp_mol: Chem.Mol, temp_mol_3d: Chem.Mol, temp_match, temp_dict, temp_case_dict):
     rec_literal = hhpred_template_rec_to_features(temp_case_dict, tar_case_dict, temp_dict['hhpred'])
-    rec_feats = rec_literal_to_numeric(rec_literal)
+    rec_feats = rec_literal_to_numeric(rec_literal, seq_include_gap=True)
 
     num_atoms_total = sum([x['num_heavy_atoms'] for x in tar_group_dict['ligands']])
     atom_begin = sum([x['num_heavy_atoms'] for x in tar_group_dict['ligands'][:tar_ligand_id]])
@@ -438,12 +570,12 @@ def hh_template_featurize(tar_mol: Chem.Mol, tar_match, tar_case_dict, tar_group
     #print(tar_mol.GetNumHeavyAtoms())
 
     rec_1d = np.concatenate([
-        rec_feats['aatype'],
+        rec_feats['ag_aatype'],
         rec_feats['crd_mask'][..., None],
         rec_feats['crd_beta_mask'][..., None]
     ], axis=-1)
 
-    extra = np.tile(rec_feats['aatype'], (rec_feats['aatype'].shape[0], 1, 1))
+    extra = np.tile(rec_feats['ag_aatype'], (rec_feats['ag_aatype'].shape[0], 1, 1))
     rr_2d = np.concatenate([
         rec_feats['distogram_2d'],
         rec_feats['crd_beta_mask_2d'][..., None],
@@ -470,8 +602,8 @@ def hh_template_featurize(tar_mol: Chem.Mol, tar_match, tar_case_dict, tar_group
     rl_2d_local = np.concatenate([
         rl_dgram,
         rl_present_2d[..., None],
-        np.tile(rec_feats['aatype'], (lig_feats['atom_feats_1d'].shape[0], 1, 1)).transpose([1, 0, 2]),
-        np.tile(lig_feats['atom_feats_1d'], (rec_feats['aatype'].shape[0], 1, 1)),
+        np.tile(rec_feats['ag_aatype'], (lig_feats['atom_feats_1d'].shape[0], 1, 1)).transpose([1, 0, 2]),
+        np.tile(lig_feats['atom_feats_1d'], (rec_feats['ag_aatype'].shape[0], 1, 1)),
     ], axis=-1)
     rl_2d = np.zeros((rl_2d_local.shape[0], num_atoms_total, rl_2d_local.shape[-1]))
     rl_2d[:, atom_begin:atom_end] = rl_2d_local
@@ -590,12 +722,12 @@ def fragment_template_featurize(temp_case_dict, group_dict):
     rec_feats = rec_literal_to_numeric(rec_literal)
 
     rec_1d = np.concatenate([
-        rec_feats['aatype'],
+        rec_feats['seq_aatype'],
         rec_feats['crd_mask'][..., None],
         rec_feats['crd_beta_mask'][..., None]
     ], axis=-1)
 
-    extra = np.tile(rec_feats['aatype'], (rec_feats['aatype'].shape[0], 1, 1))
+    extra = np.tile(rec_feats['seq_aatype'], (rec_feats['seq_aatype'].shape[0], 1, 1))
     rr_2d = np.concatenate([
         rec_feats['distogram_2d'],
         rec_feats['crd_beta_mask_2d'][..., None],
@@ -621,8 +753,8 @@ def fragment_template_featurize(temp_case_dict, group_dict):
     rl_2d = np.concatenate([
         rl_dgram,
         rl_present_2d[..., None],
-        np.tile(rec_feats['aatype'], (lig_feats['atom_feats_1d'].shape[0], 1, 1)).transpose([1, 0, 2]),
-        np.tile(lig_feats['atom_feats_1d'], (rec_feats['aatype'].shape[0], 1, 1)),
+        np.tile(rec_feats['seq_aatype'], (lig_feats['atom_feats_1d'].shape[0], 1, 1)).transpose([1, 0, 2]),
+        np.tile(lig_feats['atom_feats_1d'], (rec_feats['seq_aatype'].shape[0], 1, 1)),
     ], axis=-1)
 
     lr_2d = rl_2d.transpose([1, 0, 2])

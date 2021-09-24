@@ -53,6 +53,7 @@ class DockingDataset(Dataset):
         target_dict = features.target_rec_featurize(case_dict)
         target_dict.update(features.target_group_featurize(case_dict, group_dict))
         out_dict['target'] = target_dict
+        out_dict['ground_truth'] = features.ground_truth_featurize(case_dict, group_dict)
 
         # process hhpred
         #hh_templates = item['hh_templates']
@@ -124,7 +125,14 @@ class DockingDataset(Dataset):
 def main():
     ds = DockingDataset(DATA_DIR , 'train_split/debug.json')
     #print(ds[0]['affinity_class'])
-    print(ds[0])
+    #print(ds[0])
+
+    item = ds[0]
+    for k1, v1 in item.items():
+        print(k1)
+        for k2, v2 in v1.items():
+            v1[k2] = torch.as_tensor(v2)[None].cuda()
+            print('    ', k2, v1[k2].shape, v1[k2].dtype)
 
 
 if __name__ == '__main__':

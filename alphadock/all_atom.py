@@ -40,6 +40,7 @@ the network to facilitate easier conversion to existing protein datastructures.
 from typing import Dict, Optional
 import numpy as np
 import torch
+import torch.nn.functional as F
 
 import residue_constants
 import r3
@@ -74,39 +75,35 @@ def get_chi_atom_indices():
     return torch.as_tensor(chi_atom_indices)
 
 
-def atom14_to_atom37(atom14_data: torch.Tensor,  # (N, 14, ...)
-                     batch: Dict[str, torch.Tensor]
-                     ) -> torch.Tensor:  # (N, 37, ...)
-    """Convert atom14 to atom37 representation."""
-    assert len(atom14_data.shape) in [2, 3]
-    assert 'residx_atom37_to_atom14' in batch
-    assert 'atom37_atom_exists' in batch
+def atom14_to_atom37(
+        atom14_data: torch.Tensor,  # (N, 14, ...)
+        aatype: torch.Tensor,  # (N)
+) -> torch.Tensor:  # (N, 37, ...)
+    assert atom14_data.shape[1] == 14
+    assert aatype.ndim == 1
+    assert aatype.shape[0] == atom14_data.shape[0]
 
-    atom37_data = utils.batched_gather(atom14_data, batch['residx_atom37_to_atom14'], batch_dims=1)
-    if len(atom14_data.shape) == 2:
-        atom37_data *= batch['atom37_atom_exists']
-    elif len(atom14_data.shape) == 3:
-        atom37_data *= batch['atom37_atom_exists'][:, :, None].astype(atom37_data.dtype)
-    return atom37_data
+    residx_atom37_to_atom14 = torch.tensor(residue_constants.restype_name_to_atom14_ids, device=aatype.device, dtype=aatype.dtype)[aatype]
+    atom14_data_flat = atom14_data.reshape(*atom14_data.shape[:2], -1)
+    # add 15th field used as placeholder in restype_name_to_atom14_ids
+    atom14_data_flat = torch.cat([atom14_data_flat, torch.zeros_like(atom14_data_flat[:, :1])], dim=1)
+    out = torch.gather(atom14_data_flat, 1, residx_atom37_to_atom14[..., None].tile(1, 1, atom14_data_flat.shape[-1]))
+    return out.reshape(atom14_data.shape[0], 37, *atom14_data.shape[2:])
 
 
 def atom37_to_atom14(
-        atom37_data: torch.Tensor,  # (N, 37, ...)
-        batch: Dict[str, torch.Tensor]) -> torch.Tensor:  # (N, 14, ...)
-    """Convert atom14 to atom37 representation."""
-    assert len(atom37_data.shape) in [2, 3]
-    assert 'residx_atom14_to_atom37' in batch
-    assert 'atom14_atom_exists' in batch
+    atom37_data: torch.Tensor,  # (N, 37, ...)
+    aatype: torch.Tensor,  # (N)
+) -> torch.Tensor:  # (N, 14, ...)
+    assert atom37_data.shape[1] == 37
+    assert aatype.ndim == 1
+    assert aatype.shape[0] == atom37_data.shape[0]
 
-    atom14_data = utils.batched_gather(atom37_data,
-                                       batch['residx_atom14_to_atom37'],
-                                       batch_dims=1)
-    if len(atom37_data.shape) == 2:
-        atom14_data *= batch['atom14_atom_exists'].astype(atom14_data.dtype)
-    elif len(atom37_data.shape) == 3:
-        atom14_data *= batch['atom14_atom_exists'][:, :,
-                       None].astype(atom14_data.dtype)
-    return atom14_data
+    residx_atom14_to_atom37 = torch.tensor(residue_constants.restype_name_to_atom37_ids, device=aatype.device, dtype=aatype.dtype)[aatype]
+    atom37_data_flat = atom37_data.reshape(*atom37_data.shape[:2], -1)
+    atom37_data_flat = torch.cat([atom37_data_flat, torch.zeros_like(atom37_data_flat[:, :1])], dim=1)
+    out = torch.gather(atom37_data_flat, 1, residx_atom14_to_atom37[..., None].tile(1, 1, atom37_data_flat.shape[-1]))
+    return out.reshape(atom37_data.shape[0], 37, *atom37_data.shape[2:])
 
 
 def atom37_to_frames(
@@ -141,6 +138,15 @@ def atom37_to_frames(
             corresponding to 'all_atom_positions' represented as flat
             12 dimensional array.
     """
+
+    assert all_atom_positions.shape[-2] == 37
+    assert all_atom_positions.shape[-1] == 3
+    assert all_atom_mask.shape[-1] == 37
+    assert list(all_atom_positions.shape[:-2]) == list(all_atom_mask.shape[:-1])
+
+    device = all_atom_positions.device
+    dtype = all_atom_positions.dtype
+
     # 0: 'backbone group',
     # 1: 'pre-omega-group', (empty)
     # 2: 'phi-group', (currently empty, because it defines only hydrogens)
@@ -170,8 +176,7 @@ def atom37_to_frames(
         for chi_idx in range(4):
             if residue_constants.chi_angles_mask[restype][chi_idx]:
                 atom_names = residue_constants.chi_angles_atoms[resname][chi_idx]
-                restype_rigidgroup_base_atom_names[
-                restype, chi_idx + 4, :] = atom_names[1:]
+                restype_rigidgroup_base_atom_names[restype, chi_idx + 4, :] = atom_names[1:]
 
     # Create mask for existing rigid groups.
     restype_rigidgroup_mask = np.zeros([21, 8], dtype=np.float32)
@@ -182,19 +187,18 @@ def atom37_to_frames(
     # Translate atom names into atom37 indices.
     lookuptable = residue_constants.atom_order.copy()
     lookuptable[''] = 0
-    restype_rigidgroup_base_atom37_idx = np.vectorize(lambda x: lookuptable[x])(
-        restype_rigidgroup_base_atom_names)
+    restype_rigidgroup_base_atom37_idx = np.vectorize(lambda x: lookuptable[x])(restype_rigidgroup_base_atom_names)
 
     # Compute the gather indices for all residues in the chain.
     # shape (N, 8, 3)
-    residx_rigidgroup_base_atom37_idx = utils.batched_gather(
-        restype_rigidgroup_base_atom37_idx, aatype)
+    residx_rigidgroup_base_atom37_idx = torch.tensor(restype_rigidgroup_base_atom37_idx, device=device, dtype=aatype.dtype)[aatype]
 
     # Gather the base atom positions for each rigid group.
-    base_atom_pos = utils.batched_gather(
-        all_atom_positions,
-        residx_rigidgroup_base_atom37_idx,
-        batch_dims=1)
+    # (N, 8, 3, 3)
+    base_atom_pos = torch.gather(
+        all_atom_positions[:, :, None, :].tile([1, 1, 3, 1]), 1,
+        residx_rigidgroup_base_atom37_idx[..., None].tile([1, 1, 1, 3])
+    )
 
     # Compute the Rigids.
     gt_frames = r3.rigids_from_3_points(
@@ -205,20 +209,24 @@ def atom37_to_frames(
 
     # Compute a mask whether the group exists.
     # (N, 8)
-    group_exists = utils.batched_gather(restype_rigidgroup_mask, aatype)
+    restype_rigidgroup_mask = torch.tensor(restype_rigidgroup_mask, device=device, dtype=dtype)
+    group_exists = restype_rigidgroup_mask[aatype]
 
     # Compute a mask whether ground truth exists for the group
-    gt_atoms_exist = utils.batched_gather(  # shape (N, 8, 3)
-        all_atom_mask.astype(torch.float32),
-        residx_rigidgroup_base_atom37_idx,
-        batch_dims=1)
-    gt_exists = jnp.min(gt_atoms_exist, axis=-1) * group_exists  # (N, 8)
+    # (N, 8, 3)
+    gt_atoms_exist = torch.gather(
+        all_atom_mask[:, :, None, None].tile([1, 1, 8, 3]), 1,
+        residx_rigidgroup_base_atom37_idx[:, None]
+    ).squeeze(1)
+
+    # (N, 8)
+    gt_exists = gt_atoms_exist.min(-1).values * group_exists
 
     # Adapt backbone frame to old convention (mirror x-axis and z-axis).
     rots = np.tile(np.eye(3, dtype=np.float32), [8, 1, 1])
     rots[0, 0, 0] = -1
     rots[0, 2, 2] = -1
-    gt_frames = r3.rigids_mul_rots(gt_frames, r3.rots_from_tensor3x3(rots))
+    gt_frames = r3.rigids_mul_rots(gt_frames, r3.rots_from_tensor3x3(torch.tensor(rots, device=device, dtype=dtype)))
 
     # The frames for ambiguous rigid groups are just rotated by 180 degree around
     # the x-axis. The ambiguous group is always the last chi-group.
@@ -226,52 +234,45 @@ def atom37_to_frames(
     restype_rigidgroup_rots = np.tile(np.eye(3, dtype=np.float32), [21, 8, 1, 1])
 
     for resname, _ in residue_constants.residue_atom_renaming_swaps.items():
-        restype = residue_constants.restype_order[
-            residue_constants.restype_3to1[resname]]
+        restype = residue_constants.restype_order[residue_constants.restype_3to1[resname]]
         chi_idx = int(sum(residue_constants.chi_angles_mask[restype]) - 1)
         restype_rigidgroup_is_ambiguous[restype, chi_idx + 4] = 1
         restype_rigidgroup_rots[restype, chi_idx + 4, 1, 1] = -1
         restype_rigidgroup_rots[restype, chi_idx + 4, 2, 2] = -1
 
     # Gather the ambiguity information for each residue.
-    residx_rigidgroup_is_ambiguous = utils.batched_gather(
-        restype_rigidgroup_is_ambiguous, aatype)
-    residx_rigidgroup_ambiguity_rot = utils.batched_gather(
-        restype_rigidgroup_rots, aatype)
+    residx_rigidgroup_is_ambiguous = torch.tensor(restype_rigidgroup_is_ambiguous, device=device, dtype=dtype)[aatype]
+    residx_rigidgroup_ambiguity_rot = torch.tensor(restype_rigidgroup_rots, device=device, dtype=dtype)[aatype]
 
     # Create the alternative ground truth frames.
-    alt_gt_frames = r3.rigids_mul_rots(
-        gt_frames, r3.rots_from_tensor3x3(residx_rigidgroup_ambiguity_rot))
+    alt_gt_frames = r3.rigids_mul_rots(gt_frames, r3.rots_from_tensor3x3(residx_rigidgroup_ambiguity_rot))
 
     gt_frames_flat12 = r3.rigids_to_tensor_flat12(gt_frames)
     alt_gt_frames_flat12 = r3.rigids_to_tensor_flat12(alt_gt_frames)
 
     # reshape back to original residue layout
-    gt_frames_flat12 = jnp.reshape(gt_frames_flat12, aatype_in_shape + (8, 12))
-    gt_exists = jnp.reshape(gt_exists, aatype_in_shape + (8,))
-    group_exists = jnp.reshape(group_exists, aatype_in_shape + (8,))
-    gt_frames_flat12 = jnp.reshape(gt_frames_flat12, aatype_in_shape + (8, 12))
-    residx_rigidgroup_is_ambiguous = jnp.reshape(residx_rigidgroup_is_ambiguous,
-                                                 aatype_in_shape + (8,))
-    alt_gt_frames_flat12 = jnp.reshape(alt_gt_frames_flat12,
-                                       aatype_in_shape + (8, 12,))
+    gt_frames_flat12 = torch.reshape(gt_frames_flat12, aatype_in_shape + (8, 12))
+    gt_exists = torch.reshape(gt_exists, aatype_in_shape + (8,))
+    group_exists = torch.reshape(group_exists, aatype_in_shape + (8,))
+    gt_frames_flat12 = torch.reshape(gt_frames_flat12, aatype_in_shape + (8, 12))
+    residx_rigidgroup_is_ambiguous = torch.reshape(residx_rigidgroup_is_ambiguous, aatype_in_shape + (8,))
+    alt_gt_frames_flat12 = torch.reshape(alt_gt_frames_flat12, aatype_in_shape + (8, 12,))
 
     return {
         'rigidgroups_gt_frames': gt_frames_flat12,  # (..., 8, 12)
         'rigidgroups_gt_exists': gt_exists,  # (..., 8)
         'rigidgroups_group_exists': group_exists,  # (..., 8)
-        'rigidgroups_group_is_ambiguous':
-            residx_rigidgroup_is_ambiguous,  # (..., 8)
+        'rigidgroups_group_is_ambiguous': residx_rigidgroup_is_ambiguous,  # (..., 8)
         'rigidgroups_alt_gt_frames': alt_gt_frames_flat12,  # (..., 8, 12)
     }
 
 
 def atom37_to_torsion_angles(
-        aatype: jnp.ndarray,  # (B, N)
-        all_atom_pos: jnp.ndarray,  # (B, N, 37, 3)
-        all_atom_mask: jnp.ndarray,  # (B, N, 37)
+        aatype: torch.Tensor,  # (B, N)
+        all_atom_pos: torch.Tensor,  # (B, N, 37, 3)
+        all_atom_mask: torch.Tensor,  # (B, N, 37)
         placeholder_for_undefined=False,
-) -> Dict[str, jnp.ndarray]:
+) -> Dict[str, torch.Tensor]:
     """Computes the 7 torsion angles (in sin, cos encoding) for each residue.
 
     The 7 torsion angles are in the order
@@ -296,92 +297,88 @@ def atom37_to_torsion_angles(
     """
 
     # Map aatype > 20 to 'Unknown' (20).
-    aatype = jnp.minimum(aatype, 20)
+    aatype = torch.minimum(aatype, torch.full_like(aatype, 20))
 
     # Compute the backbone angles.
     num_batch, num_res = aatype.shape
 
-    pad = jnp.zeros([num_batch, 1, 37, 3], jnp.float32)
-    prev_all_atom_pos = jnp.concatenate([pad, all_atom_pos[:, :-1, :, :]], axis=1)
+    pad = torch.zeros_like(all_atom_pos[:, :1, :, :])
+    prev_all_atom_pos = torch.cat([pad, all_atom_pos[:, :-1, :, :]], dim=1)
 
-    pad = jnp.zeros([num_batch, 1, 37], jnp.float32)
-    prev_all_atom_mask = jnp.concatenate([pad, all_atom_mask[:, :-1, :]], axis=1)
+    pad = torch.zeros_like(all_atom_mask[:, :1, :])
+    prev_all_atom_mask = torch.cat([pad, all_atom_mask[:, :-1, :]], dim=1)
 
     # For each torsion angle collect the 4 atom positions that define this angle.
     # shape (B, N, atoms=4, xyz=3)
-    pre_omega_atom_pos = jnp.concatenate(
+    pre_omega_atom_pos = torch.cat(
         [prev_all_atom_pos[:, :, 1:3, :],  # prev CA, C
          all_atom_pos[:, :, 0:2, :]  # this N, CA
-         ], axis=-2)
-    phi_atom_pos = jnp.concatenate(
+         ], dim=-2)
+    phi_atom_pos = torch.cat(
         [prev_all_atom_pos[:, :, 2:3, :],  # prev C
          all_atom_pos[:, :, 0:3, :]  # this N, CA, C
-         ], axis=-2)
-    psi_atom_pos = jnp.concatenate(
+         ], dim=-2)
+    psi_atom_pos = torch.cat(
         [all_atom_pos[:, :, 0:3, :],  # this N, CA, C
          all_atom_pos[:, :, 4:5, :]  # this O
-         ], axis=-2)
+         ], dim=-2)
 
     # Collect the masks from these atoms.
     # Shape [batch, num_res]
     pre_omega_mask = (
-            jnp.prod(prev_all_atom_mask[:, :, 1:3], axis=-1)  # prev CA, C
-            * jnp.prod(all_atom_mask[:, :, 0:2], axis=-1))  # this N, CA
+            torch.prod(prev_all_atom_mask[:, :, 1:3], dim=-1)  # prev CA, C
+            * torch.prod(all_atom_mask[:, :, 0:2], dim=-1))  # this N, CA
     phi_mask = (
             prev_all_atom_mask[:, :, 2]  # prev C
-            * jnp.prod(all_atom_mask[:, :, 0:3], axis=-1))  # this N, CA, C
+            * torch.prod(all_atom_mask[:, :, 0:3], dim=-1))  # this N, CA, C
     psi_mask = (
-            jnp.prod(all_atom_mask[:, :, 0:3], axis=-1) *  # this N, CA, C
+            torch.prod(all_atom_mask[:, :, 0:3], dim=-1) *  # this N, CA, C
             all_atom_mask[:, :, 4])  # this O
 
+    aatype_flat = aatype.flatten()
     # Collect the atoms for the chi-angles.
     # Compute the table of chi angle indices. Shape: [restypes, chis=4, atoms=4].
-    chi_atom_indices = get_chi_atom_indices()
+    chi_atom_indices = torch.tensor(get_chi_atom_indices(), device=aatype.device, dtype=aatype.dtype)
     # Select atoms to compute chis. Shape: [batch, num_res, chis=4, atoms=4].
-    atom_indices = utils.batched_gather(
-        params=chi_atom_indices, indices=aatype, axis=0, batch_dims=0)
+    atom_indices = chi_atom_indices[aatype_flat].unflatten(0, [num_batch, num_res])
     # Gather atom positions. Shape: [batch, num_res, chis=4, atoms=4, xyz=3].
-    chis_atom_pos = utils.batched_gather(
-        params=all_atom_pos, indices=atom_indices, axis=-2,
-        batch_dims=2)
+    chis_atom_pos = torch.gather(all_atom_pos[:, :, None, :, :].tile(1, 1, 4, 1, 1), 3, atom_indices[..., None].tile(1, 1, 1, 1, 3))
 
     # Copy the chi angle mask, add the UNKNOWN residue. Shape: [restypes, 4].
     chi_angles_mask = list(residue_constants.chi_angles_mask)
     chi_angles_mask.append([0.0, 0.0, 0.0, 0.0])
-    chi_angles_mask = jnp.asarray(chi_angles_mask)
+    chi_angles_mask = torch.tensor(chi_angles_mask, dtype=all_atom_pos.dtype, device=all_atom_pos.device)
 
     # Compute the chi angle mask. I.e. which chis angles exist according to the
     # aatype. Shape [batch, num_res, chis=4].
-    chis_mask = utils.batched_gather(params=chi_angles_mask, indices=aatype,
-                                     axis=0, batch_dims=0)
+    chis_mask = chi_angles_mask[aatype_flat].unflatten(0, [num_batch, num_res])
 
     # Constrain the chis_mask to those chis, where the ground truth coordinates of
     # all defining four atoms are available.
     # Gather the chi angle atoms mask. Shape: [batch, num_res, chis=4, atoms=4].
-    chi_angle_atoms_mask = utils.batched_gather(
-        params=all_atom_mask, indices=atom_indices, axis=-1,
-        batch_dims=2)
+    chi_angle_atoms_mask = torch.gather(all_atom_mask[:, :, None, :].tile(1, 1, 4, 1), 3, atom_indices)
+
     # Check if all 4 chi angle atoms were set. Shape: [batch, num_res, chis=4].
-    chi_angle_atoms_mask = jnp.prod(chi_angle_atoms_mask, axis=[-1])
-    chis_mask = chis_mask * (chi_angle_atoms_mask).astype(jnp.float32)
+    chi_angle_atoms_mask = torch.prod(chi_angle_atoms_mask, dim=-1)
+    chis_mask = chis_mask * chi_angle_atoms_mask
 
     # Stack all torsion angle atom positions.
     # Shape (B, N, torsions=7, atoms=4, xyz=3)
-    torsions_atom_pos = jnp.concatenate(
-        [pre_omega_atom_pos[:, :, None, :, :],
-         phi_atom_pos[:, :, None, :, :],
-         psi_atom_pos[:, :, None, :, :],
-         chis_atom_pos
-         ], axis=2)
+    torsions_atom_pos = torch.cat([
+        pre_omega_atom_pos[:, :, None, :, :],
+        phi_atom_pos[:, :, None, :, :],
+        psi_atom_pos[:, :, None, :, :],
+        chis_atom_pos
+    ], dim=2)
 
     # Stack up masks for all torsion angles.
     # shape (B, N, torsions=7)
-    torsion_angles_mask = jnp.concatenate(
-        [pre_omega_mask[:, :, None],
-         phi_mask[:, :, None],
-         psi_mask[:, :, None],
-         chis_mask
-         ], axis=2)
+    torsion_angles_mask = torch.cat([
+        pre_omega_mask[:, :, None],
+        phi_mask[:, :, None],
+        psi_mask[:, :, None],
+        chis_mask
+    ], dim=2)
 
     # Create a frame from the first three atoms:
     # First atom: point on x-y-plane
@@ -391,7 +388,8 @@ def atom37_to_torsion_angles(
     torsion_frames = r3.rigids_from_3_points(
         point_on_neg_x_axis=r3.vecs_from_tensor(torsions_atom_pos[:, :, :, 1, :]),
         origin=r3.vecs_from_tensor(torsions_atom_pos[:, :, :, 2, :]),
-        point_on_xy_plane=r3.vecs_from_tensor(torsions_atom_pos[:, :, :, 0, :]))
+        point_on_xy_plane=r3.vecs_from_tensor(torsions_atom_pos[:, :, :, 0, :])
+    )
 
     # Compute the position of the forth atom in this frame (y and z coordinate
     # define the chi angle)
@@ -401,33 +399,31 @@ def atom37_to_torsion_angles(
         r3.vecs_from_tensor(torsions_atom_pos[:, :, :, 3, :]))
 
     # Normalize to have the sin and cos of the torsion angle.
-    # jnp.ndarray (B, N, torsions=7, sincos=2)
-    torsion_angles_sin_cos = jnp.stack(
-        [forth_atom_rel_pos.z, forth_atom_rel_pos.y], axis=-1)
-    torsion_angles_sin_cos /= jnp.sqrt(
-        jnp.sum(jnp.square(torsion_angles_sin_cos), axis=-1, keepdims=True)
-        + 1e-8)
+    # torch.Tensor (B, N, torsions=7, sincos=2)
+    torsion_angles_sin_cos = torch.stack([forth_atom_rel_pos.z, forth_atom_rel_pos.y], dim=-1)
+    torsion_angles_sin_cos /= torch.sqrt(torch.sum(torch.square(torsion_angles_sin_cos), dim=-1, keepdim=True) + 1e-8)
 
     # Mirror psi, because we computed it from the Oxygen-atom.
-    torsion_angles_sin_cos *= jnp.asarray(
-        [1., 1., -1., 1., 1., 1., 1.])[None, None, :, None]
+    torsion_angles_sin_cos *= torch.tensor(
+        [1., 1., -1., 1., 1., 1., 1.], dtype=all_atom_pos.dtype, device=all_atom_pos.device
+    )[None, None, :, None]
 
     # Create alternative angles for ambiguous atom names.
-    chi_is_ambiguous = utils.batched_gather(
-        jnp.asarray(residue_constants.chi_pi_periodic), aatype)
-    mirror_torsion_angles = jnp.concatenate(
-        [jnp.ones([num_batch, num_res, 3]),
-         1.0 - 2.0 * chi_is_ambiguous], axis=-1)
-    alt_torsion_angles_sin_cos = (
-            torsion_angles_sin_cos * mirror_torsion_angles[:, :, :, None])
+    chi_is_ambiguous = torch.tensor(residue_constants.chi_pi_periodic, dtype=all_atom_pos.dtype, device=all_atom_pos.device)
+    chi_is_ambiguous = chi_is_ambiguous[aatype_flat].unflatten(0, [num_batch, num_res])
+    mirror_torsion_angles = torch.cat([
+        torch.ones([num_batch, num_res, 3], dtype=all_atom_pos.dtype, device=all_atom_pos.device),
+         1.0 - 2.0 * chi_is_ambiguous
+    ], dim=-1)
+    alt_torsion_angles_sin_cos = (torsion_angles_sin_cos * mirror_torsion_angles[:, :, :, None])
 
     if placeholder_for_undefined:
         # Add placeholder torsions in place of undefined torsion angles
         # (e.g. N-terminus pre-omega)
-        placeholder_torsions = jnp.stack([
-            jnp.ones(torsion_angles_sin_cos.shape[:-1]),
-            jnp.zeros(torsion_angles_sin_cos.shape[:-1])
-        ], axis=-1)
+        placeholder_torsions = torch.stack([
+            torch.ones(torsion_angles_sin_cos.shape[:-1], dtype=all_atom_pos.dtype, device=all_atom_pos.device),
+            torch.zeros(torsion_angles_sin_cos.shape[:-1], dtype=all_atom_pos.dtype, device=all_atom_pos.device)
+        ], dim=-1)
         torsion_angles_sin_cos = torsion_angles_sin_cos * torsion_angles_mask[
             ..., None] + placeholder_torsions * (1 - torsion_angles_mask[..., None])
         alt_torsion_angles_sin_cos = alt_torsion_angles_sin_cos * torsion_angles_mask[
@@ -441,9 +437,9 @@ def atom37_to_torsion_angles(
 
 
 def torsion_angles_to_frames(
-        aatype: jnp.ndarray,  # (N)
+        aatype: torch.Tensor,  # (N)
         backb_to_global: r3.Rigids,  # (N)
-        torsion_angles_sin_cos: jnp.ndarray  # (N, 7, 2)
+        torsion_angles_sin_cos: torch.Tensor  # (N, 7, 2)
 ) -> r3.Rigids:  # (N, 8)
     """Compute rigid group frames from torsion angles.
 
@@ -466,8 +462,7 @@ def torsion_angles_to_frames(
 
     # Gather the default frames for all rigid groups.
     # r3.Rigids with shape (N, 8)
-    m = utils.batched_gather(residue_constants.restype_rigid_group_default_frame,
-                             aatype)
+    m = torch.tensor(residue_constants.restype_rigid_group_default_frame, device=aatype.device)[aatype]
     default_frames = r3.rigids_from_tensor4x4(m)
 
     # Create the rotation matrices according to the given angles (each frame is
@@ -477,12 +472,10 @@ def torsion_angles_to_frames(
 
     # insert zero rotation for backbone group.
     num_residues, = aatype.shape
-    sin_angles = jnp.concatenate([jnp.zeros([num_residues, 1]), sin_angles],
-                                 axis=-1)
-    cos_angles = jnp.concatenate([jnp.ones([num_residues, 1]), cos_angles],
-                                 axis=-1)
-    zeros = jnp.zeros_like(sin_angles)
-    ones = jnp.ones_like(sin_angles)
+    sin_angles = torch.cat([torch.zeros([num_residues, 1], dtype=sin_angles.dtype, device=sin_angles.device), sin_angles], dim=-1)
+    cos_angles = torch.cat([torch.ones([num_residues, 1], dtype=sin_angles.dtype, device=sin_angles.device), cos_angles], dim=-1)
+    zeros = torch.zeros_like(sin_angles)
+    ones = torch.ones_like(sin_angles)
 
     # all_rots are r3.Rots with shape (N, 8)
     all_rots = r3.Rots(ones, zeros, zeros,
@@ -494,24 +487,20 @@ def torsion_angles_to_frames(
 
     # chi2, chi3, and chi4 frames do not transform to the backbone frame but to
     # the previous frame. So chain them up accordingly.
-    chi2_frame_to_frame = jax.tree_map(lambda x: x[:, 5], all_frames)
-    chi3_frame_to_frame = jax.tree_map(lambda x: x[:, 6], all_frames)
-    chi4_frame_to_frame = jax.tree_map(lambda x: x[:, 7], all_frames)
+    chi2_frame_to_frame = r3.apply_tree_rigids(lambda x: x[:, 5], all_frames)
+    chi3_frame_to_frame = r3.apply_tree_rigids(lambda x: x[:, 6], all_frames)
+    chi4_frame_to_frame = r3.apply_tree_rigids(lambda x: x[:, 7], all_frames)
 
-    chi1_frame_to_backb = jax.tree_map(lambda x: x[:, 4], all_frames)
-    chi2_frame_to_backb = r3.rigids_mul_rigids(chi1_frame_to_backb,
-                                               chi2_frame_to_frame)
-    chi3_frame_to_backb = r3.rigids_mul_rigids(chi2_frame_to_backb,
-                                               chi3_frame_to_frame)
-    chi4_frame_to_backb = r3.rigids_mul_rigids(chi3_frame_to_backb,
-                                               chi4_frame_to_frame)
+    chi1_frame_to_backb = r3.apply_tree_rigids(lambda x: x[:, 4], all_frames)
+    chi2_frame_to_backb = r3.rigids_mul_rigids(chi1_frame_to_backb, chi2_frame_to_frame)
+    chi3_frame_to_backb = r3.rigids_mul_rigids(chi2_frame_to_backb, chi3_frame_to_frame)
+    chi4_frame_to_backb = r3.rigids_mul_rigids(chi3_frame_to_backb, chi4_frame_to_frame)
 
     # Recombine them to a r3.Rigids with shape (N, 8).
     def _concat_frames(xall, x5, x6, x7):
-        return jnp.concatenate(
-            [xall[:, 0:5], x5[:, None], x6[:, None], x7[:, None]], axis=-1)
+        return torch.cat([xall[:, 0:5], x5[:, None], x6[:, None], x7[:, None]], dim=-1)
 
-    all_frames_to_backb = jax.tree_map(
+    all_frames_to_backb = r3.apply_tree_rigids(
         _concat_frames,
         all_frames,
         chi2_frame_to_backb,
@@ -521,14 +510,15 @@ def torsion_angles_to_frames(
     # Create the global frames.
     # shape (N, 8)
     all_frames_to_global = r3.rigids_mul_rigids(
-        jax.tree_map(lambda x: x[:, None], backb_to_global),
-        all_frames_to_backb)
+        r3.apply_tree_rigids(lambda x: x[:, None], backb_to_global),
+        all_frames_to_backb
+    )
 
     return all_frames_to_global
 
 
 def frames_and_literature_positions_to_atom14_pos(
-        aatype: jnp.ndarray,  # (N)
+        aatype: torch.Tensor,  # (N)
         all_frames_to_global: r3.Rigids  # (N, 8)
 ) -> r3.Vecs:  # (N, 14)
     """Put atom literature positions (atom14 encoding) in each rigid group.
@@ -543,39 +533,37 @@ def frames_and_literature_positions_to_atom14_pos(
     """
 
     # Pick the appropriate transform for every atom.
-    residx_to_group_idx = utils.batched_gather(
-        residue_constants.restype_atom14_to_rigid_group, aatype)
-    group_mask = jax.nn.one_hot(
-        residx_to_group_idx, num_classes=8)  # shape (N, 14, 8)
+    residx_to_group_idx = torch.tensor(residue_constants.restype_atom14_to_rigid_group, device=aatype.device)[aatype]
+    group_mask = F.one_hot(residx_to_group_idx, num_classes=8)  # shape (N, 14, 8)
+    #print(torch.stack(all_frames_to_global.rot, dim=-1).unflatten(-1, (3,3)))
 
     # r3.Rigids with shape (N, 14)
-    map_atoms_to_global = jax.tree_map(
-        lambda x: jnp.sum(x[:, None, :] * group_mask, axis=-1),
-        all_frames_to_global)
-
+    map_atoms_to_global = r3.apply_tree_rigids(
+        lambda x: torch.sum(x[:, None, :] * group_mask, dim=-1),
+        all_frames_to_global
+    )
     # Gather the literature atom positions for each residue.
     # r3.Vecs with shape (N, 14)
-    lit_positions = r3.vecs_from_tensor(
-        utils.batched_gather(
-            residue_constants.restype_atom14_rigid_group_positions, aatype))
+    # restype_atom14_rigid_group_positions (N, 14, 3)
+    lit_positions = r3.vecs_from_tensor(torch.tensor(residue_constants.restype_atom14_rigid_group_positions, device=aatype.device)[aatype])
 
     # Transform each atom from its local frame to the global frame.
     # r3.Vecs with shape (N, 14)
     pred_positions = r3.rigids_mul_vecs(map_atoms_to_global, lit_positions)
 
     # Mask out non-existing atoms.
-    mask = utils.batched_gather(residue_constants.restype_atom14_mask, aatype)
-    pred_positions = jax.tree_map(lambda x: x * mask, pred_positions)
+    mask = torch.tensor(residue_constants.restype_atom14_mask, device=aatype.device)[aatype]
+    pred_positions = r3.apply_tree_vecs(lambda x: x * mask, pred_positions)
 
     return pred_positions
 
 
 def extreme_ca_ca_distance_violations(
-        pred_atom_positions: jnp.ndarray,  # (N, 37(14), 3)
-        pred_atom_mask: jnp.ndarray,  # (N, 37(14))
-        residue_index: jnp.ndarray,  # (N)
+        pred_atom_positions: torch.Tensor,  # (N, 37(14), 3)
+        pred_atom_mask: torch.Tensor,  # (N, 37(14))
+        residue_index: torch.Tensor,  # (N)
         max_angstrom_tolerance=1.5
-) -> jnp.ndarray:
+) -> torch.Tensor:
     """Counts residues whose Ca is a large distance from its neighbour.
 
     Measures the fraction of CA-CA pairs between consecutive amino acids that are
@@ -605,13 +593,13 @@ def extreme_ca_ca_distance_violations(
 
 
 def between_residue_bond_loss(
-        pred_atom_positions: jnp.ndarray,  # (N, 37(14), 3)
-        pred_atom_mask: jnp.ndarray,  # (N, 37(14))
-        residue_index: jnp.ndarray,  # (N)
-        aatype: jnp.ndarray,  # (N)
+        pred_atom_positions: torch.Tensor,  # (N, 37(14), 3)
+        pred_atom_mask: torch.Tensor,  # (N, 37(14))
+        residue_index: torch.Tensor,  # (N)
+        aatype: torch.Tensor,  # (N)
         tolerance_factor_soft=12.0,
         tolerance_factor_hard=12.0
-) -> Dict[str, jnp.ndarray]:
+) -> Dict[str, torch.Tensor]:
     """Flat-bottom loss to penalize structural violations between residues.
 
     This is a loss penalizing any violation of the geometry around the peptide
@@ -740,13 +728,13 @@ def between_residue_bond_loss(
 
 
 def between_residue_clash_loss(
-        atom14_pred_positions: jnp.ndarray,  # (N, 14, 3)
-        atom14_atom_exists: jnp.ndarray,  # (N, 14)
-        atom14_atom_radius: jnp.ndarray,  # (N, 14)
-        residue_index: jnp.ndarray,  # (N)
+        atom14_pred_positions: torch.Tensor,  # (N, 14, 3)
+        atom14_atom_exists: torch.Tensor,  # (N, 14)
+        atom14_atom_radius: torch.Tensor,  # (N, 14)
+        residue_index: torch.Tensor,  # (N)
         overlap_tolerance_soft=1.5,
         overlap_tolerance_hard=1.5
-) -> Dict[str, jnp.ndarray]:
+) -> Dict[str, torch.Tensor]:
     """Loss to penalize steric clashes between residues.
 
     This is a loss penalizing any steric clashes due to non bonded atoms in
@@ -849,12 +837,12 @@ def between_residue_clash_loss(
 
 
 def within_residue_violations(
-        atom14_pred_positions: jnp.ndarray,  # (N, 14, 3)
-        atom14_atom_exists: jnp.ndarray,  # (N, 14)
-        atom14_dists_lower_bound: jnp.ndarray,  # (N, 14, 14)
-        atom14_dists_upper_bound: jnp.ndarray,  # (N, 14, 14)
+        atom14_pred_positions: torch.Tensor,  # (N, 14, 3)
+        atom14_atom_exists: torch.Tensor,  # (N, 14)
+        atom14_dists_lower_bound: torch.Tensor,  # (N, 14, 14)
+        atom14_dists_upper_bound: torch.Tensor,  # (N, 14, 14)
         tighten_bounds_for_loss=0.0,
-) -> Dict[str, jnp.ndarray]:
+) -> Dict[str, torch.Tensor]:
     """Loss to penalize steric clashes within residues.
 
     This is a loss penalizing any steric violations or clashes of non-bonded atoms
@@ -925,13 +913,13 @@ def within_residue_violations(
 
 
 def find_optimal_renaming(
-        atom14_gt_positions: jnp.ndarray,  # (N, 14, 3)
-        atom14_alt_gt_positions: jnp.ndarray,  # (N, 14, 3)
-        atom14_atom_is_ambiguous: jnp.ndarray,  # (N, 14)
-        atom14_gt_exists: jnp.ndarray,  # (N, 14)
-        atom14_pred_positions: jnp.ndarray,  # (N, 14, 3)
-        atom14_atom_exists: jnp.ndarray,  # (N, 14)
-) -> jnp.ndarray:  # (N):
+        atom14_gt_positions: torch.Tensor,  # (N, 14, 3)
+        atom14_alt_gt_positions: torch.Tensor,  # (N, 14, 3)
+        atom14_atom_is_ambiguous: torch.Tensor,  # (N, 14)
+        atom14_gt_exists: torch.Tensor,  # (N, 14)
+        atom14_pred_positions: torch.Tensor,  # (N, 14, 3)
+        atom14_atom_exists: torch.Tensor,  # (N, 14)
+) -> torch.Tensor:  # (N):
     """Find optimal renaming for ground truth that maximizes LDDT.
 
     Jumper et al. (2021) Suppl. Alg. 26
@@ -1058,7 +1046,7 @@ def frame_aligned_point_error(
         jax.tree_map(lambda x: x[None, :], target_positions))
 
     # Compute errors between the structures.
-    # jnp.ndarray (num_frames, num_positions)
+    # torch.Tensor (num_frames, num_positions)
     error_dist = jnp.sqrt(
         r3.vecs_squared_distance(local_pred_pos, local_target_pos)
         + epsilon)
@@ -1072,7 +1060,72 @@ def frame_aligned_point_error(
 
     normalization_factor = (
             jnp.sum(frames_mask, axis=-1) *
-            jnp.sum(positions_mask, axis=-1))
+            jnp.sum(positions_mask, axis=-1)
+    )
+    return (jnp.sum(normed_error, axis=(-2, -1)) /
+            (epsilon + normalization_factor))
+
+
+def frame_aligned_point_error_vectorized(
+        pred_frames: r3.Rigids,  # shape (..., num_frames)
+        target_frames: r3.Rigids,  # shape (..., num_frames)
+        frames_mask: torch.Tensor,  # shape (..., num_frames)
+        pred_positions: r3.Vecs,  # shape (..., num_positions)
+        target_positions: r3.Vecs,  # shape (..., num_positions)
+        positions_mask: torch.Tensor,  # shape (..., num_positions)
+        length_scale: float,
+        l1_clamp_distance: Optional[float] = None,
+        epsilon=1e-4) -> torch.Tensor:  # shape ()
+    """Measure point error under different alignments.
+
+    Jumper et al. (2021) Suppl. Alg. 28 "computeFAPE"
+
+    Computes error between two structures with B points under A alignments derived
+    from the given pairs of frames.
+    Args:
+      pred_frames: num_frames reference frames for 'pred_positions'.
+      target_frames: num_frames reference frames for 'target_positions'.
+      frames_mask: Mask for frame pairs to use.
+      pred_positions: num_positions predicted positions of the structure.
+      target_positions: num_positions target positions of the structure.
+      positions_mask: Mask on which positions to score.
+      length_scale: length scale to divide loss by.
+      l1_clamp_distance: Distance cutoff on error beyond which gradients will
+        be zero.
+      epsilon: small value used to regularize denominator for masked average.
+    Returns:
+      Masked Frame Aligned Point Error.
+    """
+
+    # Compute array of predicted positions in the predicted frames.
+    # r3.Vecs (num_frames, num_positions)
+    local_pred_pos = r3.rigids_mul_vecs(
+        jax.tree_map(lambda r: r[..., :, None], r3.invert_rigids(pred_frames)),
+        jax.tree_map(lambda x: x[..., None, :], pred_positions))
+
+    # Compute array of target positions in the target frames.
+    # r3.Vecs (num_frames, num_positions)
+    local_target_pos = r3.rigids_mul_vecs(
+        jax.tree_map(lambda r: r[:, None], r3.invert_rigids(target_frames)),
+        jax.tree_map(lambda x: x[None, :], target_positions))
+
+    # Compute errors between the structures.
+    # torch.Tensor (num_frames, num_positions)
+    error_dist = jnp.sqrt(
+        r3.vecs_squared_distance(local_pred_pos, local_target_pos)
+        + epsilon)
+
+    if l1_clamp_distance:
+        error_dist = jnp.clip(error_dist, 0, l1_clamp_distance)
+
+    normed_error = error_dist / length_scale
+    normed_error *= jnp.expand_dims(frames_mask, axis=-1)
+    normed_error *= jnp.expand_dims(positions_mask, axis=-2)
+
+    normalization_factor = (
+            jnp.sum(frames_mask, axis=-1) *
+            jnp.sum(positions_mask, axis=-1)
+    )
     return (jnp.sum(normed_error, axis=(-2, -1)) /
             (epsilon + normalization_factor))
 
@@ -1105,35 +1158,3 @@ def _make_renaming_matrices():
 
 
 RENAMING_MATRICES = _make_renaming_matrices()
-
-
-def get_alt_atom14(aatype, positions, mask):
-    """Get alternative atom14 positions.
-
-    Constructs renamed atom positions for ambiguous residues.
-
-    Jumper et al. (2021) Suppl. Table 3 "Ambiguous atom names due to 180 degree-
-    rotation-symmetry"
-
-    Args:
-      aatype: Amino acid at given position
-      positions: Atom positions as r3.Vecs in atom14 representation, (N, 14)
-      mask: Atom masks in atom14 representation, (N, 14)
-    Returns:
-      renamed atom positions, renamed atom mask
-    """
-    # pick the transformation matrices for the given residue sequence
-    # shape (num_res, 14, 14)
-    renaming_transform = utils.batched_gather(
-        jnp.asarray(RENAMING_MATRICES), aatype)
-
-    positions = jax.tree_map(lambda x: x[:, :, None], positions)
-    alternative_positions = jax.tree_map(
-        lambda x: jnp.sum(x, axis=1), positions * renaming_transform)
-
-    # Create the mask for the alternative ground truth (differs from the
-    # ground truth mask, if only one of the atoms in an ambiguous pair has a
-    # ground truth position)
-    alternative_mask = jnp.sum(mask[..., None] * renaming_transform, axis=1)
-
-    return alternative_positions, alternative_mask

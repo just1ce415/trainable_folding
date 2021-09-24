@@ -59,6 +59,17 @@ def squared_difference(x, y):
     return torch.square(x - y)
 
 
+def apply_tree_rigids(fun, *r: Rigids) -> Rigids:
+    return Rigids(
+        rot=Rots(*[fun(*[x.rot[i] for x in r]) for i in range(9)]),
+        trans=Vecs(*[fun(*[x.trans[i] for x in r]) for i in range(3)])
+    )
+
+
+def apply_tree_vecs(fun, *r: Vecs) -> Vecs:
+    return Vecs(*[fun(*[x[i] for x in r]) for i in range(3)])
+
+
 def invert_rigids(r: Rigids) -> Rigids:
     """Computes group inverse of rigid transformations 'r'."""
     inv_rots = invert_rots(r.rot)
@@ -108,8 +119,10 @@ def rigids_from_list(l: List[torch.tensor]) -> Rigids:
 
 def rigids_from_quataffine(a: quat_affine.QuatAffine) -> Rigids:
     """Converts QuatAffine object to the corresponding Rigids object."""
-    return Rigids(Rots(*tree.flatten(a.rotation)),
-                  Vecs(*a.translation))
+    rots_flat = []
+    for row in a.rotation:
+        rots_flat += row
+    return Rigids(Rots(*rots_flat), Vecs(*a.translation))
 
 
 def rigids_from_tensor4x4(
