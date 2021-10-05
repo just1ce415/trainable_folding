@@ -47,7 +47,7 @@ def test():
     print(torsions)
 
     print('bb_frames.to_tensor()', bb_frames.to_tensor())
-    out = docker.make_all_atom(bb_frames.to_tensor(), torsions, aatype)
+    out = all_atom.backbone_affine_and_torsions_to_all_atom(bb_frames.to_tensor(), torsions, aatype)
     print(out['atom_pos'])
 
     out_coords = out['atom_pos']
@@ -64,6 +64,8 @@ def test():
     #print(out_ag.getCoords() - ag.getCoords())
     assert np.all((out_ag.getCoords() - ag.getCoords()) < tol)
     #prody.writePDB(config.TEST_DATA_DIR / 'out.pdb', out_ag)
+
+    all_atom.frame_aligned_point_error()
 
 
 if __name__ == '__main__':

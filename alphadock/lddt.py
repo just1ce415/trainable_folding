@@ -20,10 +20,15 @@
 import torch
 
 
-def lddt(predicted_points,
-         true_points,
-         true_points_mask,
+def lddt(predicted_points_a,
+         predicted_points_b,
+         true_points_a,
+         true_points_b,
+         true_points_a_mask,
+         true_points_b_mask,
          cutoff=15.,
+         exclude_self=False,
+         reduce_axis=1,
          per_residue=False):
     """Measure (approximate) lDDT for a batch of coordinates.
 
@@ -42,10 +47,6 @@ def lddt(predicted_points,
     lDDT score.
 
     Args:
-      predicted_points: (batch, length, 3) array of predicted 3D points
-      true_points: (batch, length, 3) array of true 3D points
-      true_points_mask: (batch, length, 1) binary-valued float array.  This mask
-        should be 1 for points that exist in the true points.
       cutoff: Maximum distance for a pair of points to be included
       per_residue: If true, return score for each residue.  Note that the overall
         lDDT is not exactly the mean of the per_residue lDDT's because some
@@ -55,38 +56,38 @@ def lddt(predicted_points,
       An (approximate, see above) lDDT score in the range 0-1.
     """
 
-    assert len(predicted_points.shape) == 3
-    assert predicted_points.shape[-1] == 3
-    assert true_points_mask.shape[-1] == 1
-    assert len(true_points_mask.shape) == 3
+    assert len(predicted_points_a.shape) == 3
+    assert len(predicted_points_b.shape) == 3
+    assert predicted_points_a.shape[-1] == 3
+    assert predicted_points_b.shape[-1] == 3
+    assert true_points_a_mask.shape[-1] == 1
+    assert true_points_b_mask.shape[-1] == 1
+    assert len(true_points_a_mask.shape) == 3
+    assert len(true_points_b_mask.shape) == 3
 
     # Compute true and predicted distance matrices.
-    dmat_true = jnp.sqrt(1e-10 + jnp.sum(
-        (true_points[:, :, None] - true_points[:, None, :])**2, axis=-1))
+    dmat_true = torch.sqrt(1e-10 + torch.sum(torch.square(true_points_a[:, :, None] - true_points_b[:, None, :]), dim=-1))
 
-    dmat_predicted = jnp.sqrt(1e-10 + jnp.sum(
-        (predicted_points[:, :, None] -
-         predicted_points[:, None, :])**2, axis=-1))
+    dmat_predicted = torch.sqrt(1e-10 + torch.sum(torch.square(predicted_points_a[:, :, None] - predicted_points_b[:, None, :]), dim=-1))
 
-    dists_to_score = (
-            (dmat_true < cutoff).astype(jnp.float32) * true_points_mask *
-            jnp.transpose(true_points_mask, [0, 2, 1]) *
-            (1. - jnp.eye(dmat_true.shape[1]))  # Exclude self-interaction.
-    )
+    dists_to_score = (dmat_true < cutoff) * true_points_a_mask * torch.transpose(true_points_b_mask, 2, 1)
+
+    if exclude_self:
+        assert dmat_true.shape[1] == dmat_true.shape[2]
+        dists_to_score *= (1. - torch.eye(dmat_true.shape[1], dtype=dmat_true.dtype, device=dmat_true.device))
 
     # Shift unscored distances to be far away.
-    dist_l1 = jnp.abs(dmat_true - dmat_predicted)
+    dist_l1 = torch.abs(dmat_true - dmat_predicted)
 
     # True lDDT uses a number of fixed bins.
     # We ignore the physical plausibility correction to lDDT, though.
-    score = 0.25 * ((dist_l1 < 0.5).astype(jnp.float32) +
-                    (dist_l1 < 1.0).astype(jnp.float32) +
-                    (dist_l1 < 2.0).astype(jnp.float32) +
-                    (dist_l1 < 4.0).astype(jnp.float32))
+    score = 0.25 * ((dist_l1 < 0.5).to(predicted_points_a.dtype) +
+                    (dist_l1 < 1.0).to(predicted_points_a.dtype) +
+                    (dist_l1 < 2.0).to(predicted_points_a.dtype) +
+                    (dist_l1 < 4.0).to(predicted_points_a.dtype))
 
     # Normalize over the appropriate axes.
-    reduce_axes = (-1,) if per_residue else (-2, -1)
-    norm = 1. / (1e-10 + jnp.sum(dists_to_score, axis=reduce_axes))
-    score = norm * (1e-10 + jnp.sum(dists_to_score * score, axis=reduce_axes))
-
+    reduce_axes = (1 + reduce_axis,) if per_residue else (-2, -1)
+    norm = 1. / (1e-10 + torch.sum(dists_to_score, dim=reduce_axes))
+    score = norm * (1e-10 + torch.sum(dists_to_score * score, dim=reduce_axes))
     return score

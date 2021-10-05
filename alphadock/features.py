@@ -11,6 +11,7 @@ from rdkit.Chem import AllChem
 from functools import partial
 from collections import OrderedDict
 import typing
+import torch
 
 from amino_acids import d_3aa
 from config import DATA_DIR
@@ -18,6 +19,7 @@ import utils
 import residue_constants
 import all_atom
 import r3
+import quat_affine
 
 from config import DTYPE_FLOAT, DTYPE_INT
 
@@ -70,6 +72,8 @@ REC_LIG_DISTOGRAM = {
 }
 
 RESIGRAM_MAX = 32
+
+FRAGMENT_TEMPLATE_RADIUS = 10
 
 
 def atom_to_vector(atom):
@@ -386,16 +390,33 @@ def target_rec_featurize(case_dict):
     renaming_mats = all_atom.RENAMING_MATRICES[rec_feats['seq_aatype_num']]  # (N, 14, 14)
     atom14_atom_is_ambiguous = (renaming_mats * np.eye(14)[None]).sum(1) == 0
 
-    return {
+    # calculate atom37 representations and backbone frames
+    rec_atom37_coords = all_atom.atom14_to_atom37(torch.from_numpy(rec_feats['atom14_coords']), torch.from_numpy(rec_feats['seq_aatype_num']))
+    rec_atom37_mask = all_atom.atom14_to_atom37(torch.from_numpy(rec_feats['atom14_has_coords']), torch.from_numpy(rec_feats['seq_aatype_num']))
+    rec_all_frames = all_atom.atom37_to_frames(torch.from_numpy(rec_feats['seq_aatype_num']), rec_atom37_coords, rec_atom37_mask)
+
+    rec_bb_affine = r3.rigids_to_quataffine(r3.rigids_from_tensor_flat12(rec_all_frames['rigidgroups_gt_frames'][..., 0, :]))
+    rec_bb_affine.quaternion = quat_affine.rot_to_quat(rec_bb_affine.rotation)
+    rec_bb_affine = rec_bb_affine.to_tensor().numpy()
+    rec_bb_affine_mask = rec_all_frames['rigidgroups_gt_exists'][..., 0].numpy()
+
+    out = {
         'rec_1d': rec_1d.astype(DTYPE_FLOAT),
         'rec_2d': rec_2d.astype(DTYPE_FLOAT),
         'rec_relpos': rec_feats['resi_2d'].astype(DTYPE_FLOAT),
         'rec_atom14_coords': rec_feats['atom14_coords'].astype(DTYPE_FLOAT),
         'rec_atom14_has_coords': rec_feats['atom14_has_coords'].astype(DTYPE_FLOAT),
+        'rec_atom37_coords': rec_atom37_coords.numpy().astype(DTYPE_FLOAT),
+        'rec_atom37_has_coords': rec_atom37_mask.numpy().astype(DTYPE_FLOAT),
         'rec_aatype': rec_feats['seq_aatype_num'].astype(DTYPE_INT),
+        'rec_bb_affine': rec_bb_affine.astype(DTYPE_FLOAT),
+        'rec_bb_affine_mask': rec_bb_affine_mask.astype(DTYPE_FLOAT),
         'rec_atom14_atom_is_ambiguous': atom14_atom_is_ambiguous.astype(DTYPE_FLOAT),
         'rec_atom14_atom_exists': residue_constants.restype_atom14_mask[rec_feats['seq_aatype_num']].astype(DTYPE_FLOAT)
     }
+    out.update({k: v.numpy() for k, v in rec_all_frames.items()})
+
+    return out
 
 
 def ground_truth_featurize(case_dict, group_dict):
@@ -415,7 +436,12 @@ def ground_truth_featurize(case_dict, group_dict):
     atom14_gt_exists = rec_dict['atom14_has_coords']  # (N, 14)
     renaming_mats = all_atom.RENAMING_MATRICES[rec_dict['seq_aatype_num']]  # (N, 14, 14)
     atom14_alt_gt_positions = np.sum(atom14_gt_positions[:, :, None, :] * renaming_mats[:, :, :, None], axis=1)
-    atom14_alt_gt_exists = np.sum(atom14_gt_positions[:, :, None, :] * renaming_mats[:, :, :, None], axis=1)
+    atom14_alt_gt_exists = np.sum(rec_dict['atom14_has_coords'][:, :, None] * renaming_mats, axis=1)
+    atom14_atom_is_ambiguous = (renaming_mats * np.eye(14)[None]).sum(1) == 0
+
+    atom37_gt_positions = all_atom.atom14_to_atom37(torch.from_numpy(atom14_gt_positions), torch.from_numpy(rec_dict['seq_aatype_num']))
+    atom37_gt_exists = all_atom.atom14_to_atom37(torch.from_numpy(atom14_gt_exists), torch.from_numpy(rec_dict['seq_aatype_num']))
+    gt_torsions = all_atom.atom37_to_torsion_angles(torch.from_numpy(rec_dict['seq_aatype_num'][None]), atom37_gt_positions[None], atom37_gt_exists[None])
 
     # process ligand group
     group_dir = case_dir / group_dict['name']
@@ -446,12 +472,20 @@ def ground_truth_featurize(case_dict, group_dict):
         lig_coords.append(group_coords)
         lig_has_coords.append(group_has_coords)
 
+    #print(lig_matches)
+    #print(group_dict['ligands'])
+
     out = {
         'gt_aatype': rec_dict['seq_aatype_num'].astype(DTYPE_INT),  # same as for target
         'gt_atom14_coords': atom14_gt_positions.astype(DTYPE_FLOAT),  # (N_res, 14, 3)
         'gt_atom14_has_coords': atom14_gt_exists.astype(DTYPE_FLOAT),  # (N_res, 14)
         'gt_atom14_coords_alt': atom14_alt_gt_positions.astype(DTYPE_FLOAT),  # (N_res, 14, 3)
         'gt_atom14_has_coords_alt': atom14_alt_gt_exists.astype(DTYPE_FLOAT),  # (N_res, 14)
+        'gt_atom14_atom_is_ambiguous': atom14_atom_is_ambiguous.astype(DTYPE_FLOAT),
+
+        'gt_torsions_sin_cos': gt_torsions['torsion_angles_sin_cos'][0].numpy(),
+        'gt_torsions_sin_cos_alt': gt_torsions['alt_torsion_angles_sin_cos'][0].numpy(),
+        'gt_torsions_mask': gt_torsions['torsion_angles_mask'][0].numpy(),
 
         'gt_residue_index': np.arange(len(rec_dict['seq_aatype_num']), dtype=DTYPE_INT),  # (N_res)
         'gt_has_frame': rec_dict['has_frame'].astype(DTYPE_FLOAT),  # (N_res)
@@ -718,7 +752,8 @@ def fragment_template_group_featurize(case_dict, group_dict):
 
 
 def fragment_template_featurize(temp_case_dict, group_dict):
-    rec_literal = rec_to_features(temp_case_dict)
+    rec_ag = prody.parsePDB(DATA_DIR / 'cases' / temp_case_dict['case_name'] / 'rec_orig.pdb')
+    rec_literal = ag_to_features(rec_ag, temp_case_dict['entity_info']['pdb_aln'], temp_case_dict['entity_info']['entity_aln'])
     rec_feats = rec_literal_to_numeric(rec_literal)
 
     rec_1d = np.concatenate([
@@ -758,6 +793,14 @@ def fragment_template_featurize(temp_case_dict, group_dict):
     ], axis=-1)
 
     lr_2d = rl_2d.transpose([1, 0, 2])
+
+    if FRAGMENT_TEMPLATE_RADIUS is not None:
+        close_residue_mask = np.any(rl_dmat <= FRAGMENT_TEMPLATE_RADIUS, axis=1)
+        rec_1d = rec_1d[close_residue_mask]
+        rr_2d = rr_2d[close_residue_mask]
+        rr_2d = rr_2d[:, close_residue_mask]
+        rl_2d = rl_2d[close_residue_mask]
+        lr_2d = lr_2d[:, close_residue_mask]
 
     out = {
         'lig_1d': lig_1d.astype(DTYPE_FLOAT),
@@ -829,6 +872,10 @@ def fragment_template_list_featurize(tar_group_dict, templates):
         'rr_2d': [],
         'rl_2d': [],
         'lr_2d': [],
+        'll_2d_mask': [],
+        'rr_2d_mask': [],
+        'rl_2d_mask': [],
+        'lr_2d_mask': [],
         'num_res': [],
         'num_atoms': [],
         'fragment_mapping': [],
@@ -846,8 +893,16 @@ def fragment_template_list_featurize(tar_group_dict, templates):
             output['lr_2d'].append(frag_feats['lr_2d'])
             output['tpl_id'].append(frag_feats['tpl_id'])
             output['fragment_mapping'].append(match)
-            output['num_res'].append(len(frag_feats['rec_1d']))
-            output['num_atoms'].append(len(frag_feats['lig_1d']))
+
+            num_res = len(frag_feats['rec_1d'])
+            num_atoms = len(frag_feats['lig_1d'])
+            output['num_res'].append(num_res)
+            output['num_atoms'].append(num_atoms)
+
+            output['ll_2d_mask'].append(np.ones((num_atoms, num_atoms)).astype(DTYPE_FLOAT))
+            output['rr_2d_mask'].append(np.ones((num_res, num_res)).astype(DTYPE_FLOAT))
+            output['rl_2d_mask'].append(np.ones((num_res, num_atoms)).astype(DTYPE_FLOAT))
+            output['lr_2d_mask'].append(np.ones((num_atoms, num_res)).astype(DTYPE_FLOAT))
 
     if len(output['lig_1d']) > 0:
         output = {k: stack_with_padding(v) if isinstance(v[0], np.ndarray) else np.array(v, dtype=DTYPE_INT) for k, v in output.items()}

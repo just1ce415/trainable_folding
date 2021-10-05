@@ -9,6 +9,7 @@ import numpy as np
 from io import StringIO
 from path import Path
 from copy import deepcopy
+import torch
 
 from rdkit import Chem
 from rdkit.Chem import AllChem
@@ -266,3 +267,6 @@ def calc_mcs(mol1, mol2, mcs_flags=[], timeout=60):
 
     return mcs_result.smartsString, mcs_result.numAtoms, mcs_result.numBonds
 
+
+def squared_difference(x, y):
+    return torch.square(x - y)

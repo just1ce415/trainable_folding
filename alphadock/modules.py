@@ -192,14 +192,19 @@ class TriangleMultiplicationOutgoing(nn.Module):
         self.l2_proj = nn.Linear(mid_c, in_c)
         self.l3_sigm = nn.Linear(in_c, in_c)
 
-    def forward(self, x2d):
+    def forward(self, x2d, mask=None):
         x2d = self.norm1(x2d)
         i = self.l1i(x2d) * torch.sigmoid(self.l1i_sigm(x2d))
         j = self.l1j(x2d) * torch.sigmoid(self.l1j_sigm(x2d))
+        if mask is not None:
+            i *= mask[..., None]
+            j *= mask[..., None]
         out = torch.einsum('bikc,bjkc->bijc', i, j)
         out = self.norm2(out)
         out = self.l2_proj(out)
         out = out * torch.sigmoid(self.l3_sigm(x2d))
+        if mask is not None:
+            out *= mask[..., None]
         return out
 
 
@@ -217,14 +222,19 @@ class TriangleMultiplicationIngoing(nn.Module):
         self.l2_proj = nn.Linear(mid_c, in_c)
         self.l3_sigm = nn.Linear(in_c, in_c)
 
-    def forward(self, x2d):
+    def forward(self, x2d, mask=None):
         x2d = self.norm1(x2d)
         i = self.l1i(x2d) * torch.sigmoid(self.l1i_sigm(x2d))
         j = self.l1j(x2d) * torch.sigmoid(self.l1j_sigm(x2d))
+        if mask is not None:
+            i *= mask[..., None]
+            j *= mask[..., None]
         out = torch.einsum('bkic,bkjc->bijc', i, j)
         out = self.norm2(out)
         out = self.l2_proj(out)
         out = out * torch.sigmoid(self.l3_sigm(x2d))
+        if mask is not None:
+            out *= mask[..., None]
         return out
 
 
@@ -246,9 +256,8 @@ class TriangleAttentionStartingNode(nn.Module):
         self.gate = nn.Linear(num_in_c, attention_num_c * num_heads)
         self.out = nn.Linear(attention_num_c * num_heads, num_in_c)
 
-    def forward(self, x2d):
+    def forward(self, x2d, mask=None):
         x2d = self.norm(x2d)
-
         q = self.q(x2d).view(*x2d.shape[:-1], self.attention_num_c, self.num_heads)
         k = self.k(x2d).view(*x2d.shape[:-1], self.attention_num_c, self.num_heads)
         v = self.v(x2d).view(*x2d.shape[:-1], self.attention_num_c, self.num_heads)
@@ -256,9 +265,14 @@ class TriangleAttentionStartingNode(nn.Module):
         g = torch.sigmoid(self.gate(x2d).view(*x2d.shape[:-1], self.attention_num_c, self.num_heads))
 
         b = b.unsqueeze_(1).transpose_(2, 3)
-        w = torch.softmax(torch.einsum('bijch,bikch->bijkh', q, k) / math.sqrt(self.attention_num_c) + b, dim=-2)
+        w = torch.einsum('bijch,bikch->bijkh', q, k) / math.sqrt(self.attention_num_c) + b
+        if mask is not None:
+            w = (w + 100.0) * mask[:, :, None, :, None] - 100.0
+        w = torch.softmax(w, dim=-2)
         out = torch.einsum('bijkh,bikch->bijch', w, v) * g
         out = self.out(out.flatten(start_dim=-2))
+        if mask is not None:
+            out *= mask[..., None]
         return out
 
 
@@ -280,9 +294,8 @@ class TriangleAttentionEndingNode(nn.Module):
         self.gate = nn.Linear(num_in_c, attention_num_c * num_heads)
         self.out = nn.Linear(attention_num_c * num_heads, num_in_c)
 
-    def forward(self, x2d):
+    def forward(self, x2d, mask=None):
         x2d = self.norm(x2d)
-
         q = self.q(x2d).view(*x2d.shape[:-1], self.attention_num_c, self.num_heads)
         k = self.k(x2d).view(*x2d.shape[:-1], self.attention_num_c, self.num_heads)
         v = self.v(x2d).view(*x2d.shape[:-1], self.attention_num_c, self.num_heads)
@@ -290,9 +303,14 @@ class TriangleAttentionEndingNode(nn.Module):
         g = torch.sigmoid(self.gate(x2d).view(*x2d.shape[:-1], self.attention_num_c, self.num_heads))
 
         b = b.unsqueeze_(2)
-        w = torch.softmax(torch.einsum('bijch,bkjch->bijkh', q, k) / math.sqrt(self.attention_num_c) + b, dim=-2)
+        w = torch.einsum('bijch,bkjch->bijkh', q, k) / math.sqrt(self.attention_num_c) + b
+        if mask is not None:
+            w = (w + 100.0) * mask.transpose(1, 2)[:, None, :, :, None] - 100.0
+        w = torch.softmax(w, dim=-2)
         out = torch.einsum('bijkh,bkjch->bijch', w, v) * g
         out = self.out(out.flatten(start_dim=-2))
+        if mask is not None:
+            out *= mask[..., None]
         return out
 
 
@@ -305,12 +323,14 @@ class TemplatePairStackIteration(nn.Module):
         self.TriangleMultiplicationIngoing = TriangleMultiplicationIngoing(config['TriangleMultiplicationIngoing'], global_config)
         self.PairTransition = Transition(global_config['rep_2d']['num_c'], config['PairTransition']['n'])
 
-    def forward(self, x2d):
-        x2d += self.TriangleAttentionStartingNode(x2d.clone())
-        x2d += self.TriangleAttentionEndingNode(x2d.clone())
-        x2d += self.TriangleMultiplicationOutgoing(x2d.clone())
-        x2d += self.TriangleMultiplicationIngoing(x2d.clone())
+    def forward(self, x2d, mask=None):
+        x2d += self.TriangleAttentionStartingNode(x2d.clone(), mask)
+        x2d += self.TriangleAttentionEndingNode(x2d.clone(), mask)
+        x2d += self.TriangleMultiplicationOutgoing(x2d.clone(), mask)
+        x2d += self.TriangleMultiplicationIngoing(x2d.clone(), mask)
         x2d += self.PairTransition(x2d.clone())
+        if mask is not None:
+            x2d *= mask[..., None]
         return x2d
 
 
@@ -394,6 +414,66 @@ class CEPPairStack(nn.Module):
         self.norm = nn.LayerNorm(global_config['rep_2d']['num_c'])
 
     def forward(self, inputs):
+        assert inputs['rr_2d'].shape[0] == 1
+
+        rr = self.rr_proj(inputs['rr_2d']).squeeze(0)
+        rl = self.rl_proj(inputs['rl_2d']).squeeze(0)
+        lr = self.lr_proj(inputs['lr_2d']).squeeze(0)
+        ll = self.ll_proj(inputs['ll_2d']).squeeze(0)
+
+        lig_1d = self.l_proj(inputs['lig_1d']).squeeze(0)
+        mapping = inputs['fragment_mapping'].squeeze(0)
+
+        full_2d = torch.zeros((rr.shape[0], rr.shape[1] + ll.shape[1], rr.shape[1] + ll.shape[1], rr.shape[-1]), dtype=rr.dtype, device=rr.device)
+        full_2d[:, :rr.shape[1], :rr.shape[1]] = rr
+        full_2d[:, rr.shape[1]:, rr.shape[1]:] = ll
+        full_2d[:, :rr.shape[1], rr.shape[1]:] = rl
+        full_2d[:, rr.shape[1]:, :rr.shape[1]] = lr
+
+        mask_2d = torch.zeros((rr.shape[0], rr.shape[1] + ll.shape[1], rr.shape[1] + ll.shape[1]), dtype=rr.dtype, device=rr.device)
+        mask_2d[:, :rr.shape[1], :rr.shape[1]] = inputs['rr_2d_mask']
+        mask_2d[:, rr.shape[1]:, rr.shape[1]:] = inputs['ll_2d_mask']
+        mask_2d[:, :rr.shape[1], rr.shape[1]:] = inputs['rl_2d_mask']
+        mask_2d[:, rr.shape[1]:, :rr.shape[1]] = inputs['lr_2d_mask']
+
+        for l in self.layers:
+            full_2d = l(full_2d.clone(), mask_2d)
+        full_2d = self.norm(full_2d)
+        ll_out = full_2d[:, rr.shape[1]:, rr.shape[1]:]
+
+        out_2d_list = []
+        out_1d_list = []
+        for frag_id in range(mapping.shape[0]):
+            #frag_num_res = num_res[frag_id]
+            #frag_num_atoms = num_atoms[frag_id]
+            frag_map = mapping[frag_id]
+            out_2d_mapped = torch.zeros((frag_map.shape[0], frag_map.shape[0], full_2d.shape[-1]), device=full_2d.device, dtype=full_2d.dtype)
+
+            target_gap_atoms = torch.where(frag_map == -1)[0]
+            target_gap_pairs = torch.cartesian_prod(target_gap_atoms, target_gap_atoms)
+            out_2d_mapped[target_gap_pairs[:, 0], target_gap_pairs[:, 1], -1] = 1
+
+            target_atoms = torch.where(frag_map > -1)[0]
+            template_atoms = frag_map[frag_map > -1]
+            target_pairs = torch.cartesian_prod(target_atoms, target_atoms)
+            template_pairs = torch.cartesian_prod(template_atoms, template_atoms)
+            out_2d_mapped[target_pairs[:, 0], target_pairs[:, 1]] = ll_out[frag_id, template_pairs[:, 0], template_pairs[:, 1]]
+            out_2d_list.append(out_2d_mapped)
+
+            out_1d_mapped = torch.zeros((frag_map.shape[0], lig_1d.shape[-1]), device=lig_1d.device, dtype=lig_1d.dtype)
+            out_1d_mapped[target_gap_atoms, -1] = 1
+            out_1d_mapped[target_atoms] = lig_1d[frag_id, template_atoms]
+            out_1d_list.append(out_1d_mapped)
+
+        out_2d = torch.stack(out_2d_list).unsqueeze(0)
+        out_1d = torch.stack(out_1d_list).unsqueeze(0)
+
+        return {
+            'frag_1d': out_1d,
+            'frag_2d': out_2d
+        }
+
+    def forward_old(self, inputs):
         assert inputs['rr_2d'].shape[0] == 1
 
         rr = self.rr_proj(inputs['rr_2d']).squeeze(0)

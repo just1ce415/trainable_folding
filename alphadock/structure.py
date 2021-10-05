@@ -156,6 +156,27 @@ class PredictSidechains(torch.nn.Module):
         return self.final(a).reshape(*a.shape[:-1], self.num_torsions, 2)
 
 
+class PredictLDDT(torch.nn.Module):
+    def __init__(self, config, global_config):
+        super().__init__()
+        num_in_c = global_config['num_single_c']
+        num_c = config['num_c']
+        num_bins = config['num_bins']
+
+        self.layers = nn.Sequential(
+            nn.LayerNorm(num_in_c),
+            nn.Linear(num_in_c, num_c),
+            nn.ReLU(),
+            nn.Linear(num_c, num_c),
+            nn.ReLU(),
+            nn.Linear(num_c, num_bins)
+            #nn.Softmax(-1)
+        )
+
+    def forward(self, rep_1d):
+        return self.layers(rep_1d)
+
+
 class StructureModuleIteration(torch.nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
@@ -176,6 +197,9 @@ class StructureModuleIteration(torch.nn.Module):
         self.backbone_update = nn.Linear(num_1dc, 6)
 
         self.PredictSidechains = PredictSidechains(config['PredictSidechains'], global_config)
+        self.PredictRecLDDT = PredictLDDT(config['PredictRecLDDT'], global_config)
+        self.PredictRigLDDT = PredictLDDT(config['PredictLigLDDT'], global_config)
+        #self.PredictRecLigDgram = nn.Linear(global_config['rep_2d']['num_c'], )
 
     def forward(self, inputs):
         rec_1d_init, rec_1d, lig_1d, rep_2d, rec_T, lig_T = inputs['rec_1d_init'], inputs['rec_1d'], inputs['lig_1d'], inputs['rep_2d'], inputs['rec_T'], inputs['lig_T']
@@ -212,7 +236,9 @@ class StructureModuleIteration(torch.nn.Module):
             'lig_1d': lig_1d,
             'rec_T': rec_T.to_tensor(),
             'lig_T': lig_T.to_tensor(),
-            'rec_torsions': rec_torsions
+            'rec_torsions': rec_torsions,
+            'rec_lddt': self.PredictRecLDDT(rec_1d),
+            'lig_lddt': self.PredictRecLDDT(lig_1d)
         }
 
 
@@ -228,7 +254,12 @@ class StructureModule(torch.nn.Module):
         self.rec_1d_proj = nn.Linear(num_1dc, num_1dc)
         self.lig_1d_proj = nn.Linear(num_1dc, num_1dc)
 
+        self.position_scale = global_config['position_scale']
+
     def forward(self, inputs):
+        # batch size must be one
+        assert inputs['r1d'].shape[0] == 1
+
         rec_1d_init = self.norm_1d_init(inputs['r1d'])
         lig_1d_init = self.norm_1d_init(inputs['l1d'])
         pair = self.norm_2d_init(inputs['pair'])
@@ -236,9 +267,16 @@ class StructureModule(torch.nn.Module):
         rec_1d = self.rec_1d_proj(rec_1d_init)
         lig_1d = self.lig_1d_proj(lig_1d_init)
 
-        # TODO: replace with rec crystal positions
-        rec_T = torch.zeros((1, rec_1d.shape[1], 7), device=rec_1d.device, dtype=rec_1d.dtype)
-        rec_T[:, :, 0] = 1
+        # Start with crystal rec positions
+        rec_T = inputs['rec_bb_affine'].clone().to(rec_1d.device)
+
+        # Set masked frames to origin
+        rec_T_masked = torch.where(inputs['rec_bb_affine_mask'] < 1)[1]
+        rec_T[:, rec_T_masked, :] = 0
+        rec_T[:, rec_T_masked, 0] = 1
+        rec_T[:, :, -3:] = rec_T[:, :, -3:] / self.position_scale
+
+        # Set up ligand starting frames
         lig_T = torch.zeros((1, lig_1d.shape[1], 7), device=lig_1d.device, dtype=lig_1d.dtype)
         lig_T[:, :, 0] = 1
 
@@ -254,24 +292,25 @@ class StructureModule(torch.nn.Module):
         rec_T_inter = []
         rec_torsions_inter = []
         lig_T_inter = []
+        rec_lddt = []
+        lig_lddt = []
 
         for l in self.layers:
             x.update(l(x))
             rec_T_inter.append(x['rec_T'])
             lig_T_inter.append(x['lig_T'])
             rec_torsions_inter.append(x['rec_torsions'])
-
-        # mean aux loss
-        # predict all atom
-        # calc final loss
-        # predict confidence
+            rec_lddt.append(x['rec_lddt'])
+            lig_lddt.append(x['lig_lddt'])
 
         return {
             'rec_T': torch.stack(rec_T_inter, dim=1),
             'lig_T': torch.stack(lig_T_inter, dim=1),
             'rec_torsions': torch.stack(rec_torsions_inter, dim=1),
             'lig_1d': x['lig_1d'],
-            'rec_1d': x['rec_1d']
+            'rec_1d': x['rec_1d'],
+            'rec_lddt': torch.stack(rec_lddt, dim=1),
+            'lig_lddt': torch.stack(lig_lddt, dim=1),
         }
 
 

@@ -62,54 +62,8 @@ class DockingDataset(Dataset):
 
         # process fragments
         if len(item['fragment_templates']) > 0:
-            frag_dict = features.fragment_template_list_featurize(group_dict, item['fragment_templates'][:1])
+            frag_dict = features.fragment_template_list_featurize(group_dict, item['fragment_templates'][:])
             out_dict['fragments'] = frag_dict
-
-        sample = {
-            'target': {
-                'lig_1d': None,  # atoms
-                'lig_2d': None,  # bonds
-                'rec_1d': None,  # residue feats
-                'rec_2d': None,  # distogram, cbeta_2d
-                'rec_relpos': None,
-
-                'aatype': None,
-                'atom14_gt_positions': None,
-                'atom14_atom_is_ambiguous': None,
-                'atom14_gt_exists': None,
-                'atom14_alt_gt_exists': None,
-                'atom14_atom_exists': None,
-                'residx_atom14_to_atom37': None,
-                'residue_index': None,
-                'backbone_affine_tensor': None,
-                'backbone_affine_mask': None
-            },
-
-            'hhpred': {
-                'lig_1d': None,
-                'rec_1d': None,
-                'rr_2d': None,
-                'rl_2d': None,
-                'lr_2d': None,
-                'll_2d': None,
-            },
-
-            'fragments': {
-                'lig_1d': None,
-                'rec_1d': None,
-                'rr_2d': None,
-                'rl_2d': None,
-                'lr_2d': None,
-                'll_2d': None,
-                'num_atoms': None,
-                'num_res': None,
-                'fragment_mapping': None
-            },
-
-            'ground_truth': {
-                'distogram': None,
-            }
-        }
 
         return out_dict
 

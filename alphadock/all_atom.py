@@ -44,6 +44,7 @@ import torch.nn.functional as F
 
 import residue_constants
 import r3
+import quat_affine
 
 
 def squared_difference(x, y):
@@ -558,6 +559,42 @@ def frames_and_literature_positions_to_atom14_pos(
     return pred_positions
 
 
+def l2_normalize(x, axis=-1, epsilon=1e-12):
+    buf = torch.sum(x**2, dim=axis, keepdim=True)
+    return x / torch.sqrt(torch.maximum(buf, torch.full_like(buf, epsilon)))
+
+
+def backbone_affine_and_torsions_to_all_atom(
+        affine: torch.Tensor,  # (N, 7) QuatAffine in tensor format
+        torsions_unnorm: torch.Tensor,  # (N, 14)
+        aatype: torch.Tensor  # (N)
+):
+    affine = quat_affine.QuatAffine(affine[:, :4], [x.squeeze(-1) for x in torch.tensor_split(affine[:, 4:], 3, dim=-1)])
+    backb_to_global = r3.rigids_from_quataffine(affine)
+
+    rec_torsions_unnorm = torsions_unnorm.view(torsions_unnorm.shape[0], 7, 2)
+    rec_torsions = l2_normalize(rec_torsions_unnorm)
+
+    outputs = {
+        'angles_sin_cos': rec_torsions,  # (N, 7, 2)
+        'unnormalized_angles_sin_cos': rec_torsions_unnorm,  # (N, 7, 2)
+    }
+
+    all_frames_to_global = torsion_angles_to_frames(
+        aatype,
+        backb_to_global,
+        rec_torsions
+    )
+
+    pred_positions = frames_and_literature_positions_to_atom14_pos(aatype, all_frames_to_global)
+
+    outputs.update({
+        'atom_pos': pred_positions,  # r3.Vecs (N, 14)
+        'frames': all_frames_to_global,  # r3.Rigids (N, 8)
+    })
+    return outputs
+
+
 def extreme_ca_ca_distance_violations(
         pred_atom_positions: torch.Tensor,  # (N, 37(14), 3)
         pred_atom_mask: torch.Tensor,  # (N, 37(14))
@@ -952,29 +989,29 @@ def find_optimal_renaming(
 
     # Create the pred distance matrix.
     # shape (N, N, 14, 14)
-    pred_dists = jnp.sqrt(1e-10 + jnp.sum(
+    pred_dists = torch.sqrt(1e-10 + torch.sum(
         squared_difference(
             atom14_pred_positions[:, None, :, None, :],
             atom14_pred_positions[None, :, None, :, :]),
-        axis=-1))
+        dim=-1))
 
     # Compute distances for ground truth with original and alternative names.
     # shape (N, N, 14, 14)
-    gt_dists = jnp.sqrt(1e-10 + jnp.sum(
+    gt_dists = torch.sqrt(1e-10 + torch.sum(
         squared_difference(
             atom14_gt_positions[:, None, :, None, :],
             atom14_gt_positions[None, :, None, :, :]),
-        axis=-1))
-    alt_gt_dists = jnp.sqrt(1e-10 + jnp.sum(
+        dim=-1))
+    alt_gt_dists = torch.sqrt(1e-10 + torch.sum(
         squared_difference(
             atom14_alt_gt_positions[:, None, :, None, :],
             atom14_alt_gt_positions[None, :, None, :, :]),
-        axis=-1))
+        dim=-1))
 
     # Compute LDDT's.
     # shape (N, N, 14, 14)
-    lddt = jnp.sqrt(1e-10 + squared_difference(pred_dists, gt_dists))
-    alt_lddt = jnp.sqrt(1e-10 + squared_difference(pred_dists, alt_gt_dists))
+    lddt = torch.sqrt(1e-10 + squared_difference(pred_dists, gt_dists))
+    alt_lddt = torch.sqrt(1e-10 + squared_difference(pred_dists, alt_gt_dists))
 
     # Create a mask for ambiguous atoms in rows vs. non-ambiguous atoms
     # in cols.
@@ -986,87 +1023,74 @@ def find_optimal_renaming(
 
     # Aggregate distances for each residue to the non-amibuguous atoms.
     # shape (N)
-    per_res_lddt = jnp.sum(mask * lddt, axis=[1, 2, 3])
-    alt_per_res_lddt = jnp.sum(mask * alt_lddt, axis=[1, 2, 3])
+    per_res_lddt = torch.sum(mask * lddt, dim=[1, 2, 3])
+    alt_per_res_lddt = torch.sum(mask * alt_lddt, dim=[1, 2, 3])
 
     # Decide for each residue, whether alternative naming is better.
     # shape (N)
-    alt_naming_is_better = (alt_per_res_lddt < per_res_lddt).astype(jnp.float32)
+    alt_naming_is_better = (alt_per_res_lddt < per_res_lddt).type(atom14_gt_positions.dtype)
 
     return alt_naming_is_better  # shape (N)
 
 
-def frame_aligned_point_error(
-        pred_frames: r3.Rigids,  # shape (num_frames)
-        target_frames: r3.Rigids,  # shape (num_frames)
-        frames_mask: torch.Tensor,  # shape (num_frames)
-        pred_positions: r3.Vecs,  # shape (num_positions)
-        target_positions: r3.Vecs,  # shape (num_positions)
-        positions_mask: torch.Tensor,  # shape (num_positions)
-        length_scale: float,
-        l1_clamp_distance: Optional[float] = None,
-        epsilon=1e-4) -> torch.Tensor:  # shape ()
-    """Measure point error under different alignments.
+def compute_renamed_ground_truth(
+        batch: Dict[str, torch.Tensor],
+        atom14_pred_positions: torch.Tensor,
+) -> Dict[str, torch.Tensor]:
+    """Find optimal renaming of ground truth based on the predicted positions.
 
-    Jumper et al. (2021) Suppl. Alg. 28 "computeFAPE"
+    Jumper et al. (2021) Suppl. Alg. 26 "renameSymmetricGroundTruthAtoms"
 
-    Computes error between two structures with B points under A alignments derived
-    from the given pairs of frames.
+    This renamed ground truth is then used for all losses,
+    such that each loss moves the atoms in the same direction.
+    Shape (N).
+
     Args:
-      pred_frames: num_frames reference frames for 'pred_positions'.
-      target_frames: num_frames reference frames for 'target_positions'.
-      frames_mask: Mask for frame pairs to use.
-      pred_positions: num_positions predicted positions of the structure.
-      target_positions: num_positions target positions of the structure.
-      positions_mask: Mask on which positions to score.
-      length_scale: length scale to divide loss by.
-      l1_clamp_distance: Distance cutoff on error beyond which gradients will
-        be zero.
-      epsilon: small value used to regularize denominator for masked average.
+      batch: Dictionary containing:
+        * atom14_gt_positions: Ground truth positions.
+        * atom14_alt_gt_positions: Ground truth positions with renaming swaps.
+        * atom14_atom_is_ambiguous: 1.0 for atoms that are affected by
+            renaming swaps.
+        * atom14_gt_exists: Mask for which atoms exist in ground truth.
+        * atom14_alt_gt_exists: Mask for which atoms exist in ground truth
+            after renaming.
+        * atom14_atom_exists: Mask for whether each atom is part of the given
+            amino acid type.
+      atom14_pred_positions: Array of atom positions in global frame with shape
+        (N, 14, 3).
     Returns:
-      Masked Frame Aligned Point Error.
+      Dictionary containing:
+        alt_naming_is_better: Array with 1.0 where alternative swap is better.
+        renamed_atom14_gt_positions: Array of optimal ground truth positions
+          after renaming swaps are performed.
+        renamed_atom14_gt_exists: Mask after renaming swap is performed.
     """
-    assert pred_frames.rot.xx.ndim == 1
-    assert target_frames.rot.xx.ndim == 1
-    assert frames_mask.ndim == 1, frames_mask.ndim
-    assert pred_positions.x.ndim == 1
-    assert target_positions.x.ndim == 1
-    assert positions_mask.ndim == 1
+    alt_naming_is_better = find_optimal_renaming(
+        atom14_gt_positions=batch['atom14_gt_positions'],
+        atom14_alt_gt_positions=batch['atom14_alt_gt_positions'],
+        atom14_atom_is_ambiguous=batch['atom14_atom_is_ambiguous'],
+        atom14_gt_exists=batch['atom14_gt_exists'],
+        atom14_pred_positions=atom14_pred_positions,
+        atom14_atom_exists=batch['atom14_atom_exists'])
 
-    # Compute array of predicted positions in the predicted frames.
-    # r3.Vecs (num_frames, num_positions)
-    local_pred_pos = r3.rigids_mul_vecs(
-        jax.tree_map(lambda r: r[:, None], r3.invert_rigids(pred_frames)),
-        jax.tree_map(lambda x: x[None, :], pred_positions))
+    renamed_atom14_gt_positions = (
+            (1. - alt_naming_is_better[:, None, None])
+            * batch['atom14_gt_positions']
+            + alt_naming_is_better[:, None, None]
+            * batch['atom14_alt_gt_positions'])
 
-    # Compute array of target positions in the target frames.
-    # r3.Vecs (num_frames, num_positions)
-    local_target_pos = r3.rigids_mul_vecs(
-        jax.tree_map(lambda r: r[:, None], r3.invert_rigids(target_frames)),
-        jax.tree_map(lambda x: x[None, :], target_positions))
+    renamed_atom14_gt_mask = (
+            (1. - alt_naming_is_better[:, None]) * batch['atom14_gt_exists']
+            + alt_naming_is_better[:, None] * batch['atom14_alt_gt_exists'])
 
-    # Compute errors between the structures.
-    # torch.Tensor (num_frames, num_positions)
-    error_dist = jnp.sqrt(
-        r3.vecs_squared_distance(local_pred_pos, local_target_pos)
-        + epsilon)
-
-    if l1_clamp_distance:
-        error_dist = jnp.clip(error_dist, 0, l1_clamp_distance)
-
-    normed_error = error_dist / length_scale
-    normed_error *= jnp.expand_dims(frames_mask, axis=-1)
-    normed_error *= jnp.expand_dims(positions_mask, axis=-2)
-
-    normalization_factor = (
-            jnp.sum(frames_mask, axis=-1) *
-            jnp.sum(positions_mask, axis=-1)
-    )
-    return (jnp.sum(normed_error, axis=(-2, -1)) /
-            (epsilon + normalization_factor))
+    return {
+        'alt_naming_is_better': alt_naming_is_better,  # (N)
+        'renamed_atom14_gt_positions': renamed_atom14_gt_positions,  # (N, 14, 3)
+        'renamed_atom14_gt_exists': renamed_atom14_gt_mask,  # (N, 14)
+    }
 
 
-def frame_aligned_point_error_vectorized(
+def frame_aligned_point_error(
         pred_frames: r3.Rigids,  # shape (..., num_frames)
         target_frames: r3.Rigids,  # shape (..., num_frames)
         frames_mask: torch.Tensor,  # shape (..., num_frames)
@@ -1096,38 +1120,42 @@ def frame_aligned_point_error_vectorized(
     Returns:
       Masked Frame Aligned Point Error.
     """
+    assert list(pred_frames.rot.xx.shape) == list(target_frames.rot.xx.shape), (pred_frames.rot.xx.shape, target_frames.rot.xx.shape)
+    assert list(pred_frames.rot.xx.shape) == list(frames_mask.shape), (pred_frames.rot.xx.shape, frames_mask.shape)
+    assert list(pred_frames.rot.xx.shape[:-1]) == list(pred_positions.x.shape[:-1]), (pred_frames.rot.xx.shape, pred_positions.x.shape)
+    assert list(pred_positions.x.shape) == list(target_positions.x.shape), (pred_positions.x.shape, target_positions.x.shape)
+    assert list(pred_positions.x.shape) == list(positions_mask.shape), (pred_positions.x.shape, positions_mask.shape)
 
     # Compute array of predicted positions in the predicted frames.
     # r3.Vecs (num_frames, num_positions)
     local_pred_pos = r3.rigids_mul_vecs(
-        jax.tree_map(lambda r: r[..., :, None], r3.invert_rigids(pred_frames)),
-        jax.tree_map(lambda x: x[..., None, :], pred_positions))
+        r3.apply_tree_rigids(lambda r: r[..., :, None], r3.invert_rigids(pred_frames)),
+        r3.apply_tree_vecs(lambda x: x[..., None, :], pred_positions)
+    )
 
     # Compute array of target positions in the target frames.
     # r3.Vecs (num_frames, num_positions)
     local_target_pos = r3.rigids_mul_vecs(
-        jax.tree_map(lambda r: r[:, None], r3.invert_rigids(target_frames)),
-        jax.tree_map(lambda x: x[None, :], target_positions))
+        r3.apply_tree_rigids(lambda r: r[..., :, None], r3.invert_rigids(target_frames)),
+        r3.apply_tree_vecs(lambda x: x[..., None, :], target_positions)
+    )
 
     # Compute errors between the structures.
     # torch.Tensor (num_frames, num_positions)
-    error_dist = jnp.sqrt(
-        r3.vecs_squared_distance(local_pred_pos, local_target_pos)
-        + epsilon)
+    error_dist = torch.sqrt(r3.vecs_squared_distance(local_pred_pos, local_target_pos) + epsilon)
 
     if l1_clamp_distance:
-        error_dist = jnp.clip(error_dist, 0, l1_clamp_distance)
+        error_dist = torch.clip(error_dist, 0, l1_clamp_distance)
 
     normed_error = error_dist / length_scale
-    normed_error *= jnp.expand_dims(frames_mask, axis=-1)
-    normed_error *= jnp.expand_dims(positions_mask, axis=-2)
+    normed_error *= frames_mask.unsqueeze(-1)
+    normed_error *= positions_mask.unsqueeze(-2)
 
     normalization_factor = (
-            jnp.sum(frames_mask, axis=-1) *
-            jnp.sum(positions_mask, axis=-1)
+            torch.sum(frames_mask, dim=-1) *
+            torch.sum(positions_mask, dim=-1)
     )
-    return (jnp.sum(normed_error, axis=(-2, -1)) /
-            (epsilon + normalization_factor))
+    return (torch.sum(normed_error, dim=[-2, -1]) / (epsilon + normalization_factor))
 
 
 def _make_renaming_matrices():

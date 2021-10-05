@@ -46,8 +46,25 @@ config = {
     'rec_dist_num_bins': 40,
     'num_single_c': 384,
 
+    'loss': {
+        'fape_loss_unit_distance': 10.0,
+        'fape_clamp_distance': 10.0,
+        'loss_bb_rec_rec_weight': 0.5 * 0.25,
+        'loss_bb_rec_lig_weight': 0.5 * 0.25,
+        'loss_aa_rec_rec_weight': 0.5 * 0.25,
+        'loss_aa_rec_lig_weight': 0.5 * 0.25,
+        'loss_chi_value_weight': 0.5 * 0.5,
+        'loss_chi_norm_weight': 0.5 * 0.5,
+        'loss_rec_rec_lddt_weight': 0.01 * 0.5,
+        'loss_lig_rec_lddt_weight': 0.01 * 0.5,
+        'lddt_rec_bin_size': 2,
+        'lddt_rec_num_bins': 50,
+        'lddt_lig_bin_size': 2,
+        'lddt_lig_num_bins': 50,
+    },
+
     'Evoformer': {
-        'num_iter': 2,
+        'num_iter': 1,
         'EvoformerIteration': {
             'RowAttentionWithPairBias': {
                 'attention_num_c': 32,
@@ -87,7 +104,7 @@ config = {
     },
     'InputEmbedder': {
         'TemplatePairStack': {
-            'num_iter': 2,
+            'num_iter': 1,
             'TemplatePairStackIteration': {
                 'TriangleAttentionStartingNode': {
                     'attention_num_c': 32,
@@ -113,7 +130,7 @@ config = {
             'num_heads': 4
         },
         'CEPPairStack': {
-            'num_iter': 2,
+            'num_iter': 1,
             'TemplatePairStackIteration': {
                 'TriangleAttentionStartingNode': {
                     'attention_num_c': 32,
@@ -140,7 +157,7 @@ config = {
         }
     },
     'StructureModule': {
-        'num_iter': 1,
+        'num_iter': 2,
         'StructureModuleIteration': {
             'InvariantPointAttention': {
                 'num_head': 4,
@@ -153,6 +170,14 @@ config = {
             },
             'PredictSidechains': {
                 'num_c': 128
+            },
+            'PredictRecLDDT': {
+                'num_c': 128,
+                'num_bins': 50
+            },
+            'PredictLigLDDT': {
+                'num_c': 128,
+                'num_bins': 50
             }
         }
     }
