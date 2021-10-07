@@ -11,32 +11,29 @@ DTYPE_INT = np.int64
 
 config = {
     'rec_in_c': 23,
-    'lig_in_c': 40,
+    'lig_in_c': 47,
+    'extra_in_c': 238,
 
     'lig_in2d_c': 6,
     'rec_in2d_c': 40,
     'rec_relpos_c': 65,
 
     'frag_rec': 23,
-    'frag_lig': 41,
+    'frag_lig': 48,
     'frag_rr': 82,
-    'frag_ll': 126,
-    'frag_rl': 101,
-    'frag_lr': 101,
+    'frag_ll': 140,
+    'frag_rl': 108,
+    'frag_lr': 108,
 
     'hh_rec': 24,
-    'hh_lig': 41,
+    'hh_lig': 49,
     'hh_rr': 84,
-    'hh_ll': 126,
-    'hh_rl': 102,
-    'hh_lr': 102,
+    'hh_ll': 142,
+    'hh_rl': 110,
+    'hh_lr': 110,
 
     'position_scale': 10,
     'num_torsions': 7,
-
-    'template': {
-        'num_feats': 10
-    },
     'rep_1d': {
         'num_c': 64
     },
@@ -64,8 +61,9 @@ config = {
     },
 
     'Evoformer': {
-        'num_iter': 1,
+        'num_iter': 16,
         'EvoformerIteration': {
+            'checkpoint': True,
             'RowAttentionWithPairBias': {
                 'attention_num_c': 32,
                 'num_heads': 8
@@ -104,8 +102,10 @@ config = {
     },
     'InputEmbedder': {
         'TemplatePairStack': {
-            'num_iter': 1,
+            'num_iter': 2,
+            'checkpoint': True,
             'TemplatePairStackIteration': {
+                #'checkpoint': True,
                 'TriangleAttentionStartingNode': {
                     'attention_num_c': 32,
                     'num_heads': 4
@@ -130,7 +130,8 @@ config = {
             'num_heads': 4
         },
         'CEPPairStack': {
-            'num_iter': 1,
+            'num_iter': 2,
+            'checkpoint': True,
             'TemplatePairStackIteration': {
                 'TriangleAttentionStartingNode': {
                     'attention_num_c': 32,
@@ -154,11 +155,52 @@ config = {
         'CEPPointwiseAttention': {
             'attention_num_c': 32,
             'num_heads': 4
+        },
+        'FragExtraStack': {
+            'num_iter': 4,
+            'FragExtraStackIteration': {
+                'checkpoint': True,
+                'RowAttentionWithPairBias': {
+                    'attention_num_c': 8,
+                    'num_heads': 8
+                },
+                'ExtraColumnGlobalAttention': {
+                    'attention_num_c': 8,
+                    'num_heads': 8
+                },
+                'LigTransition': {
+                    'n': 4
+                },
+                'RecTransition': {
+                    'n': 4
+                },
+                'OuterProductMean': {
+                    'mid_c': 32
+                },
+                'TriangleMultiplicationIngoing': {
+                    'mid_c': 128,
+                },
+                'TriangleMultiplicationOutgoing': {
+                    'mid_c': 128,
+                },
+                'TriangleAttentionStartingNode': {
+                    'attention_num_c': 32,
+                    'num_heads': 4
+                },
+                'TriangleAttentionEndingNode': {
+                    'attention_num_c': 32,
+                    'num_heads': 4
+                },
+                'PairTransition': {
+                    'n': 4
+                }
+            }
         }
     },
     'StructureModule': {
         'num_iter': 2,
         'StructureModuleIteration': {
+            'checkpoint': False,
             'InvariantPointAttention': {
                 'num_head': 4,
                 'num_scalar_qk': 16,

@@ -42,9 +42,9 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-import residue_constants
-import r3
-import quat_affine
+from alphadock import residue_constants
+from alphadock import r3
+from alphadock import quat_affine
 
 
 def squared_difference(x, y):
@@ -339,7 +339,7 @@ def atom37_to_torsion_angles(
     aatype_flat = aatype.flatten()
     # Collect the atoms for the chi-angles.
     # Compute the table of chi angle indices. Shape: [restypes, chis=4, atoms=4].
-    chi_atom_indices = torch.tensor(get_chi_atom_indices(), device=aatype.device, dtype=aatype.dtype)
+    chi_atom_indices = get_chi_atom_indices().to(device=aatype.device, dtype=aatype.dtype)
     # Select atoms to compute chis. Shape: [batch, num_res, chis=4, atoms=4].
     atom_indices = chi_atom_indices[aatype_flat].unflatten(0, [num_batch, num_res])
     # Gather atom positions. Shape: [batch, num_res, chis=4, atoms=4, xyz=3].

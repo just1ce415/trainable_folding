@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 import torch.functional as F
+from torch.utils.checkpoint import checkpoint
 import math
 
 import quat_affine
@@ -121,7 +122,7 @@ class InvariantPointAttention(torch.nn.Module):
 class PredictSidechains(torch.nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        num_in_c = global_config['rep_1d']['num_c']
+        num_in_c = global_config['num_single_c']
         num_c = config['num_c']
         self.num_torsions = global_config['num_torsions']
 
@@ -150,7 +151,7 @@ class PredictSidechains(torch.nn.Module):
         )
 
     def forward(self, s_cur, s_ini):
-        a = self.s_cur(s_cur) + self.s_ini(s_ini)
+        a = self.s_cur(s_cur.clone()) + self.s_ini(s_ini)
         a += self.res1(a.clone())
         a += self.res2(a.clone())
         return self.final(a).reshape(*a.shape[:-1], self.num_torsions, 2)
@@ -195,10 +196,11 @@ class StructureModuleIteration(torch.nn.Module):
         )
 
         self.backbone_update = nn.Linear(num_1dc, 6)
+        self.lig_atoms_update = nn.Linear(num_1dc, 6)
 
         self.PredictSidechains = PredictSidechains(config['PredictSidechains'], global_config)
         self.PredictRecLDDT = PredictLDDT(config['PredictRecLDDT'], global_config)
-        self.PredictRigLDDT = PredictLDDT(config['PredictLigLDDT'], global_config)
+        self.PredictLigLDDT = PredictLDDT(config['PredictLigLDDT'], global_config)
         #self.PredictRecLigDgram = nn.Linear(global_config['rep_2d']['num_c'], )
 
     def forward(self, inputs):
@@ -208,7 +210,7 @@ class StructureModuleIteration(torch.nn.Module):
         num_atoms = lig_1d.shape[1]
 
         # IPA
-        s_update = self.InvariantPointAttention(rec_1d, lig_1d, rep_2d, rec_T, lig_T)
+        s_update = self.InvariantPointAttention(rec_1d.clone(), lig_1d.clone(), rep_2d, rec_T, lig_T)
         rec_1d += s_update[:, :num_res]
         lig_1d += s_update[:, num_res:]
 
@@ -223,10 +225,8 @@ class StructureModuleIteration(torch.nn.Module):
         # update backbone
         rec_T = quat_affine.QuatAffine.from_tensor(rec_T)
         lig_T = quat_affine.QuatAffine.from_tensor(lig_T)
-
-        rec_bb_update = self.backbone_update(rec_1d)
-        rec_T = rec_T.pre_compose(rec_bb_update)
-        lig_T = lig_T.pre_compose(self.backbone_update(lig_1d))
+        rec_T = rec_T.pre_compose(self.backbone_update(rec_1d.clone()))
+        lig_T = lig_T.pre_compose(self.lig_atoms_update(lig_1d.clone()))
 
         # sidechains
         rec_torsions = self.PredictSidechains(rec_1d, rec_1d_init)
@@ -236,9 +236,9 @@ class StructureModuleIteration(torch.nn.Module):
             'lig_1d': lig_1d,
             'rec_T': rec_T.to_tensor(),
             'lig_T': lig_T.to_tensor(),
-            'rec_torsions': rec_torsions,
-            'rec_lddt': self.PredictRecLDDT(rec_1d),
-            'lig_lddt': self.PredictRecLDDT(lig_1d)
+            'rec_torsions': rec_torsions,  #  (1, Nres, 7, 2)
+            'rec_lddt': self.PredictRecLDDT(rec_1d.clone()),
+            'lig_lddt': self.PredictLigLDDT(lig_1d.clone())
         }
 
 
@@ -249,19 +249,21 @@ class StructureModule(torch.nn.Module):
         num_1dc = global_config['num_single_c']
 
         self.layers = nn.ModuleList([StructureModuleIteration(config['StructureModuleIteration'], global_config) for _ in range(self.num_iter)])
-        self.norm_1d_init = nn.LayerNorm(num_1dc)
+        self.norm_rec_1d_init = nn.LayerNorm(num_1dc)
+        self.norm_lig_1d_init = nn.LayerNorm(num_1dc)
         self.norm_2d_init = nn.LayerNorm(global_config['rep_2d']['num_c'])
         self.rec_1d_proj = nn.Linear(num_1dc, num_1dc)
         self.lig_1d_proj = nn.Linear(num_1dc, num_1dc)
 
         self.position_scale = global_config['position_scale']
+        self.config = config
 
     def forward(self, inputs):
         # batch size must be one
         assert inputs['r1d'].shape[0] == 1
 
-        rec_1d_init = self.norm_1d_init(inputs['r1d'])
-        lig_1d_init = self.norm_1d_init(inputs['l1d'])
+        rec_1d_init = self.norm_rec_1d_init(inputs['r1d'])
+        lig_1d_init = self.norm_lig_1d_init(inputs['l1d'])
         pair = self.norm_2d_init(inputs['pair'])
 
         rec_1d = self.rec_1d_proj(rec_1d_init)
@@ -275,10 +277,12 @@ class StructureModule(torch.nn.Module):
         rec_T[:, rec_T_masked, :] = 0
         rec_T[:, rec_T_masked, 0] = 1
         rec_T[:, :, -3:] = rec_T[:, :, -3:] / self.position_scale
+        rec_T.requires_grad = True
 
         # Set up ligand starting frames
         lig_T = torch.zeros((1, lig_1d.shape[1], 7), device=lig_1d.device, dtype=lig_1d.dtype)
         lig_T[:, :, 0] = 1
+        lig_T.requires_grad = True
 
         x = {
             'rec_1d_init': rec_1d_init,
@@ -295,8 +299,14 @@ class StructureModule(torch.nn.Module):
         rec_lddt = []
         lig_lddt = []
 
+        #print({k: v.requires_grad for k, v in x.items()})
+
         for l in self.layers:
-            x.update(l(x))
+            if self.config['StructureModuleIteration']['checkpoint']:
+                update = checkpoint(lambda x: l(x), x)
+                x.update(update)
+            else:
+                x.update(l(x))
             rec_T_inter.append(x['rec_T'])
             lig_T_inter.append(x['lig_T'])
             rec_torsions_inter.append(x['rec_torsions'])

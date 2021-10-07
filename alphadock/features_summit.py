@@ -1,10 +1,11 @@
 import itertools
 import numpy as np
 import prody
-from rdkit import Chem
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import typing
 import torch
+import time
+from tqdm import tqdm
 
 from alphadock import utils
 from alphadock import residue_constants
@@ -64,7 +65,13 @@ REC_LIG_DISTOGRAM = {
 
 RESIGRAM_MAX = 32
 
-FRAGMENT_TEMPLATE_RADIUS = 10
+FRAGMENT_TEMPLATE_RADIUS = 12
+
+LIG_EXTRA_DISTANCE = {
+    'min': 3,
+    'max': 12,
+    'num_bins': 9
+}
 
 
 def atom_to_vector(atom):
@@ -150,6 +157,14 @@ def cbeta_atom(residue):
     return None
 
 
+def calc_sidechain_torsions(residue):
+    pass
+
+
+def calc_bb_torsions(a, b, c):
+    pass
+
+
 def residue_to_atom14(residue: prody.Residue):
     ideal_names = residue_constants.restype_name_to_atom14_names.get(residue.getResname().upper() if residue is not None else 'UNK', 'UNK')
     coords = np.zeros((len(ideal_names), 3), dtype=DTYPE_FLOAT)
@@ -167,7 +182,7 @@ def residue_to_atom14(residue: prody.Residue):
     return coords, has_coords
 
 
-def ag_to_features(rec_ag, ag_aln, tar_aln, no_mismatch=False):
+def ag_to_features(rec_ag, ag_aln, tar_aln, no_mismatch=False, residues_mask=None):
     # TODO: add sasa, torsions and AF confidence
 
     feats_1d = OrderedDict(
@@ -197,28 +212,31 @@ def ag_to_features(rec_ag, ag_aln, tar_aln, no_mismatch=False):
         assert a in AATYPE_WITH_X_AND_GAP
         assert b in AATYPE_WITH_X_AND_GAP
         if b != '-':
-            feats_1d['seq_aatype'].append(b)
-            feats_1d['ag_aatype'].append(a)
-            residue = None
-            if a != '-':
-                if no_mismatch and a != b:
-                    # TODO: decide with to do with mismatching residues when
-                    #       the residues in the structure to do correspond to
-                    #       the entry sequence. Threating them as missing for now
-                    print('Mismatch:', a, b)
-                    residue = None
-                else:
-                    residue = residues[ag_resi]
-            feats_1d['crd_mask'].append(residue is not None)
-            cbeta = cbeta_atom(residue)
-            feats_1d['crd_beta_mask'].append(cbeta is not None)
-            feats_1d['crd_beta'].append(None if cbeta is None else cbeta.getCoords())
-            feats_1d['has_frame'].append((residue is not None) and ('CA' in residue) and ('C' in residue) and ('N' in residue))
-            feats_1d['resi'].append(tar_resi)
+            if residues_mask is None or (residues_mask is not None and a != '-' and residues_mask[ag_resi] > 0.0):
+                feats_1d['seq_aatype'].append(b)
+                feats_1d['ag_aatype'].append(a)
+                residue = None
+                if a != '-':
+                    if no_mismatch and a != b:
+                        # TODO: decide what to do with mismatching residues when
+                        #       the residues in the structure to do correspond to
+                        #       the entry sequence. Treating them as missing for now
+                        print('Mismatch:', a, b)
+                        residue = None
+                    else:
+                        residue = residues[ag_resi]
+                feats_1d['crd_mask'].append(residue is not None)
+                cbeta = cbeta_atom(residue)
+                feats_1d['crd_beta_mask'].append(cbeta is not None)
+                feats_1d['crd_beta'].append(None if cbeta is None else cbeta.getCoords())
+                feats_1d['has_frame'].append((residue is not None) and ('CA' in residue) and ('C' in residue) and ('N' in residue))
+                feats_1d['resi'].append(tar_resi)
 
-            atom14_coords, atom14_has_coords = residue_to_atom14(residue)
-            feats_1d['atom14_coords'].append(atom14_coords)
-            feats_1d['atom14_has_coords'].append(atom14_has_coords)
+                atom14_coords, atom14_has_coords = residue_to_atom14(residue)
+                feats_1d['atom14_coords'].append(atom14_coords)
+                feats_1d['atom14_has_coords'].append(atom14_has_coords)
+                #feats_1d['atom14_coords'].append(np.zeros((14, 3)))
+                #feats_1d['atom14_has_coords'].append(np.zeros(14))
 
             tar_resi += 1
 
@@ -302,11 +320,8 @@ def dmat_to_distogram(dmat, dmin, dmax, num_bins, mask=None):
     dmat = dmat.copy().flatten()
     dgram = np.zeros((len(dmat), num_bins), dtype=DTYPE_FLOAT)
     bin_size = (dmax - dmin) / num_bins
-    dmat -= dmin
-    bin_ids = (dmat // bin_size).astype(int)
-    bin_ids[bin_ids < 0] = 0
-    bin_ids[bin_ids >= num_bins] = num_bins - 1
-    dgram[np.arange(len(dgram)), bin_ids] = 1.0
+    bin_ids = np.minimum(np.abs(((dmat - dmin) // bin_size).astype(int)), num_bins - 1)
+    dgram[np.arange(dgram.shape[0]), bin_ids] = 1.0
     dgram = dgram.reshape(*shape, num_bins)
 
     if mask is not None:
@@ -344,8 +359,7 @@ def rec_literal_to_numeric(rec_dict, seq_include_gap=False):
     resi_2d = dmat_to_distogram(resi_2d, -RESIGRAM_MAX, RESIGRAM_MAX + 1, RESIGRAM_MAX * 2 + 1)
 
     # mask distogram
-    nob_x, nob_y = np.where(crd_beta_mask_2d)
-    dgram[nob_x, nob_y] = 0.0
+    dgram *= crd_beta_mask_2d[..., None]
 
     return {
         'seq_aatype': np.stack(rec_dict['seq_aatype']),
@@ -358,6 +372,7 @@ def rec_literal_to_numeric(rec_dict, seq_include_gap=False):
         'resi_1d': resi_1d,
         'resi_2d': resi_2d,
         'distogram_2d': dgram,
+        'dmat': dmat,
         'crd_beta_mask_2d': crd_beta_mask_2d.astype(DTYPE_FLOAT),
         'atom14_coords': np.stack(rec_dict['atom14_coords']),
         'atom14_has_coords': np.stack(rec_dict['atom14_has_coords']),
@@ -430,9 +445,8 @@ def ground_truth_featurize(case_dict, group_dict):
     group_dir = case_dir / group_dict['name']
     group_feats = []
     for lig_dict in group_dict['ligands']:
-        mol = Chem.MolFromSmiles(lig_dict['smiles'])
-        mol_3d = Chem.MolFromMolFile(group_dir / lig_dict['sdf_id'] + '.mol', removeHs=True)
-        group_feats.append(ligand_featurize(mol, mol_3d))
+        lig_feats = np.load(DATA_DIR / 'featurized' / lig_dict['sdf_id'] + '.ligand_feats.npy', allow_pickle=True).item()
+        group_feats.append(lig_feats)
 
     group_num_atoms = sum([x['atom_feats'].shape[0] for x in group_feats])
     lig_matches = []
@@ -478,46 +492,13 @@ def ground_truth_featurize(case_dict, group_dict):
     return out
 
 
-def ligand_featurize(mol, mol_3d=None):
-    atom_feats = []
-    for atom in mol.GetAtoms():
-        atom_feats.append(atom_to_vector(atom))
-    bond_feats = []
-
-    for bond in mol.GetBonds():
-        vec = bond_to_vector(bond)
-        i, j = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
-        bond_feats.append([i, j, vec])
-        bond_feats.append([j, i, vec])
-    bonds_2d = np.zeros((len(atom_feats), len(atom_feats), 6))
-
-    if len(bond_feats) > 0:
-        bonds_2d[[x[0] for x in bond_feats], [x[1] for x in bond_feats]] = [x[2] for x in bond_feats]
-
-    out = OrderedDict(
-        atom_feats=np.stack(atom_feats),
-        bonds_2d=bonds_2d,
-        coords=None,
-        matches=None
-    )
-
-    if mol_3d is not None:
-        matches = mol.GetSubstructMatches(mol_3d, uniquify=False)
-        assert len(matches) > 0
-        out['matches'] = matches
-        out['coords'] = mol_3d.GetConformer(0).GetPositions()
-
-    return out
-
-
 def target_group_featurize(case_dict, group_dict):
-    case_dir = DATA_DIR / 'cases' / case_dict['case_name']
-    group_dir = case_dir / group_dict['name']
+    #case_dir = DATA_DIR / 'cases' / case_dict['case_name']
+    #group_dir = case_dir / group_dict['name']
     group_feats = []
     for lig_dict in group_dict['ligands']:
-        mol = Chem.MolFromSmiles(lig_dict['smiles'])
-        #mol_3d = Chem.MolFromMolFile(group_dir / lig_dict['sdf_id'] + '.mol', removeHs=True)
-        group_feats.append(ligand_featurize(mol))
+        lig_feats = np.load(DATA_DIR / 'featurized' / lig_dict['sdf_id'] + '.ligand_feats.npy', allow_pickle=True).item()
+        group_feats.append(lig_feats)
 
     group_1d = np.concatenate([x['atom_feats'] for x in group_feats], axis=0)
     group_2d = np.zeros((group_1d.shape[0], group_1d.shape[0], group_feats[0]['bonds_2d'].shape[-1]))
@@ -533,31 +514,31 @@ def target_group_featurize(case_dict, group_dict):
     }
 
 
-def hhpred_template_lig_to_features(mol_tpl: Chem.Mol, mol_3d_tpl: Chem.Mol, mol_tar: Chem.Mol, m_tpl, m_tar):
-    num_atoms_tar = mol_tar.GetNumAtoms()
-    feats = ligand_featurize(mol_tpl, mol_3d_tpl)
+def hhpred_template_lig_to_features(tpl_sdf_id, tar_num_atoms, m_tpl, m_tar):
+    feats = np.load(DATA_DIR / 'featurized' / tpl_sdf_id + '.ligand_feats.npy', allow_pickle=True).item()
+
     coords = np.zeros((feats['atom_feats'].shape[0], 3))
     coords[list(feats['matches'][0])] = feats['coords']
     atom_present = np.zeros(feats['atom_feats'].shape[0])
     atom_present[list(feats['matches'][0])] = 1
 
     # shape + 1 because of a new symbol gap "-"
-    dilated_atom_feats = np.zeros((num_atoms_tar, feats['atom_feats'].shape[-1] + 1))
+    dilated_atom_feats = np.zeros((tar_num_atoms, feats['atom_feats'].shape[-1] + 1))
     dilated_atom_feats[:, -1] = 1
     dilated_atom_feats[list(m_tar), :-1] = feats['atom_feats'][list(m_tpl)]
     dilated_atom_feats[list(m_tar), -1] = 0
 
-    dilated_atom_present = np.zeros(num_atoms_tar)
+    dilated_atom_present = np.zeros(tar_num_atoms)
     dilated_atom_present[list(m_tar)] = atom_present[list(m_tpl)]
     dilated_atom_present_2d = np.outer(dilated_atom_present, dilated_atom_present)
 
-    dilated_crd = np.zeros((num_atoms_tar, 3))
+    dilated_crd = np.zeros((tar_num_atoms, 3))
     dilated_crd[list(m_tar)] = coords[list(m_tpl)]
 
     dmat = utils.calc_dmat(dilated_crd, dilated_crd)
     dgram = dmat_to_distogram(dmat, LIG_DISTOGRAM['min'], LIG_DISTOGRAM['max'], LIG_DISTOGRAM['num_bins'], mask=dilated_atom_present_2d < 1)
 
-    dilated_bonds = np.zeros((num_atoms_tar, num_atoms_tar, feats['bonds_2d'].shape[-1]))
+    dilated_bonds = np.zeros((tar_num_atoms, tar_num_atoms, feats['bonds_2d'].shape[-1]))
     tar_ids = list(zip(itertools.product(m_tar, m_tar)))
     tpl_ids = list(zip(itertools.product(m_tpl, m_tpl)))
     dilated_bonds[tar_ids[0], tar_ids[1]] = feats['bonds_2d'][tpl_ids[0], tpl_ids[1]]
@@ -574,19 +555,15 @@ def hhpred_template_lig_to_features(mol_tpl: Chem.Mol, mol_3d_tpl: Chem.Mol, mol
     }
 
 
-def hh_template_featurize(tar_mol: Chem.Mol, tar_match, tar_case_dict, tar_group_dict, tar_ligand_id, temp_mol: Chem.Mol, temp_mol_3d: Chem.Mol, temp_match, temp_dict, temp_case_dict):
+def hh_template_featurize(tar_case_dict, tar_group_dict, tar_ligand_id, temp_dict, temp_case_dict, temp_sdf_id, tar_match, temp_match):
+    #print(tar_case_dict['case_name'], tar_group_dict['name'], tar_ligand_id, temp_dict['lig_match']['ref_chemid'], temp_sdf_id, tar_match, temp_match)
     rec_literal = hhpred_template_rec_to_features(temp_case_dict, tar_case_dict, temp_dict['hhpred'])
     rec_feats = rec_literal_to_numeric(rec_literal, seq_include_gap=True)
 
     num_atoms_total = sum([x['num_heavy_atoms'] for x in tar_group_dict['ligands']])
-    atom_begin = sum([x['num_heavy_atoms'] for x in tar_group_dict['ligands'][:tar_ligand_id]])
-    atom_end = atom_begin + tar_group_dict['ligands'][tar_ligand_id]['num_heavy_atoms']
-    lig_feats = hhpred_template_lig_to_features(temp_mol, temp_mol_3d, tar_mol, temp_match, tar_match)
-
-    #print(tar_group_dict)
-    #print(tar_group_dict['ligands'][tar_ligand_id])
-    #print(tar_mol.GetNumAtoms())
-    #print(tar_mol.GetNumHeavyAtoms())
+    tar_atom_begin = sum([x['num_heavy_atoms'] for x in tar_group_dict['ligands'][:tar_ligand_id]])
+    tar_match = [x + tar_atom_begin for x in tar_match]
+    lig_feats = hhpred_template_lig_to_features(temp_sdf_id, num_atoms_total, temp_match, tar_match)
 
     rec_1d = np.concatenate([
         rec_feats['ag_aatype'],
@@ -605,27 +582,23 @@ def hh_template_featurize(tar_mol: Chem.Mol, tar_match, tar_case_dict, tar_group
     lig_1d = np.concatenate([lig_feats['atom_feats_1d'], lig_feats['atom_present_1d'][..., None]], axis=-1)
 
     extra = np.tile(lig_feats['atom_feats_1d'], (lig_feats['atom_feats_1d'].shape[0], 1, 1))
-    ll_2d_local = np.concatenate([
+    ll_2d = np.concatenate([
         lig_feats['distogram_2d'],
         lig_feats['bond_feats_2d'],
         lig_feats['atom_present_2d'][..., None],
         extra,
         extra.transpose([1, 0, 2]),
     ], axis=-1)
-    ll_2d = np.zeros((num_atoms_total, num_atoms_total, ll_2d_local.shape[-1]))
-    ll_2d[atom_begin:atom_end, atom_begin:atom_end, :] = ll_2d_local
 
     rl_dmat = utils.calc_dmat(rec_feats['crd_beta'], lig_feats['atom_coords_1d'])
     rl_present_2d = np.outer(rec_feats['crd_beta_mask'], lig_feats['atom_present_1d'])
     rl_dgram = dmat_to_distogram(rl_dmat, REC_LIG_DISTOGRAM['min'], REC_LIG_DISTOGRAM['max'], REC_LIG_DISTOGRAM['num_bins'], mask=rl_present_2d < 1)
-    rl_2d_local = np.concatenate([
-        rl_dgram,
+    rl_2d = np.concatenate([
+        rl_dgram * rl_present_2d[..., None],
         rl_present_2d[..., None],
         np.tile(rec_feats['ag_aatype'], (lig_feats['atom_feats_1d'].shape[0], 1, 1)).transpose([1, 0, 2]),
         np.tile(lig_feats['atom_feats_1d'], (rec_feats['ag_aatype'].shape[0], 1, 1)),
     ], axis=-1)
-    rl_2d = np.zeros((rl_2d_local.shape[0], num_atoms_total, rl_2d_local.shape[-1]))
-    rl_2d[:, atom_begin:atom_end] = rl_2d_local
 
     lr_2d = rl_2d.transpose([1, 0, 2])
 
@@ -640,59 +613,13 @@ def hh_template_featurize(tar_mol: Chem.Mol, tar_match, tar_case_dict, tar_group
     return out
 
 
-def match_mols(mol1, mol2, flags=['r']):
-    smarts_str = utils.calc_mcs(mol1, mol2, mcs_flags=flags)[0]
-    assert len(smarts_str) > 0
-    smarts = Chem.MolFromSmarts(smarts_str)
-    matches_tar = mol1.GetSubstructMatches(smarts, uniquify=True)
-    matches_tpl = mol2.GetSubstructMatches(smarts, uniquify=True)
-    return smarts_str, matches_tar, matches_tpl
-
-
-def hh_templates_featurize_many(tar_case_dict, case_dicts):
-    templates = []
-
-    case_dir = DATA_DIR / 'cases' / tar_case_dict['case_name']
-    for tar_group_dict in tar_case_dict['ligand_groups']:
-        tar_group_dir = case_dir / tar_group_dict['name']
-        for tar_ligand_id, tar_ligand_dict in enumerate(tar_group_dict['ligands']):
-            temp_json = tar_group_dir / tar_ligand_dict['sdf_id'] + '.templates.json'
-            if not temp_json.exists():
-                continue
-            tar_mol = Chem.MolFromSmiles(tar_ligand_dict['smiles'])
-            assert tar_mol.GetNumAtoms() == tar_mol.GetNumHeavyAtoms()
-            temp_list = utils.read_json(temp_json)
-            for temp_hh_dict in temp_list:
-                temp_case_dict = case_dicts[temp_hh_dict['hhpred']['hh_pdb']]
-                temp_chemid = temp_hh_dict['lig_match']['ref_chemid']
-                for temp_group_dict in temp_case_dict['ligand_groups']:
-                    for temp_ligand_dict in temp_group_dict['ligands']:
-                        if temp_chemid != temp_ligand_dict['chemid']:
-                            continue
-                        temp_mol = Chem.MolFromSmiles(temp_ligand_dict['smiles'])
-                        assert tar_mol.GetNumAtoms() == tar_mol.GetNumHeavyAtoms()
-                        temp_mol_3d = Chem.MolFromMolFile(DATA_DIR / 'cases' / temp_case_dict['case_name'] / temp_group_dict['name'] / temp_ligand_dict['sdf_id'] + '.mol', removeHs=True)
-                        smarts, tar_matches, temp_matches = match_mols(tar_mol, temp_mol)
-                        for tar_match in tar_matches:
-                            for temp_match in temp_matches:
-                                temp_feats = hh_template_featurize(tar_mol, tar_match, tar_case_dict, tar_group_dict, tar_ligand_id, temp_mol, temp_mol_3d, temp_match, temp_hh_dict, temp_case_dict)
-                                temp_feats['tar_match'] = tar_match
-                                temp_feats['temp_match'] = temp_match
-                                temp_feats['smarts'] = smarts
-                                #temp_feats['smarts'] =
-                                #temp_feats['smarts'] =
-                                templates.append(temp_feats)
-    return templates
-
-
 def fragment_template_group_featurize(case_dict, group_dict):
     case_dir = DATA_DIR / 'cases' / case_dict['case_name']
     group_dir = case_dir / group_dict['name']
     group_feats = []
     for lig_dict in group_dict['ligands']:
-        mol = Chem.MolFromSmiles(lig_dict['smiles'])
-        mol_3d = Chem.MolFromMolFile(group_dir / lig_dict['sdf_id'] + '.mol', removeHs=True)
-        group_feats.append(ligand_featurize(mol, mol_3d))
+        lig_feats = np.load(DATA_DIR / 'featurized' / lig_dict['sdf_id'] + '.ligand_feats.npy', allow_pickle=True).item()
+        group_feats.append(lig_feats)
 
     atom_feats_1d = np.concatenate([x['atom_feats'] for x in group_feats], axis=0)
 
@@ -731,15 +658,39 @@ def fragment_template_group_featurize(case_dict, group_dict):
         'atom_present_1d': atom_present_1d,
         'atom_present_2d': atom_present_2d,
         'bond_feats_2d': bond_feats_2d,
-        'distogram_2d': dgram,
+        'distogram_2d': dgram * atom_present_2d[..., None],
         'matches_smiles_to_3d': matches
     }
 
 
 def fragment_template_featurize(temp_case_dict, group_dict):
+    lig_feats = fragment_template_group_featurize(temp_case_dict, group_dict)
+    lig_1d = np.concatenate([lig_feats['atom_feats_1d'], lig_feats['atom_present_1d'][..., None]], axis=-1)
+
+    extra = np.tile(lig_feats['atom_feats_1d'], (lig_feats['atom_feats_1d'].shape[0], 1, 1))
+    ll_2d = np.concatenate([
+        lig_feats['distogram_2d'],
+        lig_feats['bond_feats_2d'],
+        lig_feats['atom_present_2d'][..., None],
+        extra,
+        extra.transpose([1, 0, 2]),
+    ], axis=-1)
+
+    #start = time.time()
     rec_ag = prody.parsePDB(DATA_DIR / 'cases' / temp_case_dict['case_name'] / 'rec_orig.pdb')
-    rec_literal = ag_to_features(rec_ag, temp_case_dict['entity_info']['pdb_aln'], temp_case_dict['entity_info']['entity_aln'])
+
+    # select residues within FRAGMENT_TEMPLATE_RADIUS from the ligand
+    residues = list(rec_ag.getHierView().iterResidues())
+    residues_coords = np.stack([x['CA'].getCoords() if x['CA'] is not None else np.zeros(3) for x in residues])
+    residues_has_coords = np.array([x['CA'] is not None for x in residues], dtype=DTYPE_INT)
+    rl_ca_dmat = utils.calc_dmat(residues_coords, lig_feats['atom_coords_1d'])
+    residues_mask = np.any(rl_ca_dmat <= FRAGMENT_TEMPLATE_RADIUS, axis=1) * residues_has_coords
+
+    #print(time.time() - start); start = time.time()
+    rec_literal = ag_to_features(rec_ag, temp_case_dict['entity_info']['pdb_aln'], temp_case_dict['entity_info']['entity_aln'], residues_mask=residues_mask)
+    #print(time.time() - start); start = time.time()
     rec_feats = rec_literal_to_numeric(rec_literal)
+    #print(time.time() - start); start = time.time()
 
     rec_1d = np.concatenate([
         rec_feats['seq_aatype'],
@@ -754,24 +705,13 @@ def fragment_template_featurize(temp_case_dict, group_dict):
         extra,
         extra.transpose([1, 0, 2]),
     ], axis=2)
+    #print(time.time() - start); start = time.time()
 
-    lig_feats = fragment_template_group_featurize(temp_case_dict, group_dict)
-    lig_1d = np.concatenate([lig_feats['atom_feats_1d'], lig_feats['atom_present_1d'][..., None]], axis=-1)
-
-    extra = np.tile(lig_feats['atom_feats_1d'], (lig_feats['atom_feats_1d'].shape[0], 1, 1))
-    ll_2d = np.concatenate([
-        lig_feats['distogram_2d'],
-        lig_feats['bond_feats_2d'],
-        lig_feats['atom_present_2d'][..., None],
-        extra,
-        extra.transpose([1, 0, 2]),
-    ], axis=-1)
-
-    rl_dmat = utils.calc_dmat(rec_feats['crd_beta'], lig_feats['atom_coords_1d'])
+    rl_cb_dmat = utils.calc_dmat(rec_feats['crd_beta'], lig_feats['atom_coords_1d'])
     rl_present_2d = np.outer(rec_feats['crd_beta_mask'], lig_feats['atom_present_1d'])
-    rl_dgram = dmat_to_distogram(rl_dmat, REC_LIG_DISTOGRAM['min'], REC_LIG_DISTOGRAM['max'], REC_LIG_DISTOGRAM['num_bins'], mask=rl_present_2d < 1)
+    rl_dgram = dmat_to_distogram(rl_cb_dmat, REC_LIG_DISTOGRAM['min'], REC_LIG_DISTOGRAM['max'], REC_LIG_DISTOGRAM['num_bins'], mask=rl_present_2d < 1)
     rl_2d = np.concatenate([
-        rl_dgram,
+        rl_dgram * rl_present_2d[..., None],
         rl_present_2d[..., None],
         np.tile(rec_feats['seq_aatype'], (lig_feats['atom_feats_1d'].shape[0], 1, 1)).transpose([1, 0, 2]),
         np.tile(lig_feats['atom_feats_1d'], (rec_feats['seq_aatype'].shape[0], 1, 1)),
@@ -779,13 +719,14 @@ def fragment_template_featurize(temp_case_dict, group_dict):
 
     lr_2d = rl_2d.transpose([1, 0, 2])
 
-    if FRAGMENT_TEMPLATE_RADIUS is not None:
-        close_residue_mask = np.any(rl_dmat <= FRAGMENT_TEMPLATE_RADIUS, axis=1)
-        rec_1d = rec_1d[close_residue_mask]
-        rr_2d = rr_2d[close_residue_mask]
-        rr_2d = rr_2d[:, close_residue_mask]
-        rl_2d = rl_2d[close_residue_mask]
-        lr_2d = lr_2d[:, close_residue_mask]
+    #if FRAGMENT_TEMPLATE_RADIUS is not None:
+    #    close_residue_mask = np.any(rl_dmat <= FRAGMENT_TEMPLATE_RADIUS, axis=1)
+    #    rec_1d = rec_1d[close_residue_mask]
+    #    rr_2d = rr_2d[close_residue_mask]
+    #    rr_2d = rr_2d[:, close_residue_mask]
+    #    rl_2d = rl_2d[close_residue_mask]
+    #    lr_2d = lr_2d[:, close_residue_mask]
+    #print(time.time() - start); start = time.time()
 
     out = {
         'lig_1d': lig_1d.astype(DTYPE_FLOAT),
@@ -807,113 +748,77 @@ def stack_with_padding(arrays: typing.List[np.ndarray]):
     return np.stack(padded_arrays)
 
 
-def fragment_template_list_featurize(tar_group_dict, templates):
-    tar_mols = [Chem.MolFromSmiles(x['smiles']) for x in tar_group_dict['ligands']]
-    tar_size = sum([x.GetNumHeavyAtoms() for x in tar_mols])
-
+def fragment_template_list_featurize(tpl_case_dicts, tpl_group_dicts, mappings):
     frag_feats_list = []
 
-    for tpl_id, tpl in enumerate(templates):
-        tpl_dir = DATA_DIR / 'cases' / tpl['tpl_chain']
-        tpl_case_dict = utils.read_json(tpl_dir / 'case.json')
-        tpl_group_dict = tpl_case_dict['ligand_groups'][tpl['tpl_group_id']]
-        assert tpl_group_dict['name'] == tpl['tpl_group']
-
-        assert tpl_group_dict['ligands'][tpl['tpl_lig_id']]['chemid'] == tpl['tpl_chemid']
-        tar_mol = tar_mols[tpl['tar_lig_id']]
-        tpl_mol = Chem.MolFromSmiles(tpl_group_dict['ligands'][tpl['tpl_lig_id']]['smiles'])
-        smarts_mol = Chem.MolFromSmarts(tpl['match']['mcs_smarts'])
-        tar_matches = tar_mol.GetSubstructMatches(smarts_mol, uniquify=False)
-        tpl_matches = tpl_mol.GetSubstructMatches(smarts_mol, uniquify=False)
-        assert len(tar_matches) > 0
-        assert len(tpl_matches) > 0
-
-        tar_id_shift = 0
-        for tar_mol in tar_mols[:tpl['tar_lig_id']]:
-            tar_id_shift += tar_mol.GetNumHeavyAtoms()
-
-        tpl_id_shift = 0
-        for tpl_lig in tpl_group_dict['ligands'][:tpl['tpl_lig_id']]:
-            tpl_id_shift += Chem.MolFromSmiles(tpl_lig['smiles']).GetNumHeavyAtoms()
-
-        matches = []
-        for tar_m in tar_matches:
-            tar_m = np.array(tar_m, dtype=np.int32) + tar_id_shift
-            for tpl_m in tpl_matches:
-                tpl_m = np.array(tpl_m, dtype=np.int32) + tpl_id_shift
-                match = np.full(tar_size, -1)
-                match[tar_m] = tpl_m
-                matches.append(match.astype(DTYPE_INT))
-
+    for tpl_case_dict, tpl_group_dict, mapping in tqdm(list(zip(tpl_case_dicts, tpl_group_dicts, mappings))):
+        #frag_feats = np.load(f"{DATA_DIR}/featurized/{tpl_case_dict['case_name']}.{tpl_group_dict['name']}.fragment_feats.npy", allow_pickle=True).item()
         frag_feats = fragment_template_featurize(tpl_case_dict, tpl_group_dict)
-        frag_feats['matches'] = matches
-        frag_feats['tpl_id'] = tpl_id
+        frag_feats['fragment_mapping'] = np.array(mapping).astype(DTYPE_INT)
+
+        num_res = len(frag_feats['rec_1d'])
+        num_atoms = len(frag_feats['lig_1d'])
+        frag_feats['num_res'] = num_res
+        frag_feats['num_atoms'] = num_atoms
+
+        frag_feats['ll_2d_mask'] = np.ones((num_atoms, num_atoms)).astype(DTYPE_FLOAT)
+        frag_feats['rr_2d_mask'] = np.ones((num_res, num_res)).astype(DTYPE_FLOAT)
+        frag_feats['rl_2d_mask'] = np.ones((num_res, num_atoms)).astype(DTYPE_FLOAT)
+        frag_feats['lr_2d_mask'] = np.ones((num_atoms, num_res)).astype(DTYPE_FLOAT)
+
         frag_feats_list.append(frag_feats)
 
-    output = {
-        'lig_1d': [],
-        'rec_1d': [],
-        'll_2d': [],
-        'rr_2d': [],
-        'rl_2d': [],
-        'lr_2d': [],
-        'll_2d_mask': [],
-        'rr_2d_mask': [],
-        'rl_2d_mask': [],
-        'lr_2d_mask': [],
-        'num_res': [],
-        'num_atoms': [],
-        'fragment_mapping': [],
-        'tpl_id': []
-    }
-
-    for frag_feats in frag_feats_list:
-        #print('matches', len(frag_feats['matches']))
-        for match in frag_feats['matches']:
-            output['lig_1d'].append(frag_feats['lig_1d'])
-            output['rec_1d'].append(frag_feats['rec_1d'])
-            output['ll_2d'].append(frag_feats['ll_2d'])
-            output['rr_2d'].append(frag_feats['rr_2d'])
-            output['rl_2d'].append(frag_feats['rl_2d'])
-            output['lr_2d'].append(frag_feats['lr_2d'])
-            output['tpl_id'].append(frag_feats['tpl_id'])
-            output['fragment_mapping'].append(match)
-
-            num_res = len(frag_feats['rec_1d'])
-            num_atoms = len(frag_feats['lig_1d'])
-            output['num_res'].append(num_res)
-            output['num_atoms'].append(num_atoms)
-
-            output['ll_2d_mask'].append(np.ones((num_atoms, num_atoms)).astype(DTYPE_FLOAT))
-            output['rr_2d_mask'].append(np.ones((num_res, num_res)).astype(DTYPE_FLOAT))
-            output['rl_2d_mask'].append(np.ones((num_res, num_atoms)).astype(DTYPE_FLOAT))
-            output['lr_2d_mask'].append(np.ones((num_atoms, num_res)).astype(DTYPE_FLOAT))
-
-    if len(output['lig_1d']) > 0:
+    #start = time.time()
+    if len(frag_feats_list) > 0:
+        output = defaultdict(list)
+        for frag_feats in frag_feats_list:
+            for k, v in frag_feats.items():
+                output[k].append(v)
+        #print(time.time() - start); start = time.time()
         output = {k: stack_with_padding(v) if isinstance(v[0], np.ndarray) else np.array(v, dtype=DTYPE_INT) for k, v in output.items()}
+        #print(time.time() - start); start = time.time()
     else:
         output = None
 
     return output
 
 
-def example():
-    from tqdm import tqdm
-    print(DATA_DIR)
-    #print(rec_featurize(utils.read_json(DATA_DIR / 'cases/10GS_A/case.json')))
-    tar_case_dict = utils.read_json(DATA_DIR / 'cases/3HCF_A/case.json')
-    tar_group_dict = tar_case_dict['ligand_groups'][1]
-    tar_ligand_id = 1
-    template_dict = utils.read_json(DATA_DIR / 'cases/3HCF_A/LT5_SAH/3hcf_SAH_1_A_3001__D___.templates.json')[0]
-    template_case_dict = utils.read_json(DATA_DIR / 'cases/4EKG_A/case.json')
-    template_mol_file = DATA_DIR / 'cases/4EKG_A/0QJ/4ekg_0QJ_1_A_500__B___.mol'
-    #print(hh_template_featurize(tar_case_dict, tar_group_dict, tar_ligand_id, template_dict, template_case_dict, template_mol_file))
+def fragment_extra_featurize(tpl_case_dict, tpl_group_dict, mapping):
+    lig_feats = fragment_template_group_featurize(tpl_case_dict, tpl_group_dict)
 
-    cases = OrderedDict((x.dirname().basename(), utils.read_json(x)) for x in tqdm(sorted(DATA_DIR.glob('cases/*/case.json'))))
-    for k, v in tqdm(list(cases.items())[:]):
-        temps = hh_templates_featurize_many(v, cases)
-        if temps:
-            print(temps[0])
+    rec_ag = prody.parsePDB(DATA_DIR / 'cases' / tpl_case_dict['case_name'] / 'rec_orig.pdb')
+    rec_coords = rec_ag.calpha.getCoords()
+    rec_aatype = np.array([AATYPE_WITH_X.get(x, AATYPE_WITH_X['X']) for x in rec_ag.calpha.getSequence()], dtype=np.int)
+    lr_dmat = utils.calc_dmat(lig_feats['atom_coords_1d'], rec_coords)
+
+    close_mask = np.any(lr_dmat < LIG_EXTRA_DISTANCE['max'], axis=0)
+    rec_aatype = rec_aatype[close_mask]
+    lr_dmat = lr_dmat[:, close_mask]
+    rec_aatype_onehot = np.zeros((rec_aatype.shape[0], len(AATYPE_WITH_X)))
+    rec_aatype_onehot[range(rec_aatype.shape[0]), rec_aatype] = 1.0
+    lr_dram = dmat_to_distogram(lr_dmat, LIG_EXTRA_DISTANCE['min'], LIG_EXTRA_DISTANCE['max'], LIG_EXTRA_DISTANCE['num_bins'])
+
+    counts = np.matmul(lr_dram.swapaxes(1, 2), rec_aatype_onehot[None]).reshape(lr_dram.shape[0], -1)
+
+    out = np.zeros((len(mapping), lig_feats['atom_feats_1d'].shape[-1] + 1 + counts.shape[1] + 1), dtype=DTYPE_FLOAT)
+    mapping = np.array(mapping, dtype=np.int)
+    tpl_ids = mapping[mapping > -1]
+    out[mapping > -1, :lig_feats['atom_feats_1d'].shape[-1]] = lig_feats['atom_feats_1d'][tpl_ids]
+    out[mapping > -1, lig_feats['atom_feats_1d'].shape[-1]] = lig_feats['atom_present_1d'][tpl_ids]
+    out[mapping > -1, lig_feats['atom_feats_1d'].shape[-1]+1:out.shape[-1]-1] = counts[tpl_ids]
+    out *= (mapping > -1).astype(DTYPE_FLOAT)[:, None]
+    out[mapping == -1, -1] = 1  # gap (unmapped target atoms)
+    return out  # (Natoms, Nfeats)
+
+
+def fragment_extra_list_featurize(tpl_case_dicts, tpl_group_dicts, mappings):
+    feats_list = []
+
+    for tpl_case_dict, tpl_group_dict, mapping in tqdm(list(zip(tpl_case_dicts, tpl_group_dicts, mappings))):
+        lig_feats = fragment_extra_featurize(tpl_case_dict, tpl_group_dict, mapping)
+        feats_list.append(lig_feats)
+
+    return np.stack(feats_list)
 
 
 def example2():

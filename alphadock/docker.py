@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
+from torch.utils.checkpoint import checkpoint
 import math
 import functools
 
@@ -17,7 +18,7 @@ class DockerIteration(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
         self.InputEmbedder = modules.InputEmbedder(config['InputEmbedder'], global_config)
-        self.Evoformer = nn.Sequential(*[modules.EvoformerIteration(config['Evoformer']['EvoformerIteration'], global_config) for x in range(config['Evoformer']['num_iter'])])
+        self.Evoformer = nn.ModuleList([modules.EvoformerIteration(config['Evoformer']['EvoformerIteration'], global_config) for x in range(config['Evoformer']['num_iter'])])
         self.EvoformerExtractSingleLig = nn.Linear(global_config['rep_1d']['num_c'], global_config['num_single_c'])
         self.EvoformerExtractSingleRec = nn.Linear(global_config['rep_1d']['num_c'], global_config['num_single_c'])
         self.StructureModule = structure.StructureModule(config['StructureModule'], global_config)
@@ -27,7 +28,13 @@ class DockerIteration(nn.Module):
 
     def forward(self, input):
         x = self.InputEmbedder(input)
-        x = self.Evoformer(x)
+
+        for evo_iter in self.Evoformer:
+            if self.config['Evoformer']['EvoformerIteration']['checkpoint']:
+                x = checkpoint(lambda a, b, c: evo_iter({'l1d': a, 'r1d': b, 'pair': c}), x['l1d'], x['r1d'], x['pair'])
+            else:
+                x = evo_iter(x)
+
         pair = x['pair']
         rec_single = self.EvoformerExtractSingleRec(x['r1d'])
         lig_single = self.EvoformerExtractSingleLig(x['l1d'][:, 0])
@@ -41,7 +48,7 @@ class DockerIteration(nn.Module):
 
         assert struct_out['rec_T'].shape[0] == 1
         final_all_atom = all_atom.backbone_affine_and_torsions_to_all_atom(
-            struct_out['rec_T'][0][-1],
+            struct_out['rec_T'][0][-1].clone(),
             struct_out['rec_torsions'][0][-1],
             input['target']['rec_aatype'][0]
         )
@@ -320,5 +327,32 @@ def example3():
         #print({k: v.shape if isinstance(v, torch.Tensor) else v for k, v in model(item).items()})
 
 
+def example4():
+    from config import config, DATA_DIR
+
+    #with torch.autograd.set_detect_anomaly(True):
+    model = DockerIteration(config, config).cuda()
+    model.train()
+
+    pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print('Num params:', pytorch_total_params)
+
+    from dataset import DockingDataset
+    ds = DockingDataset(DATA_DIR, 'train_split/debug.json')
+    item = ds[0]
+
+    for k1, v1 in item.items():
+        print(k1)
+        for k2, v2 in v1.items():
+            v1[k2] = torch.as_tensor(v2)[None].cuda()
+            print('    ', k2, v1[k2].shape, v1[k2].dtype)
+
+    #print(item['fragments']['rr_2d'])
+    out = model(item)
+    out['loss_total'].backward()
+
+    #print({k: v.shape if isinstance(v, torch.Tensor) else v for k, v in model(item).items()})
+
+
 if __name__ == '__main__':
-    example3()
+    example4()

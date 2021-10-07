@@ -37,8 +37,9 @@ unintended use of these cores on both GPUs and TPUs.
 
 import collections
 from typing import List
-import quat_affine
 import torch
+
+from alphadock import quat_affine
 
 
 # Array of 3-component vectors, stored as individual array for

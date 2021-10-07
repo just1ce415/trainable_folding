@@ -38,11 +38,10 @@ actually used are executed.
 
 import functools
 from typing import Tuple
-
 import torch
 import numpy as np
 
-from config import DTYPE_FLOAT
+from alphadock.config import DTYPE_FLOAT
 
 
 # pylint: disable=bad-whitespace

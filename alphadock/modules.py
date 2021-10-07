@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 import torch.functional as F
+from torch.utils.checkpoint import checkpoint
 import math
 
 
@@ -20,12 +21,8 @@ class RowAttentionWithPairBias(nn.Module):
         self.rec_norm = nn.LayerNorm(rec_num_c)
         self.lig_norm = nn.LayerNorm(lig_num_c)
 
-        self.rec_q = nn.Linear(rec_num_c, attn_num_c * num_heads, bias=False)
-        self.rec_k = nn.Linear(rec_num_c, attn_num_c * num_heads, bias=False)
-        self.rec_v = nn.Linear(rec_num_c, attn_num_c * num_heads, bias=False)
-        self.lig_q = nn.Linear(lig_num_c, attn_num_c * num_heads, bias=False)
-        self.lig_k = nn.Linear(lig_num_c, attn_num_c * num_heads, bias=False)
-        self.lig_v = nn.Linear(lig_num_c, attn_num_c * num_heads, bias=False)
+        self.rec_qkv = nn.Linear(rec_num_c, 3 * attn_num_c * num_heads, bias=False)
+        self.lig_qkv = nn.Linear(lig_num_c, 3 * attn_num_c * num_heads, bias=False)
 
         self.rec_rec_project = nn.Linear(pair_rep_num_c, num_heads, bias=False)
         self.lig_lig_project = nn.Linear(pair_rep_num_c, num_heads, bias=False)
@@ -47,17 +44,11 @@ class RowAttentionWithPairBias(nn.Module):
         rec_profile = self.rec_norm(rec_profile)
         lig_profile = self.rec_norm(lig_profile)
 
-        rec_q = self.rec_q(rec_profile).view(*rec_profile.shape[:-1], self.attn_num_c, self.num_heads)
-        rec_k = self.rec_k(rec_profile).view(*rec_profile.shape[:-1], self.attn_num_c, self.num_heads)
-        rec_v = self.rec_v(rec_profile).view(*rec_profile.shape[:-1], self.attn_num_c, self.num_heads)
-        lig_q = self.lig_q(lig_profile).view(*lig_profile.shape[:-1], self.attn_num_c, self.num_heads)
-        lig_k = self.lig_k(lig_profile).view(*lig_profile.shape[:-1], self.attn_num_c, self.num_heads)
-        lig_v = self.lig_v(lig_profile).view(*lig_profile.shape[:-1], self.attn_num_c, self.num_heads)
+        rec_q, rec_k, rec_v = torch.tensor_split(self.rec_qkv(rec_profile).view(*rec_profile.shape[:-1], self.attn_num_c, 3 * self.num_heads), 3, dim=-1)
+        lig_q, lig_k, lig_v = torch.tensor_split(self.lig_qkv(lig_profile).view(*lig_profile.shape[:-1], self.attn_num_c, 3 * self.num_heads), 3, dim=-1)
 
         weights = torch.zeros((batch_size, num_cep, num_res + num_atoms, num_res + num_atoms, self.num_heads), device=rec_profile.device, dtype=rec_profile.dtype)
 
-        #print(rec_q.shape)
-        #print(lig_k.shape)
         rec_rec_aff = torch.einsum('bich,bjch->bijh', rec_q, rec_k)
         rec_lig_aff = torch.einsum('bich,bmjch->bmijh', rec_q, lig_k)
         lig_rec_aff = torch.einsum('bich,bmjch->bmjih', rec_k, lig_q)
@@ -102,11 +93,7 @@ class LigColumnAttention(nn.Module):
         lig_num_c = global_config['rep_1d']['num_c']
 
         self.lig_norm = nn.LayerNorm(lig_num_c)
-
-        self.lig_q = nn.Linear(lig_num_c, attn_num_c * num_heads, bias=False)
-        self.lig_k = nn.Linear(lig_num_c, attn_num_c * num_heads, bias=False)
-        self.lig_v = nn.Linear(lig_num_c, attn_num_c * num_heads, bias=False)
-
+        self.lig_qkv = nn.Linear(lig_num_c, attn_num_c * num_heads * 3, bias=False)
         self.lig_final = nn.Linear(attn_num_c * num_heads, lig_num_c)
 
         self.attn_num_c = attn_num_c
@@ -115,17 +102,40 @@ class LigColumnAttention(nn.Module):
     def forward(self, lig_profile):
         lig_profile = self.lig_norm(lig_profile)
 
-        lig_q = self.lig_q(lig_profile).view(*lig_profile.shape[:-1], self.attn_num_c, self.num_heads)
-        lig_k = self.lig_k(lig_profile).view(*lig_profile.shape[:-1], self.attn_num_c, self.num_heads)
-        lig_v = self.lig_v(lig_profile).view(*lig_profile.shape[:-1], self.attn_num_c, self.num_heads)
+        lig_q, lig_k, lig_v = torch.tensor_split(self.lig_qkv(lig_profile).view(*lig_profile.shape[:-1], self.attn_num_c, self.num_heads * 3), 3, dim=-1)
 
-        factor = 1 / math.sqrt(self.attn_num_c)
-        lig_lig_aff = torch.einsum('bmich,bmjch->bmijh', lig_q, lig_k) * factor
-        weights = torch.softmax(lig_lig_aff, dim=-2)
+        lig_lig_aff = torch.einsum('bmich,bnich->bmnih', lig_q, lig_k) / math.sqrt(self.attn_num_c)
+        weights = torch.softmax(lig_lig_aff, dim=2)
 
-        lig_profile = torch.einsum('bmrch,bmirh->bmich', lig_v, weights)
+        #lig_profile = torch.sum(lig_v[:, None] * weights[..., None, :], dim=2)
+        lig_profile = torch.einsum('bmnih,bnich->bmich', weights, lig_v)
         lig_profile = self.lig_final(lig_profile.reshape(*lig_profile.shape[:-2], -1))
         return lig_profile
+
+
+class ExtraColumnGlobalAttention(nn.Module):
+    def __init__(self, config, global_config):
+        super().__init__()
+        self.attn_num_c = config['attention_num_c']
+        self.num_heads = config['num_heads']
+
+        self.norm = nn.LayerNorm(global_config['rep_1d']['num_c'])
+        self.kqv = nn.Linear(global_config['rep_1d']['num_c'], self.attn_num_c * (self.num_heads + 2), bias=False)
+        self.gate = nn.Linear(global_config['rep_1d']['num_c'], self.attn_num_c * self.num_heads)
+        self.final = nn.Linear(self.attn_num_c * self.num_heads, global_config['rep_1d']['num_c'])
+
+    def forward(self, lig_profile):
+        x = self.norm(lig_profile)
+
+        q, k, v = torch.split(self.kqv(x).view(*x.shape[:-1], self.attn_num_c, self.num_heads + 2), [self.num_heads, 1, 1], dim=-1)
+        q = torch.mean(q, dim=1)
+
+        g = self.gate(x).view(*x.shape[:-1], self.attn_num_c, self.num_heads)
+
+        w = torch.softmax(torch.einsum('bich,bsic->bsih', q, k.squeeze(-1)) / math.sqrt(self.attn_num_c), dim=1)
+        out = g * torch.sum(w[..., None, :] * v, dim=1)[:, None]
+
+        return self.final(out.view(*out.shape[:-2], self.attn_num_c * self.num_heads))
 
 
 class Transition(nn.Module):
@@ -324,6 +334,7 @@ class TemplatePairStackIteration(nn.Module):
         self.PairTransition = Transition(global_config['rep_2d']['num_c'], config['PairTransition']['n'])
 
     def forward(self, x2d, mask=None):
+        #x2d = x2d.clone()
         x2d += self.TriangleAttentionStartingNode(x2d.clone(), mask)
         x2d += self.TriangleAttentionEndingNode(x2d.clone(), mask)
         x2d += self.TriangleMultiplicationOutgoing(x2d.clone(), mask)
@@ -344,6 +355,7 @@ class TemplatePairStack(nn.Module):
 
         self.layers = nn.ModuleList([TemplatePairStackIteration(config['TemplatePairStackIteration'], global_config) for _ in range(config['num_iter'])])
         self.norm = nn.LayerNorm(global_config['rep_2d']['num_c'])
+        self.config = config
 
     def forward(self, inputs):
         rr = self.rr_proj(inputs['rr_2d']).squeeze(0)
@@ -361,8 +373,14 @@ class TemplatePairStack(nn.Module):
         out[:, num_res:, :num_res] = lr
         out[:, num_res:, num_res:] = ll
 
+        #out = out.clone()
+
         for l in self.layers:
+            #if self.config['TemplatePairStackIteration']['checkpoint']:
+            #    out = checkpoint(lambda x: l(x), out)
+            #else:
             out = l(out)
+
         return self.norm(out).unsqueeze(0)
 
 
@@ -392,12 +410,6 @@ class TemplatePointwiseAttention(nn.Module):
         out = torch.einsum('btijh,btijch->bijch', w, v)
         out = self.out(out.flatten(start_dim=-2))
         return out
-
-
-#def map_template_to_target(feat_1d, feat_2d, mapping, add_gap_feature=True):
-#    assert len(feat_1d.shape) == 3
-#    size = mapping
-#    out = torch.zeros()
 
 
 class CEPPairStack(nn.Module):
@@ -439,10 +451,18 @@ class CEPPairStack(nn.Module):
         for l in self.layers:
             full_2d = l(full_2d.clone(), mask_2d)
         full_2d = self.norm(full_2d)
+        full_2d *= mask_2d[..., None]
+
+        # frag-frag interaction part
         ll_out = full_2d[:, rr.shape[1]:, rr.shape[1]:]
+
+        # masked mean over rec residues of fragment-receptor interaction
+        # (Nfrag, Natoms, C)
+        frag_rec = full_2d[:, rr.shape[1]:, :rr.shape[1]].sum(2) / mask_2d[:, rr.shape[1]:, :rr.shape[1]].sum(2)[..., None]
 
         out_2d_list = []
         out_1d_list = []
+        our_frag_rec_list = []
         for frag_id in range(mapping.shape[0]):
             #frag_num_res = num_res[frag_id]
             #frag_num_atoms = num_atoms[frag_id]
@@ -461,16 +481,22 @@ class CEPPairStack(nn.Module):
             out_2d_list.append(out_2d_mapped)
 
             out_1d_mapped = torch.zeros((frag_map.shape[0], lig_1d.shape[-1]), device=lig_1d.device, dtype=lig_1d.dtype)
-            out_1d_mapped[target_gap_atoms, -1] = 1
+            out_1d_mapped[target_gap_atoms, -1] = 1  # add gap bin (do we need it?)
             out_1d_mapped[target_atoms] = lig_1d[frag_id, template_atoms]
             out_1d_list.append(out_1d_mapped)
 
+            our_frag_rec_mapped = torch.zeros((frag_map.shape[0], frag_rec.shape[-1]), device=lig_1d.device, dtype=lig_1d.dtype)
+            our_frag_rec_mapped[target_atoms] = frag_rec[frag_id, template_atoms]
+            our_frag_rec_list.append(our_frag_rec_mapped)
+
         out_2d = torch.stack(out_2d_list).unsqueeze(0)
         out_1d = torch.stack(out_1d_list).unsqueeze(0)
+        our_frag_rec = torch.stack(our_frag_rec_list).unsqueeze(0)
 
         return {
             'frag_1d': out_1d,
-            'frag_2d': out_2d
+            'frag_2d': out_2d,
+            'our_frag_rec': our_frag_rec
         }
 
     def forward_old(self, inputs):
@@ -579,6 +605,58 @@ class Evoformer(torch.nn.Module):
         return x
 
 
+class FragExtraStackIteration(torch.nn.Module):
+    def __init__(self, config, global_config):
+        super().__init__()
+        self.RowAttentionWithPairBias = RowAttentionWithPairBias(config['RowAttentionWithPairBias'], global_config)
+        self.ExtraColumnGlobalAttention = ExtraColumnGlobalAttention(config['ExtraColumnGlobalAttention'], global_config)
+        self.LigTransition = Transition(global_config['rep_1d']['num_c'], config['LigTransition']['n'])
+        self.RecTransition = Transition(global_config['rep_1d']['num_c'], config['RecTransition']['n'])
+        self.OuterProductMean = OuterProductMean(config['OuterProductMean'], global_config)
+        self.TriangleMultiplicationOutgoing = TriangleMultiplicationOutgoing(config['TriangleMultiplicationOutgoing'], global_config)
+        self.TriangleMultiplicationIngoing = TriangleMultiplicationIngoing(config['TriangleMultiplicationOutgoing'], global_config)
+        self.TriangleAttentionStartingNode = TriangleAttentionStartingNode(config['TriangleAttentionStartingNode'], global_config)
+        self.TriangleAttentionEndingNode = TriangleAttentionEndingNode(config['TriangleAttentionEndingNode'], global_config)
+        self.PairTransition = Transition(global_config['rep_2d']['num_c'], config['PairTransition']['n'])
+
+    # TODO: add dropout
+    def forward(self, x):
+        rec, extra, pair = x['rec'], x['extra'], x['pair']
+        a, b = self.RowAttentionWithPairBias(rec.clone(), extra.clone(), pair.clone())
+        rec += a
+        extra += b
+        extra += self.ExtraColumnGlobalAttention(extra.clone())
+        rec += self.RecTransition(rec.clone())
+        extra += self.LigTransition(extra.clone())
+        pair += self.OuterProductMean(rec.clone(), extra.clone(), pair)
+        pair += self.TriangleMultiplicationOutgoing(pair.clone())
+        pair += self.TriangleMultiplicationIngoing(pair.clone())
+        pair += self.TriangleAttentionStartingNode(pair.clone())
+        pair += self.TriangleAttentionEndingNode(pair.clone())
+        pair += self.PairTransition(pair.clone())
+        return {'rec': rec, 'extra': extra, 'pair': pair}
+
+
+class FragExtraStack(nn.Module):
+    def __init__(self, config, global_config):
+        super().__init__()
+        self.project = nn.Linear(global_config['extra_in_c'], global_config['rep_1d']['num_c'])
+        self.layers = nn.ModuleList([FragExtraStackIteration(config['FragExtraStackIteration'], global_config) for _ in range(config['num_iter'])])
+        self.config = config
+
+    def forward(self, rec, extra, pair):
+        extra = self.project(extra)
+        x = {'rec': rec, 'extra': extra, 'pair': pair}
+        print({k: v.shape for k, v in x.items()})
+        for l in self.layers:
+            if self.config['FragExtraStackIteration']['checkpoint']:
+                x = checkpoint(lambda y: l(y), x)
+            else:
+                x = l(x)
+            print({k: v.shape for k, v in x.items()})
+        return x['rec'], x['pair']
+
+
 class InitPairRepresentation(torch.nn.Module):
     def __init__(self, global_config):
         super().__init__()
@@ -650,6 +728,9 @@ class InputEmbedder(torch.nn.Module):
         self.CEPPointwiseAttention = TemplatePointwiseAttention(config['CEPPointwiseAttention'], global_config)
         self.TemplatePairStack = TemplatePairStack(config['TemplatePairStack'], global_config)
         self.TemplatePointwiseAttention = TemplatePointwiseAttention(config['TemplatePointwiseAttention'], global_config)
+        self.FragExtraStack = FragExtraStack(config['FragExtraStack'], global_config)
+
+        self.config = config
 
     def forward(self, inputs):
         # create pair representation
@@ -658,28 +739,37 @@ class InputEmbedder(torch.nn.Module):
         # CEP embedding
         num_res = inputs['target']['rec_1d'].shape[1]
         if 'fragments' in inputs:
-            cep = self.CEPPairStack(inputs['fragments'])
+            if self.config['CEPPairStack']['checkpoint']:
+                cep = checkpoint(lambda x: self.CEPPairStack(x), inputs['fragments'])
+            else:
+                cep = self.CEPPairStack(inputs['fragments'])
             cep_embedding = self.CEPPointwiseAttention(pair[:, num_res:, num_res:], cep['frag_2d'])
 
         # make template embedding
         if 'hhpred' in inputs:
-            hh_2d = self.TemplatePairStack(inputs['hhpred'])
+            if self.config['TemplatePairStack']['checkpoint']:
+                hh_2d = checkpoint(lambda x: self.TemplatePairStack(x), inputs['hhpred'])
+            else:
+                hh_2d = self.TemplatePairStack(inputs['hhpred'])
             template_embedding = self.TemplatePointwiseAttention(pair.clone(), hh_2d)
+
+        rep_rec_1d = self.r_feat(inputs['target']['rec_1d'])
+        # TODO: add linear rec template feats. In the future check if we can use rec profiles from cep layer
 
         # add embeddings to the pair rep
         if 'hhpred' in inputs:
             pair += template_embedding
 
+        # update lig-lig from cep_embedding
+        # embed extra stack
         if 'fragments' in inputs:
             pair[:, num_res:, num_res:] += cep_embedding
-
-        rep_rec_1d = self.r_feat(inputs['target']['rec_1d'])
-        # TODO: add linear rec template feats. In the future check if we can use rec profiles from cep layer
+            rep_rec_1d, pair = self.FragExtraStack(rep_rec_1d.clone(), inputs['fragments']['extra'], pair)
 
         # make 1d rep
         l_feat = self.l_feat(inputs['target']['lig_1d'])
         if 'fragments' in inputs:
-            rep_lig_1d = cep['frag_1d'] + cep['frag_2d'].mean(3) + l_feat.unsqueeze(1)
+            rep_lig_1d = cep['frag_1d'] + cep['frag_2d'].mean(3) + cep['our_frag_rec'] + l_feat.unsqueeze(1)
         else:
             rep_lig_1d = l_feat.unsqueeze(1)
         # TODO: concat linear lig template feats
