@@ -569,7 +569,7 @@ def backbone_affine_and_torsions_to_all_atom(
         torsions_unnorm: torch.Tensor,  # (N, 14)
         aatype: torch.Tensor  # (N)
 ):
-    affine = quat_affine.QuatAffine(affine[:, :4], [x.squeeze(-1) for x in torch.tensor_split(affine[:, 4:], 3, dim=-1)])
+    affine = quat_affine.QuatAffine(affine[:, :4], [x.squeeze(-1) for x in torch.chunk(affine[:, 4:], 3, dim=-1)])
     backb_to_global = r3.rigids_from_quataffine(affine)
 
     rec_torsions_unnorm = torsions_unnorm.view(torsions_unnorm.shape[0], 7, 2)

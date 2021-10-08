@@ -21,8 +21,8 @@ class DockingDataset(Dataset):
             dataset_dir,
             json_file,
             max_hh_templates=2,
-            max_frag_templates=4,
-            max_frag_extra=16,
+            max_frag_templates=2,
+            max_frag_extra=2,
             seed=123456
     ):
 

@@ -29,11 +29,12 @@ class DockerIteration(nn.Module):
     def forward(self, input):
         x = self.InputEmbedder(input)
 
+        #x = {k: v.to('cuda:1') for k, v in x.items()}
         for evo_iter in self.Evoformer:
             if self.config['Evoformer']['EvoformerIteration']['checkpoint']:
-                x = checkpoint(lambda a, b, c: evo_iter({'l1d': a, 'r1d': b, 'pair': c}), x['l1d'], x['r1d'], x['pair'])
+                x['r1d'], x['l1d'], x['pair'] = checkpoint(lambda a, b, c: evo_iter(a.clone(), b.clone(), c.clone()), x['r1d'], x['l1d'], x['pair'])
             else:
-                x = evo_iter(x)
+                x['r1d'], x['l1d'], x['pair'] = evo_iter(x['r1d'], x['l1d'], x['pair'])
 
         pair = x['pair']
         rec_single = self.EvoformerExtractSingleRec(x['r1d'])
@@ -52,9 +53,10 @@ class DockerIteration(nn.Module):
             struct_out['rec_torsions'][0][-1],
             input['target']['rec_aatype'][0]
         )
-        print({k: v.shape for k, v in struct_out.items()})
+        #print({k: v.shape for k, v in struct_out.items()})
 
         #print()
+        #input = {k: {k1: v1.to('cuda:2') for k1, v1 in v.items()} for k, v in input.items()}
         return loss(input, struct_out, final_all_atom, self.global_config)
 
 
@@ -274,13 +276,13 @@ def lddt_loss(batch, struct_out, config):
     # TODO: decide on the proper range here
     # (Ntraj, Nres)
     rec_rec_lddt_label = torch.minimum(
-        torch.div(rec_rec_lddt * 100, config['loss']['lddt_rec_bin_size'], rounding_mode='floor'),
+        torch.div(rec_rec_lddt * 100, config['loss']['lddt_rec_bin_size']),
         torch.full_like(rec_rec_lddt, config['loss']['lddt_rec_num_bins'] - 1)
     )
 
     # (Ntraj, Natoms)
     lig_rec_lddt_label = torch.minimum(
-        torch.div(lig_rec_lddt * 100, config['loss']['lddt_lig_bin_size'], rounding_mode='floor'),
+        torch.div(lig_rec_lddt * 100, config['loss']['lddt_lig_bin_size']),
         torch.full_like(lig_rec_lddt, config['loss']['lddt_lig_num_bins'] - 1)
     )
 
@@ -347,12 +349,45 @@ def example4():
             v1[k2] = torch.as_tensor(v2)[None].cuda()
             print('    ', k2, v1[k2].shape, v1[k2].dtype)
 
-    #print(item['fragments']['rr_2d'])
+    #with torch.cuda.amp.autocast():
     out = model(item)
-    out['loss_total'].backward()
+    loss = out['loss_total']
+    loss.backward()
+
+    #print({k: v.shape if isinstance(v, torch.Tensor) else v for k, v in model(item).items()})
+
+
+def example_profiler():
+    from config import config, DATA_DIR
+    import torchvision
+    import torchvision.models as models
+    from torch.profiler import profile, record_function, ProfilerActivity
+
+    #with torch.autograd.set_detect_anomaly(True):
+    model = DockerIteration(config, config).cuda()
+    model.train()
+
+    pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print('Num params:', pytorch_total_params)
+
+    from dataset import DockingDataset
+    ds = DockingDataset(DATA_DIR, 'train_split/debug.json')
+    item = ds[0]
+
+    for k1, v1 in item.items():
+        print(k1)
+        for k2, v2 in v1.items():
+            v1[k2] = torch.as_tensor(v2)[None].cuda()
+            print('    ', k2, v1[k2].shape, v1[k2].dtype)
+
+    with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], profile_memory=True, record_shapes=True, with_stack=True) as prof:
+        with record_function("model_forward"):
+            out = model.InputEmbedder(item)
+            #loss = out['loss_total']
+    print(prof.key_averages(group_by_stack_n=15).table(sort_by="cuda_memory_usage", row_limit=50))
 
     #print({k: v.shape if isinstance(v, torch.Tensor) else v for k, v in model(item).items()})
 
 
 if __name__ == '__main__':
-    example4()
+    example_profiler()

@@ -260,7 +260,7 @@ class QuatAffine(object):
 
     @classmethod
     def from_tensor(cls, tensor, normalize=False):
-        quaternion, tx, ty, tz = torch.tensor_split(tensor, [4, 5, 6], dim=-1)
+        quaternion, tx, ty, tz = torch.split(tensor, [4, 1, 1, 1], dim=-1)
         return cls(quaternion,
                    [tx[..., 0], ty[..., 0], tz[..., 0]],
                    normalize=normalize)
@@ -276,7 +276,7 @@ class QuatAffine(object):
         Returns:
           New QuatAffine object.
         """
-        vector_quaternion_update, x, y, z = torch.tensor_split(update, [3, 4, 5], dim=-1)
+        vector_quaternion_update, x, y, z = torch.split(update, [3, 1, 1, 1], dim=-1)
         trans_update = [torch.squeeze(x, dim=-1),
                         torch.squeeze(y, dim=-1),
                         torch.squeeze(z, dim=-1)]

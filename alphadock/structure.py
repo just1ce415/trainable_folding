@@ -66,13 +66,13 @@ class InvariantPointAttention(torch.nn.Module):
         Wl = math.sqrt(1. / 3.)
 
         kqv_local = self.rec_kqv_point(rec_1d)  # [b, r, c]
-        kqv_global = torch.stack(rec_T.apply_to_point(torch.tensor_split(kqv_local, 3, dim=-1)))  # [3, b, r, x]
+        kqv_global = torch.stack(rec_T.apply_to_point(torch.chunk(kqv_local, 3, dim=-1)))  # [3, b, r, x]
         kqv_global = kqv_global.movedim(0, 2)   # [b, r, 3, x]
         kqv_global = kqv_global.view(*kqv_global.shape[:-1], self.num_head, self.num_point_qk*2+self.num_point_v)  # [b, r, 3, h, x]
         rec_k_point, rec_q_point, rec_v_point = torch.split(kqv_global, [self.num_point_qk, self.num_point_qk, self.num_point_v], dim=-1)
 
         kqv_local = self.lig_kqv_point(lig_1d)  # [b, r, c]
-        kqv_global = torch.stack(lig_T.apply_to_point(torch.tensor_split(kqv_local, 3, dim=-1)))  # [3, b, r, x]
+        kqv_global = torch.stack(lig_T.apply_to_point(torch.chunk(kqv_local, 3, dim=-1)))  # [3, b, r, x]
         kqv_global = kqv_global.movedim(0, 2)   # [b, r, 3, x]
         kqv_global = kqv_global.view(*kqv_global.shape[:-1], self.num_head, self.num_point_qk*2+self.num_point_v)  # [b, r, 3, h, x]
         lig_k_point, lig_q_point, lig_v_point = torch.split(kqv_global, [self.num_point_qk, self.num_point_qk, self.num_point_v], dim=-1)
@@ -106,8 +106,8 @@ class InvariantPointAttention(torch.nn.Module):
         out_global = torch.einsum('bijh,bjdhp->bidph', weights, v_point)
         #out_global = out_global.movedim(1, 0)
 
-        rec_out_local = torch.cat(rec_T.invert_point(torch.tensor_split(out_global[:, :num_res], 3, dim=2)), dim=2)
-        lig_out_local = torch.cat(lig_T.invert_point(torch.tensor_split(out_global[:, num_res:], 3, dim=2)), dim=2)  # [b, i, 3, p, h]
+        rec_out_local = torch.cat(rec_T.invert_point(torch.chunk(out_global[:, :num_res], 3, dim=2)), dim=2)
+        lig_out_local = torch.cat(lig_T.invert_point(torch.chunk(out_global[:, num_res:], 3, dim=2)), dim=2)  # [b, i, 3, p, h]
         out_local = torch.cat([rec_out_local, lig_out_local], dim=1).permute([0, 1, 3, 4, 2])  # [b, i, p, h, 3]
 
         # add local coords
@@ -349,7 +349,7 @@ def example():
 
     #print(lig_T.rotation[0][0])
 
-    input = torch.tensor_split(torch.zeros((4, 3, 3, 6)), 3, dim=-2)
+    input = torch.chunk(torch.zeros((4, 3, 3, 6)), 3, dim=-2)
     #print(input[0].shape)
     #print(lig_T.apply_to_point(input, extra_dims=0)[0].shape)
 

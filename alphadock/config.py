@@ -61,7 +61,7 @@ config = {
     },
 
     'Evoformer': {
-        'num_iter': 16,
+        'num_iter': 1,
         'EvoformerIteration': {
             'checkpoint': True,
             'RowAttentionWithPairBias': {
@@ -102,7 +102,7 @@ config = {
     },
     'InputEmbedder': {
         'TemplatePairStack': {
-            'num_iter': 2,
+            'num_iter': 1,
             'checkpoint': True,
             'TemplatePairStackIteration': {
                 #'checkpoint': True,
@@ -130,9 +130,10 @@ config = {
             'num_heads': 4
         },
         'CEPPairStack': {
-            'num_iter': 2,
+            'num_iter': 1,
             'checkpoint': True,
             'TemplatePairStackIteration': {
+                'checkpoint': False,
                 'TriangleAttentionStartingNode': {
                     'attention_num_c': 32,
                     'num_heads': 4
@@ -157,7 +158,7 @@ config = {
             'num_heads': 4
         },
         'FragExtraStack': {
-            'num_iter': 4,
+            'num_iter': 1,
             'FragExtraStackIteration': {
                 'checkpoint': True,
                 'RowAttentionWithPairBias': {
@@ -198,7 +199,7 @@ config = {
         }
     },
     'StructureModule': {
-        'num_iter': 2,
+        'num_iter': 1,
         'StructureModuleIteration': {
             'checkpoint': False,
             'InvariantPointAttention': {
