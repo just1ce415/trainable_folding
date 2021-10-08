@@ -164,7 +164,7 @@ def rigids_from_tensor_flat12(
 ) -> Rigids:  # shape (...)
     """Flat12 encoding: rotation matrix (9 floats) + translation (3 floats)."""
     assert m.shape[-1] == 12
-    x = torch.moveaxis(m, -1, 0)  # Unstack
+    x = torch.movedim(m, -1, 0)  # Unstack
     return Rigids(Rots(*x[:9]), Vecs(*x[9:]))
 
 

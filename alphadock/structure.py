@@ -335,14 +335,14 @@ def example():
     lig_1d = torch.ones((1, num_atoms, config['rep_1d']['num_c']))
     rep_2d = torch.ones((1, num_res+num_atoms, num_res+num_atoms, config['rep_2d']['num_c']))
 
-    rot = torch.tile(torch.eye(3), (num_res, 1, 1)).moveaxis(0, -1)
+    rot = torch.tile(torch.eye(3), (num_res, 1, 1)).movedim(0, -1)
     quat = quat_affine.rot_to_quat(rot)
     #print(quat)
     tr = [torch.full([num_res], 3), torch.full([num_res], 4), torch.full([num_res], 5)]
     #rec_T = quat_affine.make_transform_from_reference(torch.ones())
     rec_T = quat_affine.QuatAffine(quat, tr)
 
-    rot = torch.tile(torch.eye(3), (num_atoms, 1, 1)).moveaxis(0, -1)
+    rot = torch.tile(torch.eye(3), (num_atoms, 1, 1)).movedim(0, -1)
     quat = quat_affine.rot_to_quat(rot)
     tr = [torch.full([num_atoms], 3), torch.full([num_atoms], 4), torch.full([num_atoms], 5)]
     lig_T = quat_affine.QuatAffine(quat, tr)

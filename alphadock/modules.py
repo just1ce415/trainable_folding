@@ -772,7 +772,6 @@ class InputEmbedder(torch.nn.Module):
             rep_lig_1d = cep['frag_1d'] + cep['frag_2d'].mean(3) + cep['our_frag_rec'] + l_feat.unsqueeze(1)
         else:
             rep_lig_1d = l_feat.unsqueeze(1)
-        # TODO: concat linear lig template feats
 
         return {'l1d': rep_lig_1d, 'r1d': rep_rec_1d, 'pair': pair}
 

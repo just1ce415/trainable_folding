@@ -104,7 +104,7 @@ def rot_to_quat(rot, unstack_inputs=False):
       Quaternion as (..., 4) tensor.
     """
     if unstack_inputs:
-        rot = [torch.moveaxis(x, -1, 0) for x in torch.moveaxis(rot, -2, 0)]
+        rot = [torch.movedim(x, -1, 0) for x in torch.movedim(rot, -2, 0)]
 
     [[xx, xy, xz], [yx, yy, yz], [zx, zy, zz]] = rot
 
@@ -118,7 +118,7 @@ def rot_to_quat(rot, unstack_inputs=False):
     k = (1./3.) * torch.stack([torch.stack(x, dim=-1) for x in k], dim=-2)
 
     # Get eigenvalues in non-decreasing order and associated.
-    _, qs = torch.linalg.eigh(k)
+    _, qs = torch.symeig(k, eigenvectors=True)
     return qs[..., -1]
 
 
@@ -144,7 +144,7 @@ def quat_to_rot(normalized_quat):
         normalized_quat[..., :, None, None] *
         normalized_quat[..., None, :, None],
         dim=(-3, -2))
-    rot = torch.moveaxis(rot_tensor, -1, 0)  # Unstack.
+    rot = torch.movedim(rot_tensor, -1, 0)  # Unstack.
     return [[rot[0], rot[1], rot[2]],
             [rot[3], rot[4], rot[5]],
             [rot[6], rot[7], rot[8]]]
@@ -210,9 +210,9 @@ class QuatAffine(object):
 
         if unstack_inputs:
             if rotation is not None:
-                rotation = [torch.moveaxis(x, -1, 0)   # Unstack.
-                            for x in torch.moveaxis(rotation, -2, 0)]  # Unstack.
-            translation = torch.moveaxis(translation, -1, 0)  # Unstack.
+                rotation = [torch.movedim(x, -1, 0)   # Unstack.
+                            for x in torch.movedim(rotation, -2, 0)]  # Unstack.
+            translation = torch.movedim(translation, -1, 0)  # Unstack.
 
         if normalize and quaternion is not None:
             quaternion = quaternion / torch.linalg.norm(quaternion, axis=-1, keepdims=True)

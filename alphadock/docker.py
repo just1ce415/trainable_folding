@@ -82,8 +82,8 @@ def loss(batch, struct_out, final_all_atom, config):
     gt_all_frames = all_atom.atom37_to_frames(batch['ground_truth']['gt_aatype'][0], rec_gt_atom37_coords, rec_gt_atom37_mask)
 
     # (N_traj, N_res)
-    gt_bb_frames = r3.rigids_from_tensor_flat12(gt_all_frames['rigidgroups_gt_frames'][:, 0, :].tile(num_traj, 1, 1))
-    gt_bb_mask = gt_all_frames['rigidgroups_gt_exists'][:, 0].tile(num_traj, 1)
+    gt_bb_frames = r3.rigids_from_tensor_flat12(gt_all_frames['rigidgroups_gt_frames'][:, 0, :].repeat(num_traj, 1, 1))
+    gt_bb_mask = gt_all_frames['rigidgroups_gt_exists'][:, 0].repeat(num_traj, 1)
 
     num_lig_symm = batch['ground_truth']['gt_lig_coords'].shape[1]
     lig_gt_mask = batch['ground_truth']['gt_lig_has_coords'][0]
@@ -108,8 +108,8 @@ def loss(batch, struct_out, final_all_atom, config):
         r3.apply_tree_rigids(lambda x: x.repeat_interleave(num_lig_symm, dim=0), gt_bb_frames),
         gt_bb_mask.repeat_interleave(num_lig_symm, dim=0),
         r3.vecs_from_tensor(lig_traj[:, :, -3:].repeat_interleave(num_lig_symm, dim=0)),
-        r3.vecs_from_tensor(lig_gt_coords.tile(num_traj, 1, 1)),
-        lig_gt_mask.tile(num_traj, 1),
+        r3.vecs_from_tensor(lig_gt_coords.repeat(num_traj, 1, 1)),
+        lig_gt_mask.repeat(num_traj, 1),
         config['loss']['fape_loss_unit_distance'],
         config['loss']['fape_clamp_distance']
     )
@@ -158,10 +158,10 @@ def loss(batch, struct_out, final_all_atom, config):
     )
 
     loss_aa_rec_lig = all_atom.frame_aligned_point_error(
-        r3.apply_tree_rigids(lambda x: x.tile(num_lig_symm, 1), rec_final_pred_frames_flat),
-        r3.apply_tree_rigids(lambda x: x.tile(num_lig_symm, 1), renamed_gt_frames_flat),
-        renamed_gt_frames_mask_flat.tile(num_lig_symm, 1),
-        r3.vecs_from_tensor(lig_final_pred_coords_tensor.tile(num_lig_symm, 1, 1)),
+        r3.apply_tree_rigids(lambda x: x.repeat(num_lig_symm, 1), rec_final_pred_frames_flat),
+        r3.apply_tree_rigids(lambda x: x.repeat(num_lig_symm, 1), renamed_gt_frames_flat),
+        renamed_gt_frames_mask_flat.repeat(num_lig_symm, 1),
+        r3.vecs_from_tensor(lig_final_pred_coords_tensor.repeat(num_lig_symm, 1, 1)),
         r3.vecs_from_tensor(lig_gt_coords),
         lig_gt_mask,
         config['loss']['fape_loss_unit_distance'],
@@ -248,10 +248,10 @@ def lddt_loss(batch, struct_out, config):
     lig_rec_lddt_for_mask_selection = lddt.lddt(
         lig_pred_coords.repeat_interleave(num_symm, dim=0),
         rec_pred_coords.repeat_interleave(num_symm, dim=0),
-        lig_true_coords.tile(num_traj, 1, 1),
-        rec_true_coords[None].tile(num_traj * num_symm, 1, 1),
-        lig_true_mask[:, :, None].tile(num_traj, 1, 1),
-        rec_true_mask[None, :, None].tile(num_traj * num_symm, 1, 1),
+        lig_true_coords.repeat(num_traj, 1, 1),
+        rec_true_coords[None].repeat(num_traj * num_symm, 1, 1),
+        lig_true_mask[:, :, None].repeat(num_traj, 1, 1),
+        rec_true_mask[None, :, None].repeat(num_traj * num_symm, 1, 1),
         per_residue=False,
         exclude_self=False
     )  # (Ntraj * Nsymm)
@@ -264,9 +264,9 @@ def lddt_loss(batch, struct_out, config):
         lig_pred_coords,
         rec_pred_coords,
         lig_true_coords[lig_best_mask_id_per_traj],
-        rec_true_coords[None].tile(num_traj, 1, 1),
+        rec_true_coords[None].repeat(num_traj, 1, 1),
         lig_best_mask_per_traj[:, :, None],
-        rec_true_mask[None, :, None].tile(num_traj, 1, 1),
+        rec_true_mask[None, :, None].repeat(num_traj, 1, 1),
         per_residue=True,
         exclude_self=False
     )  # (Ntraj, Natoms)

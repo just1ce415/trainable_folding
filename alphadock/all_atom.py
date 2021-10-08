@@ -88,7 +88,7 @@ def atom14_to_atom37(
     atom14_data_flat = atom14_data.reshape(*atom14_data.shape[:2], -1)
     # add 15th field used as placeholder in restype_name_to_atom14_ids
     atom14_data_flat = torch.cat([atom14_data_flat, torch.zeros_like(atom14_data_flat[:, :1])], dim=1)
-    out = torch.gather(atom14_data_flat, 1, residx_atom37_to_atom14[..., None].tile(1, 1, atom14_data_flat.shape[-1]))
+    out = torch.gather(atom14_data_flat, 1, residx_atom37_to_atom14[..., None].repeat(1, 1, atom14_data_flat.shape[-1]))
     return out.reshape(atom14_data.shape[0], 37, *atom14_data.shape[2:])
 
 
@@ -103,7 +103,7 @@ def atom37_to_atom14(
     residx_atom14_to_atom37 = torch.tensor(residue_constants.restype_name_to_atom37_ids, device=aatype.device, dtype=aatype.dtype)[aatype]
     atom37_data_flat = atom37_data.reshape(*atom37_data.shape[:2], -1)
     atom37_data_flat = torch.cat([atom37_data_flat, torch.zeros_like(atom37_data_flat[:, :1])], dim=1)
-    out = torch.gather(atom37_data_flat, 1, residx_atom14_to_atom37[..., None].tile(1, 1, atom37_data_flat.shape[-1]))
+    out = torch.gather(atom37_data_flat, 1, residx_atom14_to_atom37[..., None].repeat(1, 1, atom37_data_flat.shape[-1]))
     return out.reshape(atom37_data.shape[0], 37, *atom37_data.shape[2:])
 
 
@@ -197,8 +197,8 @@ def atom37_to_frames(
     # Gather the base atom positions for each rigid group.
     # (N, 8, 3, 3)
     base_atom_pos = torch.gather(
-        all_atom_positions[:, :, None, :].tile([1, 1, 3, 1]), 1,
-        residx_rigidgroup_base_atom37_idx[..., None].tile([1, 1, 1, 3])
+        all_atom_positions[:, :, None, :].repeat([1, 1, 3, 1]), 1,
+        residx_rigidgroup_base_atom37_idx[..., None].repeat([1, 1, 1, 3])
     )
 
     # Compute the Rigids.
@@ -216,7 +216,7 @@ def atom37_to_frames(
     # Compute a mask whether ground truth exists for the group
     # (N, 8, 3)
     gt_atoms_exist = torch.gather(
-        all_atom_mask[:, :, None, None].tile([1, 1, 8, 3]), 1,
+        all_atom_mask[:, :, None, None].repeat([1, 1, 8, 3]), 1,
         residx_rigidgroup_base_atom37_idx[:, None]
     ).squeeze(1)
 
@@ -343,7 +343,7 @@ def atom37_to_torsion_angles(
     # Select atoms to compute chis. Shape: [batch, num_res, chis=4, atoms=4].
     atom_indices = chi_atom_indices[aatype_flat].unflatten(0, [num_batch, num_res])
     # Gather atom positions. Shape: [batch, num_res, chis=4, atoms=4, xyz=3].
-    chis_atom_pos = torch.gather(all_atom_pos[:, :, None, :, :].tile(1, 1, 4, 1, 1), 3, atom_indices[..., None].tile(1, 1, 1, 1, 3))
+    chis_atom_pos = torch.gather(all_atom_pos[:, :, None, :, :].repeat(1, 1, 4, 1, 1), 3, atom_indices[..., None].repeat(1, 1, 1, 1, 3))
 
     # Copy the chi angle mask, add the UNKNOWN residue. Shape: [restypes, 4].
     chi_angles_mask = list(residue_constants.chi_angles_mask)
@@ -357,7 +357,7 @@ def atom37_to_torsion_angles(
     # Constrain the chis_mask to those chis, where the ground truth coordinates of
     # all defining four atoms are available.
     # Gather the chi angle atoms mask. Shape: [batch, num_res, chis=4, atoms=4].
-    chi_angle_atoms_mask = torch.gather(all_atom_mask[:, :, None, :].tile(1, 1, 4, 1), 3, atom_indices)
+    chi_angle_atoms_mask = torch.gather(all_atom_mask[:, :, None, :].repeat(1, 1, 4, 1), 3, atom_indices)
 
     # Check if all 4 chi angle atoms were set. Shape: [batch, num_res, chis=4].
     chi_angle_atoms_mask = torch.prod(chi_angle_atoms_mask, dim=-1)
