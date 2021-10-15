@@ -522,34 +522,6 @@ restype_name_to_atom14_names = {
     'UNK': ['',  '',   '',  '',  '',   '',    '',    '',    '',    '',    '',    '',    '',    ''],
 
 }
-# pylint: enable=line-too-long
-# pylint: enable=bad-whitespace
-
-
-def _make_restype_name_to_atom37_ids():
-    _lookuptable = atom_order.copy()
-    _lookuptable[''] = len(atom_order)
-    res_order = sorted(restype_name_to_atom14_names.keys())
-    _restype_name_to_atom14_names = np.array([restype_name_to_atom14_names[x] for x in res_order], dtype=np.object)
-    return np.vectorize(lambda x: _lookuptable[x])(_restype_name_to_atom14_names)
-
-
-restype_name_to_atom37_ids = _make_restype_name_to_atom37_ids()  #  (N, 14)
-
-
-def _make_restype_name_to_atom14_ids():
-    out = []
-    res_order = sorted(restype_name_to_atom14_names.keys())
-    for restype in res_order:
-        atom_to_pos = dict([(y, x) for x, y in enumerate(restype_name_to_atom14_names[restype])])
-        atoms14 = []
-        for name in atom_types:
-            atoms14.append(atom_to_pos.get(name, len(atom_to_pos)))
-        out.append(atoms14)
-    return np.array(out, dtype=int)
-
-
-restype_name_to_atom14_ids = _make_restype_name_to_atom14_ids()  #  (N, 37)
 
 
 # This is the standard residue order when coding AA type as a number.
@@ -644,6 +616,32 @@ unk_restype = 'UNK'
 
 resnames = [restype_1to3[r] for r in restypes] + [unk_restype]
 resname_to_idx = {resname: i for i, resname in enumerate(resnames)}
+
+
+def _make_restype_name_to_atom37_ids():
+    _lookuptable = atom_order.copy()
+    _lookuptable[''] = len(atom_order)
+    res_order = resnames
+    _restype_name_to_atom14_names = np.array([restype_name_to_atom14_names[x] for x in res_order], dtype=np.object)
+    return np.vectorize(lambda x: _lookuptable[x])(_restype_name_to_atom14_names)
+
+
+restype_name_to_atom37_ids = _make_restype_name_to_atom37_ids()  #  (N, 14)
+
+
+def _make_restype_name_to_atom14_ids():
+    out = []
+    res_order = resnames
+    for restype in res_order:
+        atom_to_pos = dict([(y, x) for x, y in enumerate(restype_name_to_atom14_names[restype])])
+        atoms14 = []
+        for name in atom_types:
+            atoms14.append(atom_to_pos.get(name, len(atom_to_pos)))
+        out.append(atoms14)
+    return np.array(out, dtype=int)
+
+
+restype_name_to_atom14_ids = _make_restype_name_to_atom14_ids()  #  (N, 37)
 
 
 # The mapping here uses hhblits convention, so that B is mapped to D, J and O
@@ -915,3 +913,7 @@ def make_atom14_dists_bounds(overlap_tolerance=1.5,
             'upper_bound': restype_atom14_bond_upper_bound,  # shape (21,14,14)
             'stddev': restype_atom14_bond_stddev,  # shape (21,14,14)
             }
+
+
+ELEMENTS_ORDER = ['O', 'C', 'N', 'S', 'P', 'ZN', 'CL', 'MG', 'F', 'NA', 'CA', 'FE', 'MN', 'K', 'BR', 'I', 'X']
+ELEMENTS = {x[1]: x[0] for x in enumerate(ELEMENTS_ORDER)}

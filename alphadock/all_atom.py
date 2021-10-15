@@ -590,7 +590,8 @@ def backbone_affine_and_torsions_to_all_atom(
 
     outputs.update({
         'atom_pos': pred_positions,  # r3.Vecs (N, 14)
-        'frames': all_frames_to_global,  # r3.Rigids (N, 8)
+        'frames': all_frames_to_global,  # r3.Rigids (N, 8),
+        'atom_pos_tensor': r3.vecs_to_tensor(pred_positions)  # Tensor (N, 14, 3)
     })
     return outputs
 
@@ -1034,8 +1035,13 @@ def find_optimal_renaming(
 
 
 def compute_renamed_ground_truth(
-        batch: Dict[str, torch.Tensor],
-        atom14_pred_positions: torch.Tensor,
+        atom14_gt_positions,
+        atom14_alt_gt_positions,
+        atom14_atom_is_ambiguous,
+        atom14_gt_exists,
+        atom14_alt_gt_exists,
+        atom14_pred_positions,
+        atom14_atom_exists
 ) -> Dict[str, torch.Tensor]:
     """Find optimal renaming of ground truth based on the predicted positions.
 
@@ -1066,22 +1072,23 @@ def compute_renamed_ground_truth(
         renamed_atom14_gt_exists: Mask after renaming swap is performed.
     """
     alt_naming_is_better = find_optimal_renaming(
-        atom14_gt_positions=batch['atom14_gt_positions'],
-        atom14_alt_gt_positions=batch['atom14_alt_gt_positions'],
-        atom14_atom_is_ambiguous=batch['atom14_atom_is_ambiguous'],
-        atom14_gt_exists=batch['atom14_gt_exists'],
+        atom14_gt_positions=atom14_gt_positions,
+        atom14_alt_gt_positions=atom14_alt_gt_positions,
+        atom14_atom_is_ambiguous=atom14_atom_is_ambiguous,
+        atom14_gt_exists=atom14_gt_exists,
         atom14_pred_positions=atom14_pred_positions,
-        atom14_atom_exists=batch['atom14_atom_exists'])
+        atom14_atom_exists=atom14_atom_exists
+    )
 
     renamed_atom14_gt_positions = (
             (1. - alt_naming_is_better[:, None, None])
-            * batch['atom14_gt_positions']
+            * atom14_gt_positions
             + alt_naming_is_better[:, None, None]
-            * batch['atom14_alt_gt_positions'])
+            * atom14_alt_gt_positions)
 
     renamed_atom14_gt_mask = (
-            (1. - alt_naming_is_better[:, None]) * batch['atom14_gt_exists']
-            + alt_naming_is_better[:, None] * batch['atom14_alt_gt_exists'])
+            (1. - alt_naming_is_better[:, None]) * atom14_gt_exists
+            + alt_naming_is_better[:, None] * atom14_alt_gt_exists)
 
     return {
         'alt_naming_is_better': alt_naming_is_better,  # (N)
@@ -1099,7 +1106,9 @@ def frame_aligned_point_error(
         positions_mask: torch.Tensor,  # shape (..., num_positions)
         length_scale: float,
         l1_clamp_distance: Optional[float] = None,
-        epsilon=1e-4) -> torch.Tensor:  # shape ()
+        epsilon=1e-4,
+        squared=True
+) -> torch.Tensor:  # shape ()
     """Measure point error under different alignments.
 
     Jumper et al. (2021) Suppl. Alg. 28 "computeFAPE"
@@ -1141,13 +1150,16 @@ def frame_aligned_point_error(
     )
 
     # Compute errors between the structures.
-    # torch.Tensor (num_frames, num_positions)
-    error_dist = torch.sqrt(r3.vecs_squared_distance(local_pred_pos, local_target_pos) + epsilon)
+    error_dist = r3.vecs_squared_distance(local_pred_pos, local_target_pos)
+    if not squared:
+        error_dist = torch.sqrt(error_dist)
+        l1_clamp_distance = l1_clamp_distance**2 if l1_clamp_distance is not None else None
+        length_scale = length_scale**2
 
     if l1_clamp_distance:
-        error_dist = torch.clip(error_dist, 0, l1_clamp_distance)
+        error_dist = torch.clip(error_dist, 0, l1_clamp_distance**2)
 
-    normed_error = error_dist / length_scale
+    normed_error = error_dist / length_scale**2
     normed_error *= frames_mask.unsqueeze(-1)
     normed_error *= positions_mask.unsqueeze(-2)
 
@@ -1155,7 +1167,7 @@ def frame_aligned_point_error(
             torch.sum(frames_mask, dim=-1) *
             torch.sum(positions_mask, dim=-1)
     )
-    return (torch.sum(normed_error, dim=[-2, -1]) / (epsilon + normalization_factor))
+    return (torch.sum(normed_error, dim=[-2, -1]) + epsilon) / (epsilon + normalization_factor)
 
 
 def _make_renaming_matrices():
@@ -1186,3 +1198,53 @@ def _make_renaming_matrices():
 
 
 RENAMING_MATRICES = _make_renaming_matrices()
+
+
+def format_pdb_line(serial, name, resname, chain, resnum, x, y, z, element, hetatm=False):
+    name = name if len(name) == 4 else ' ' + name
+    line = f'{"HETATM" if hetatm else "ATOM  "}{serial:>5d} {name:4s} {resname:3s} {chain:1s}{resnum:>4d}    {x: 8.3f}{y: 8.3f}{z: 8.3f}{" "*22}{element:>2s}'
+    return line
+
+
+def atom14_to_pdb_stream(stream, aatypes, atom14_coords, atom14_mask=None, chain='A', serial_start=1, resnum_start=1):
+    assert len(aatypes.shape) == 1, aatypes.shape
+    assert len(atom14_coords.shape) == 3, atom14_coords.shape
+    assert atom14_coords.shape[0] == aatypes.shape[0], (atom14_coords.shape, aatypes.shape)
+    assert atom14_coords.shape[-1] == 3, atom14_coords.shape
+    if atom14_mask is not None:
+        assert len(atom14_mask.shape) == 2, atom14_mask.shape
+        assert atom14_mask.shape[0] == aatypes.shape[0], (atom14_mask.shape, aatypes.shape)
+
+    serial = serial_start
+    for resi, aatype in enumerate(aatypes):
+        aa1 = residue_constants.restypes[aatype]
+        resname = residue_constants.restype_1to3[aa1]
+        for ix, name in enumerate(residue_constants.restype_name_to_atom14_names[resname]):
+            if name == '':
+                continue
+            if atom14_mask is not None and atom14_mask[resi, ix] < 1.0:
+                continue
+            x, y, z = atom14_coords[resi, ix]
+            element = name[0]
+            pdb_line = format_pdb_line(serial, name, resname, chain, resi+resnum_start, x, y, z, element)
+            stream.write(pdb_line + '\n')
+            serial += 1
+    return serial
+
+
+def ligand_to_pdb_stream(stream, atom_types, coords, resname='LIG', resnum=1, chain='A', serial_start=1):
+    assert len(atom_types.shape) == 1, atom_types.shape
+    assert len(coords.shape) == 2, coords.shape
+    assert coords.shape[0] == atom_types.shape[0], (coords.shape, atom_types.shape)
+    assert coords.shape[-1] == 3, coords.shape
+
+    serial = serial_start
+    for ix, type_num in enumerate(atom_types):
+        element = residue_constants.ELEMENTS_ORDER[type_num]
+        x, y, z = coords[ix]
+        name = (str(ix+1) + element)[:4]
+        pdb_line = format_pdb_line(serial, name, resname, chain, resnum, x, y, z, element, hetatm=True)
+        stream.write(pdb_line + '\n')
+        serial += 1
+    return serial
+

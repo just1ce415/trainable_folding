@@ -6,6 +6,7 @@ import typing
 import torch
 import time
 from tqdm import tqdm
+import traceback
 
 from alphadock import utils
 from alphadock import residue_constants
@@ -15,8 +16,8 @@ from alphadock import quat_affine
 from alphadock.config import DATA_DIR, DTYPE_FLOAT, DTYPE_INT
 
 
-ELEMENTS_ORDER = ['O', 'C', 'N', 'S', 'P', 'ZN', 'CL', 'MG', 'F', 'NA', 'CA', 'FE', 'MN', 'K', 'BR', 'I', 'X']
-ELEMENTS = {x[1]: x[0] for x in enumerate(ELEMENTS_ORDER)}
+ELEMENTS_ORDER = residue_constants.ELEMENTS_ORDER
+ELEMENTS = residue_constants.ELEMENTS
 
 HYBRIDIZATIONS = {
     'S': 0,
@@ -71,6 +72,24 @@ LIG_EXTRA_DISTANCE = {
     'min': 3,
     'max': 12,
     'num_bins': 9
+}
+
+AFFINITY_LOG10 = {
+    'min': 0,
+    'max': 6,
+    'num_bins': 6
+}
+
+SASA_BINS = {
+    'min': 0,
+    'max': 2.5,
+    'num_bins': 10
+}
+
+AF_CONFIDENCE_BINS = {
+    'min': 40,
+    'max': 100,
+    'num_bins': 6
 }
 
 
@@ -197,7 +216,8 @@ def ag_to_features(rec_ag, ag_aln, tar_aln, no_mismatch=False, residues_mask=Non
         resi=[],
         atom14_coords=[],
         atom14_has_coords=[],
-        has_frame=[]
+        has_frame=[],
+        ag_resi=[]
     )
 
     residues = list(rec_ag.getHierView().iterResidues())
@@ -225,14 +245,24 @@ def ag_to_features(rec_ag, ag_aln, tar_aln, no_mismatch=False, residues_mask=Non
                         residue = None
                     else:
                         residue = residues[ag_resi]
+
+                try:
+                    atom14_coords, atom14_has_coords = residue_to_atom14(residue)
+                except AssertionError:
+                    # 1BNN_A throws AssertionError
+                    traceback.print_exc()
+                    atom14_coords = np.zeros((14, 3), dtype=DTYPE_FLOAT)
+                    atom14_has_coords = np.zeros(14, dtype=DTYPE_FLOAT)
+                    residue = None
+
                 feats_1d['crd_mask'].append(residue is not None)
                 cbeta = cbeta_atom(residue)
                 feats_1d['crd_beta_mask'].append(cbeta is not None)
                 feats_1d['crd_beta'].append(None if cbeta is None else cbeta.getCoords())
                 feats_1d['has_frame'].append((residue is not None) and ('CA' in residue) and ('C' in residue) and ('N' in residue))
                 feats_1d['resi'].append(tar_resi)
+                feats_1d['ag_resi'].append(min(ag_resi, len(residues)-1))
 
-                atom14_coords, atom14_has_coords = residue_to_atom14(residue)
                 feats_1d['atom14_coords'].append(atom14_coords)
                 feats_1d['atom14_has_coords'].append(atom14_has_coords)
                 #feats_1d['atom14_coords'].append(np.zeros((14, 3)))
@@ -251,12 +281,20 @@ def rec_to_features(case_dict):
     case_dir = DATA_DIR / 'cases' / case_dict['case_name']
     af_seq = case_dict['alphafold']['seq']
     entity_seq = case_dict['entity_info']['pdbx_seq_one_letter_code_can']
-    #assert af_seq == entity_seq
 
     rec_ag = prody.parsePDB(case_dir / 'AF_orig.pdb')
-    #print(utils.global_align(af_seq, entity_seq))
     af_aln, ent_aln = utils.global_align(af_seq, entity_seq)[0][:2]
-    return ag_to_features(rec_ag, af_aln, ent_aln, no_mismatch=True)
+    #print(case_dict['case_name'] + '\n' + af_aln + '\n' + ent_aln + '\n' + 'mm_num: ' + str(sum([x != y and x != '-' and y != '-' for x, y in zip(af_aln, ent_aln)])))
+
+    feats = ag_to_features(rec_ag, af_aln, ent_aln, no_mismatch=True)
+
+    sasa = np.loadtxt(case_dir / 'AF_sasa.txt')
+    assert len(sasa) == len(rec_ag)
+    sasa_residues = [sasa[r.getIndices()].sum() for r in rec_ag.getHierView().iterResidues()]
+    feats['sasa'] = np.array(sasa_residues)[feats['ag_resi']]
+    feats['confidence'] = rec_ag.calpha.getBetas()[feats['ag_resi']]
+
+    return feats
 
 
 def _transform_hh_aln(tpl_seq, tar_seq, hhpred_dict):
@@ -344,13 +382,19 @@ def rec_literal_to_numeric(rec_dict, seq_include_gap=False):
 
     rec_dict['seq_aatype'] = [one_hot_aatype(x, seq_abc) for x in rec_dict['seq_aatype']]
     rec_dict['ag_aatype'] = [one_hot_aatype(x, AATYPE_WITH_X_AND_GAP) for x in rec_dict['ag_aatype']]
+    crd_beta_mask = np.array(rec_dict['crd_beta_mask'])
+
+    if 'sasa' in rec_dict:
+        sasa = dmat_to_distogram(rec_dict['sasa'], SASA_BINS['min'], SASA_BINS['max'], SASA_BINS['num_bins']) * crd_beta_mask[:, None]
+
+    if 'confidence' in rec_dict:
+        confidence = dmat_to_distogram(rec_dict['confidence'], AF_CONFIDENCE_BINS['min'], AF_CONFIDENCE_BINS['max'], AF_CONFIDENCE_BINS['num_bins']) * crd_beta_mask[:, None]
 
     crd = np.stack([np.zeros(3) if x is None else x for x in rec_dict['crd_beta']])
     dmat = utils.calc_dmat(crd, crd)
     dgram = dmat_to_distogram(dmat, REC_DISTOGRAM['min'], REC_DISTOGRAM['max'], REC_DISTOGRAM['num_bins'])
 
     # cbeta_mask 2d
-    crd_beta_mask = np.array(rec_dict['crd_beta_mask'])
     crd_beta_mask_2d = np.outer(crd_beta_mask, crd_beta_mask)
 
     # residue id 2d
@@ -361,7 +405,7 @@ def rec_literal_to_numeric(rec_dict, seq_include_gap=False):
     # mask distogram
     dgram *= crd_beta_mask_2d[..., None]
 
-    return {
+    out_dict = {
         'seq_aatype': np.stack(rec_dict['seq_aatype']),
         'seq_aatype_num': np.array(seq_aatype_num, dtype=DTYPE_INT),
         'ag_aatype': np.stack(rec_dict['ag_aatype']),
@@ -376,13 +420,20 @@ def rec_literal_to_numeric(rec_dict, seq_include_gap=False):
         'crd_beta_mask_2d': crd_beta_mask_2d.astype(DTYPE_FLOAT),
         'atom14_coords': np.stack(rec_dict['atom14_coords']),
         'atom14_has_coords': np.stack(rec_dict['atom14_has_coords']),
-        'has_frame': np.array(rec_dict['has_frame'], dtype=DTYPE_INT)
+        'has_frame': np.array(rec_dict['has_frame'], dtype=DTYPE_INT),
     }
+    if 'sasa' in rec_dict:
+        out_dict['sasa'] = sasa
+
+    if 'confidence' in rec_dict:
+        out_dict['confidence'] = confidence
+
+    return out_dict
 
 
 def target_rec_featurize(case_dict):
     rec_feats = rec_literal_to_numeric(rec_to_features(case_dict), seq_include_gap=False)
-    rec_1d = np.concatenate([rec_feats['seq_aatype'], rec_feats['crd_mask'][..., None], rec_feats['crd_beta_mask'][..., None]], axis=-1)
+    rec_1d = np.concatenate([rec_feats['seq_aatype'], rec_feats['crd_mask'][..., None], rec_feats['crd_beta_mask'][..., None], rec_feats['sasa'], rec_feats['confidence']], axis=-1)
     rec_2d = np.concatenate([rec_feats['distogram_2d'], rec_feats['crd_beta_mask_2d'][..., None]], axis=-1)
 
     renaming_mats = all_atom.RENAMING_MATRICES[rec_feats['seq_aatype_num']]  # (N, 14, 14)
@@ -441,6 +492,12 @@ def ground_truth_featurize(case_dict, group_dict):
     atom37_gt_exists = all_atom.atom14_to_atom37(torch.from_numpy(atom14_gt_exists).float(), torch.from_numpy(rec_dict['seq_aatype_num']))
     gt_torsions = all_atom.atom37_to_torsion_angles(torch.from_numpy(rec_dict['seq_aatype_num'][None]), atom37_gt_positions[None].float(), atom37_gt_exists[None].float())
 
+    rec_all_frames = all_atom.atom37_to_frames(torch.from_numpy(rec_dict['seq_aatype_num']), atom37_gt_positions.float(), atom37_gt_exists.float())
+    rec_bb_affine = r3.rigids_to_quataffine(r3.rigids_from_tensor_flat12(rec_all_frames['rigidgroups_gt_frames'][..., 0, :]))
+    rec_bb_affine.quaternion = quat_affine.rot_to_quat(rec_bb_affine.rotation)
+    rec_bb_affine = rec_bb_affine.to_tensor().numpy()
+    rec_bb_affine_mask = rec_all_frames['rigidgroups_gt_exists'][..., 0].numpy()
+
     # process ligand group
     group_dir = case_dir / group_dict['name']
     group_feats = []
@@ -471,6 +528,20 @@ def ground_truth_featurize(case_dict, group_dict):
 
     #print(lig_matches)
     #print(group_dict['ligands'])
+    aff_start = 0
+    aff_end = 0
+    aff_value = 0
+    aff_label = 0
+    aff_known = False
+    for aff_lig_id, lig_dict in enumerate(group_dict['ligands']):
+        aff_end += lig_dict['num_heavy_atoms']
+        if lig_dict['affinity'] is not None and lig_dict['affinity']['unit'].upper() == 'NM':
+            aff_value = np.log10(lig_dict['affinity']['value'])
+            aff_bin_size = (AFFINITY_LOG10['max'] - AFFINITY_LOG10['min']) / AFFINITY_LOG10['num_bins']
+            aff_label = np.minimum(np.abs(((aff_value - AFFINITY_LOG10['min']) // aff_bin_size).astype(int)), AFFINITY_LOG10['num_bins'] - 1)
+            aff_known = True
+            break
+        aff_start += lig_dict['num_heavy_atoms']
 
     out = {
         'gt_aatype': rec_dict['seq_aatype_num'].astype(DTYPE_INT),  # same as for target
@@ -484,11 +555,31 @@ def ground_truth_featurize(case_dict, group_dict):
         'gt_torsions_sin_cos_alt': gt_torsions['alt_torsion_angles_sin_cos'][0].numpy().astype(DTYPE_FLOAT),
         'gt_torsions_mask': gt_torsions['torsion_angles_mask'][0].numpy().astype(DTYPE_FLOAT),
 
+        'gt_rigidgroups_gt_frames': rec_all_frames['rigidgroups_gt_frames'].numpy().astype(DTYPE_FLOAT),  # (..., 8, 12)
+        'gt_rigidgroups_alt_gt_frames': rec_all_frames['rigidgroups_alt_gt_frames'].numpy().astype(DTYPE_FLOAT),  # (..., 8, 12)
+        'gt_rigidgroups_gt_exists': rec_all_frames['rigidgroups_gt_exists'].numpy().astype(DTYPE_FLOAT),  # (..., 8)
+        #'gt_rigidgroups_group_exists': rec_all_frames['rigidgroups_group_exists'].numpy().astype(DTYPE_FLOAT),  # (..., 8)
+        'gt_rigidgroups_group_is_ambiguous': rec_all_frames['rigidgroups_group_is_ambiguous'].numpy().astype(DTYPE_FLOAT),  # (..., 8)
+
+        'gt_bb_affine': rec_bb_affine.astype(DTYPE_FLOAT),
+        'gt_bb_affine_mask': rec_bb_affine_mask.astype(DTYPE_FLOAT),
+
         'gt_residue_index': np.arange(len(rec_dict['seq_aatype_num']), dtype=DTYPE_INT),  # (N_res)
         'gt_has_frame': rec_dict['has_frame'].astype(DTYPE_FLOAT),  # (N_res)
         'gt_lig_coords': np.stack(lig_coords).astype(DTYPE_FLOAT),  # (N_symm, N_atoms, 3)
         'gt_lig_has_coords': np.stack(lig_has_coords).astype(DTYPE_FLOAT),  # (N_symm, N_atoms)
     }
+
+    if aff_known:
+        out.update({
+            'gt_affinity_label': aff_label.astype(DTYPE_INT),
+            'gt_affinity_value': aff_value.astype(DTYPE_FLOAT),
+            'gt_affinity_known': np.array(aff_known).astype(DTYPE_INT),
+            'gt_affinity_start': np.array(aff_start).astype(DTYPE_INT),
+            'gt_affinity_end': np.array(aff_end).astype(DTYPE_INT),
+            'gt_affinity_lig_id': np.array(aff_lig_id).astype(DTYPE_INT)
+        })
+
     return out
 
 
@@ -503,14 +594,20 @@ def target_group_featurize(case_dict, group_dict):
     group_1d = np.concatenate([x['atom_feats'] for x in group_feats], axis=0)
     group_2d = np.zeros((group_1d.shape[0], group_1d.shape[0], group_feats[0]['bonds_2d'].shape[-1]))
     start = 0
+    start_list = []
+    end_list = []
     for lig_feats in group_feats:
+        start_list.append(start)
         lig_size = lig_feats['atom_feats'].shape[0]
         group_2d[start:start+lig_size, start:start+lig_size] = lig_feats['bonds_2d']
         start += lig_size
+        end_list.append(start)
 
     return {
         'lig_1d': group_1d.astype(DTYPE_FLOAT),
-        'lig_2d': group_2d.astype(DTYPE_FLOAT)
+        'lig_2d': group_2d.astype(DTYPE_FLOAT),
+        'lig_starts': np.array(start_list, dtype=DTYPE_INT),
+        'lig_ends': np.array(end_list, dtype=DTYPE_INT)
     }
 
 
@@ -751,7 +848,7 @@ def stack_with_padding(arrays: typing.List[np.ndarray]):
 def fragment_template_list_featurize(tpl_case_dicts, tpl_group_dicts, mappings):
     frag_feats_list = []
 
-    for tpl_case_dict, tpl_group_dict, mapping in tqdm(list(zip(tpl_case_dicts, tpl_group_dicts, mappings))):
+    for tpl_case_dict, tpl_group_dict, mapping in zip(tpl_case_dicts, tpl_group_dicts, mappings):
         #frag_feats = np.load(f"{DATA_DIR}/featurized/{tpl_case_dict['case_name']}.{tpl_group_dict['name']}.fragment_feats.npy", allow_pickle=True).item()
         frag_feats = fragment_template_featurize(tpl_case_dict, tpl_group_dict)
         frag_feats['fragment_mapping'] = np.array(mapping).astype(DTYPE_INT)
@@ -814,7 +911,7 @@ def fragment_extra_featurize(tpl_case_dict, tpl_group_dict, mapping):
 def fragment_extra_list_featurize(tpl_case_dicts, tpl_group_dicts, mappings):
     feats_list = []
 
-    for tpl_case_dict, tpl_group_dict, mapping in tqdm(list(zip(tpl_case_dicts, tpl_group_dicts, mappings))):
+    for tpl_case_dict, tpl_group_dict, mapping in zip(tpl_case_dicts, tpl_group_dicts, mappings):
         lig_feats = fragment_extra_featurize(tpl_case_dict, tpl_group_dict, mapping)
         feats_list.append(lig_feats)
 

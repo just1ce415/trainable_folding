@@ -4,7 +4,7 @@ import torch.functional as F
 from torch.utils.checkpoint import checkpoint
 import math
 
-import quat_affine
+from alphadock import quat_affine
 
 
 class InvariantPointAttention(torch.nn.Module):
@@ -51,16 +51,9 @@ class InvariantPointAttention(torch.nn.Module):
         lig_k_1d, lig_q_1d, lig_v_1d = torch.split(kqv, [self.num_scalar_qk, self.num_scalar_qk, self.num_scalar_v], dim=-1)  # [b, a, h, c]
 
         rr = self.rr_kqv_2d(rep_2d[:, :num_res, :num_res]).view([batch, num_res, num_res, self.num_head])
-        #rr_k, rr_q, rr_v = torch.split(kqv, [self.num_2d_qk, self.num_2d_qk, self.num_2d_v])
-
         ll = self.ll_kqv_2d(rep_2d[:, num_res:, num_res:]).view([batch, num_atoms, num_atoms, self.num_head])
-        #ll_k, ll_q, ll_v = torch.split(kqv, [self.num_2d_qk, self.num_2d_qk, self.num_2d_v])
-
         rl = self.rl_kqv_2d(rep_2d[:, :num_res, num_res:]).view([batch, num_res, num_atoms, self.num_head])
-        #rl_k, rl_q, rl_v = torch.split(kqv, [self.num_2d_qk, self.num_2d_qk, self.num_2d_v])
-
         lr = self.lr_kqv_2d(rep_2d[:, num_res:, :num_res]).view([batch, num_atoms, num_res, self.num_head])
-        #lr_k, lr_q, lr_v = torch.split(kqv, [self.num_2d_qk, self.num_2d_qk, self.num_2d_v])
 
         Wc = math.sqrt(2. / (9. * self.num_point_qk))
         Wl = math.sqrt(1. / 3.)
@@ -242,6 +235,27 @@ class StructureModuleIteration(torch.nn.Module):
         }
 
 
+class PredictAffinity(torch.nn.Module):
+    def __init__(self, config, global_config):
+        super().__init__()
+        num_in_c = global_config['num_single_c']
+        num_c = config['num_c']
+        num_bins = config['num_bins']
+
+        self.layers = nn.Sequential(
+            nn.LayerNorm(num_in_c),
+            nn.Linear(num_in_c, num_c),
+            nn.ReLU(),
+            nn.Linear(num_c, num_c),
+            nn.ReLU(),
+            nn.Linear(num_c, num_bins)
+            #nn.Softmax(-1)
+        )
+
+    def forward(self, rep_1d):
+        return self.layers(rep_1d)
+
+
 class StructureModule(torch.nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
@@ -254,6 +268,7 @@ class StructureModule(torch.nn.Module):
         self.norm_2d_init = nn.LayerNorm(global_config['rep_2d']['num_c'])
         self.rec_1d_proj = nn.Linear(num_1dc, num_1dc)
         self.lig_1d_proj = nn.Linear(num_1dc, num_1dc)
+        self.pred_affinity = PredictAffinity(config['PredictAffinity'], global_config)
 
         self.position_scale = global_config['position_scale']
         self.config = config
@@ -301,9 +316,12 @@ class StructureModule(torch.nn.Module):
 
         #print({k: v.requires_grad for k, v in x.items()})
 
+        def checkpoint_fun(function):
+            return lambda input: function(input)
+
         for l in self.layers:
             if self.config['StructureModuleIteration']['checkpoint']:
-                update = checkpoint(lambda x: l(x), x)
+                update = checkpoint(checkpoint_fun(l), x)
                 x.update(update)
             else:
                 x.update(l(x))
@@ -313,6 +331,11 @@ class StructureModule(torch.nn.Module):
             rec_lddt.append(x['rec_lddt'])
             lig_lddt.append(x['lig_lddt'])
 
+        aff_rep = self.pred_affinity(x['lig_1d'])
+        affinities = []
+        for start, end in zip(inputs['lig_starts'][0], inputs['lig_ends'][0]):
+            affinities.append(aff_rep[:, start:end].mean(-2))
+
         return {
             'rec_T': torch.stack(rec_T_inter, dim=1),
             'lig_T': torch.stack(lig_T_inter, dim=1),
@@ -321,6 +344,7 @@ class StructureModule(torch.nn.Module):
             'rec_1d': x['rec_1d'],
             'rec_lddt': torch.stack(rec_lddt, dim=1),
             'lig_lddt': torch.stack(lig_lddt, dim=1),
+            'lig_affinity': torch.stack(affinities, dim=1)
         }
 
 
