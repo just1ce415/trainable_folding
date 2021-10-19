@@ -10,11 +10,12 @@ from torch.utils.data import Dataset
 from functools import partial
 import torch
 import sys
-import horovod.torch as hvd
+#import horovod.torch as hvd
 
 from config import DATA_DIR
 from alphadock import utils
 from alphadock import features_summit
+from alphadock import residue_constants
 
 
 class DockingDataset(Dataset):
@@ -27,7 +28,8 @@ class DockingDataset(Dataset):
             max_frag_extra=64,
             use_hh_prob=0.5,
             sample_to_size=None,
-            clamp_fape_prob=0.9,
+            clamp_fape_prob=0.5,
+            max_num_res=None,
             seed=123456
     ):
         self.dataset_dir = Path(dataset_dir).abspath()
@@ -43,6 +45,9 @@ class DockingDataset(Dataset):
         self.use_hh_prob = use_hh_prob
         self.clamp_fape_prob = clamp_fape_prob
         self.rng = np.random.default_rng(seed)
+
+        if max_num_res is not None:
+            self.data = [x for x in self.data if len(utils.read_json(DATA_DIR / 'cases' / x['case_name'] / 'case.json')['entity_info']['pdbx_seq_one_letter_code']) <= max_num_res]
 
         if sample_to_size is not None:
             probs = np.array([1. / x['seqclus_size'] for x in self.data])
@@ -190,13 +195,13 @@ class DockingDataset(Dataset):
         fragment_matches = [x for x in fragment_matches if (x['tpl_chain'] + '_' + x['tpl_group']) in self.template_pool]
 
         # process hhpred
-        if self.rng.random() < self.use_hh_prob:
+        if self.rng.random() < self.use_hh_prob and self.max_hh_templates > 0:
             hhpred = self._get_hh_list(case_dict, group_dict, group_dir, fragment_matches)
             if len(hhpred) > 0:
                 out_dict['hhpred'] = hhpred
 
         # process fragments
-        if len(fragment_matches) > 0:
+        if len(fragment_matches) > 0 and (self.max_frag_main + self.max_frag_extra) > 0:
             out_dict['fragments'] = {}
             selected_fragments = self._get_frag_list(fragment_matches, self.max_frag_main + self.max_frag_extra)
 
@@ -237,7 +242,6 @@ class DockingDataset(Dataset):
 
     def _get_item_simple(self, ix):
         item = self.data[ix]
-
         rank = 0
 
         item = {}
@@ -267,14 +271,144 @@ class DockingDataset(Dataset):
         return out_dict
 
     def __getitem__(self, ix):
-        # if there is an error, fall back to the first sample
-        #try:
         return self._get_item(ix)
-        #except Exception:
-        #    traceback.print_exc()
-        #    print('ASDFSDFS', self.data[ix])
-        #    raise
-        #    return self._get_item(0)
+
+
+class DockingDatasetSimulated(Dataset):
+    def __init__(
+            self,
+            size=10,
+            num_res=400,
+            num_atoms=50,
+            num_frag_main=16,
+            num_frag_extra=16,
+            num_hh=2,
+    ):
+        self.size = size
+        self.num_res = num_res
+        self.num_atoms = num_atoms
+        self.num_frag_main = num_frag_main
+        self.num_frag_extra = num_frag_extra
+        self.num_hh = num_hh
+
+    def __len__(self):
+        return self.size
+
+    def _get_item(self):
+        aatype = 'S'
+        aaorder = residue_constants.restype_order_with_x[aatype]
+        num_res = self.num_res
+        num_atoms = self.num_atoms
+        num_frag_main = self.num_frag_main
+        num_frag_extra = self.num_frag_extra
+        num_hh = self.num_hh
+
+        inputs = {
+            'target': {
+                'rec_1d': torch.ones(torch.Size([num_res, 39]), dtype= torch.float32),
+                'rec_2d': torch.ones(torch.Size([num_res, num_res, 40]) ,dtype= torch.float32),
+                'rec_relpos': torch.zeros(torch.Size([num_res, num_res, 65]) , dtype= torch.float32),
+                'rec_atom14_coords': torch.zeros(torch.Size([num_res, 14, 3]) , dtype=torch.float32),
+                'rec_atom14_has_coords': torch.zeros(torch.Size([num_res, 14]), dtype=torch.float32),
+                'rec_atom37_coords': torch.zeros(torch.Size([num_res, 37, 3]) , dtype=torch.float32),
+                'rec_atom37_has_coords': torch.zeros(torch.Size([num_res, 37]) , dtype=torch.float32),
+                'rec_aatype': torch.zeros(torch.Size([num_res]), dtype=torch.int64),
+                'rec_bb_affine': torch.zeros(torch.Size([num_res, 7]) , dtype= torch.float32),
+                'rec_bb_affine_mask': torch.ones(torch.Size([num_res]) , dtype= torch.float32),
+                'rec_atom14_atom_is_ambiguous': torch.zeros(torch.Size([num_res, 14]) , dtype= torch.float32),
+                'rec_atom14_atom_exists': torch.zeros(torch.Size([num_res, 14]), dtype=  torch.float32),
+                'rigidgroups_gt_frames': torch.zeros(torch.Size([num_res, 8, 12]) , dtype= torch.float32),
+                'rigidgroups_gt_exists': torch.zeros(torch.Size([num_res, 8]) , dtype= torch.float32),
+                'rigidgroups_group_exists': torch.zeros(torch.Size([num_res, 8]) , dtype= torch.float32),
+                'rigidgroups_group_is_ambiguous': torch.zeros(torch.Size([num_res, 8]), dtype=  torch.float32),
+                'rigidgroups_alt_gt_frames': torch.zeros(torch.Size([num_res, 8, 12]) , dtype= torch.float32),
+                'rec_torsions_sin_cos': torch.zeros(torch.Size([num_res, 7, 2]) , dtype=torch.float32),
+                'rec_torsions_sin_cos_alt': torch.zeros(torch.Size([num_res, 7, 2]) , dtype=torch.float32),
+                'rec_torsions_mask': torch.zeros(torch.Size([num_res, 7]) , dtype=torch.float32),
+                'lig_1d': torch.ones(torch.Size([num_atoms, 47]) , dtype= torch.float32),
+                'lig_2d': torch.ones(torch.Size([num_atoms, num_atoms, 6]), dtype=  torch.float32),
+                'lig_starts': torch.tensor([0], dtype=torch.int64),
+                'lig_ends': torch.tensor([num_atoms], dtype=torch.int64),
+                'lig_atom_types': torch.zeros(num_atoms, dtype=torch.int64),
+                'ix': torch.tensor(0)
+            },
+            'ground_truth': {
+                'gt_aatype': torch.zeros(torch.Size([num_res]) , dtype=torch.int64),
+                'gt_atom14_coords': torch.zeros(torch.Size([num_res, 14, 3]) , dtype=torch.float32),
+                'gt_atom14_has_coords': torch.zeros(torch.Size([num_res, 14]) , dtype=torch.float32),
+                'gt_atom14_coords_alt': torch.zeros(torch.Size([num_res, 14, 3]) , dtype=torch.float32),
+                'gt_atom14_has_coords_alt': torch.zeros(torch.Size([num_res, 14]) , dtype=torch.float32),
+                'gt_atom14_atom_is_ambiguous': torch.zeros(torch.Size([num_res, 14]) , dtype=torch.float32),
+                'gt_torsions_sin_cos': torch.zeros(torch.Size([num_res, 7, 2]) , dtype=torch.float32),
+                'gt_torsions_sin_cos_alt': torch.zeros(torch.Size([num_res, 7, 2]) , dtype=torch.float32),
+                'gt_torsions_mask': torch.zeros(torch.Size([num_res, 7]) , dtype=torch.float32),
+
+                'gt_rigidgroups_gt_frames': torch.zeros(torch.Size([num_res, 8, 12]) , dtype= torch.float32),
+                'gt_rigidgroups_alt_gt_frames': torch.zeros(torch.Size([num_res, 8, 12]) , dtype= torch.float32),
+                'gt_rigidgroups_gt_exists': torch.zeros(torch.Size([num_res, 8]) , dtype= torch.float32),
+                'gt_rigidgroups_group_is_ambiguous': torch.zeros(torch.Size([num_res, 8]), dtype=  torch.float32),
+                'gt_bb_affine': torch.zeros(torch.Size([num_res, 7]) , dtype= torch.float32),
+                'gt_bb_affine_mask': torch.ones(torch.Size([num_res]) , dtype= torch.float32),
+
+                'gt_residue_index': torch.zeros(torch.Size([num_res]) , dtype=torch.int64),
+                'gt_has_frame': torch.zeros(torch.Size([num_res]) , dtype=torch.float32),
+                'gt_lig_coords': torch.zeros(torch.Size([4, num_atoms, 3]) , dtype=torch.float32),
+                'gt_lig_has_coords': torch.zeros(torch.Size([4, num_atoms]) , dtype=torch.float32),
+                'clamp_fape': torch.tensor(0)
+            },
+            'hhpred': {
+                'lig_1d': torch.ones(torch.Size([num_hh, num_atoms, 49]) , dtype=torch.float32),
+                'rec_1d': torch.ones(torch.Size([num_hh, num_res, 24]) , dtype=torch.float32),
+                'll_2d': torch.ones(torch.Size([num_hh, num_atoms, num_atoms, 142]) , dtype=torch.float32),
+                'rr_2d': torch.ones(torch.Size([num_hh, num_res, num_res, 84]) , dtype=torch.float32),
+                'rl_2d': torch.ones(torch.Size([num_hh, num_res, num_atoms, 110]) , dtype=torch.float32),
+                'lr_2d': torch.ones(torch.Size([num_hh, num_atoms, num_res, 110]) , dtype=torch.float32),
+            },
+            'fragments': {
+                'main': torch.ones(torch.Size([num_frag_main, num_atoms, 238]) , dtype=torch.float32),
+                'extra': torch.ones(torch.Size([num_frag_extra, num_atoms, 238]) , dtype=torch.float32),
+            }
+        }
+        inputs['target']['rec_atom14_has_coords'][:] = torch.from_numpy(residue_constants.restype_atom14_mask[aaorder])
+        inputs['target']['rec_atom37_has_coords'][:] = torch.from_numpy(residue_constants.restype_atom37_mask[aaorder])
+        inputs['target']['rec_aatype'][:] = aaorder
+        inputs['target']['rec_bb_affine'][:, 0] = 1
+        inputs['target']['rec_atom14_atom_exists'][:] = torch.from_numpy(residue_constants.restype_atom14_mask[aaorder])
+        inputs['target']['rigidgroups_gt_frames'][:] = torch.tensor([1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0])
+        inputs['target']['rigidgroups_gt_exists'][:, :5] = 1
+        inputs['target']['rigidgroups_group_exists'][:, :5] = 1
+        inputs['target']['rigidgroups_alt_gt_frames'] = inputs['target']['rigidgroups_gt_frames'].clone()
+        inputs['target']['rec_torsions_sin_cos'][:, :,  0] = 1
+        inputs['target']['rec_torsions_sin_cos_alt'][:, :, 0] = 1
+        inputs['target']['rec_torsions_mask'][:, :4] = 1
+
+        inputs['ground_truth']['gt_aatype'][:] = aaorder
+        inputs['ground_truth']['gt_atom14_has_coords'][:] = torch.from_numpy(residue_constants.restype_atom14_mask[aaorder])
+        inputs['ground_truth']['gt_atom14_has_coords_alt'][:] = torch.from_numpy(residue_constants.restype_atom14_mask[aaorder])
+        inputs['ground_truth']['gt_torsions_sin_cos'][:, :, 0] = 1
+        inputs['ground_truth']['gt_torsions_sin_cos_alt'][:, :, 0] = 1
+        inputs['ground_truth']['gt_torsions_mask'][:, :4] = 1
+        inputs['ground_truth']['gt_has_frame'][:] = 1
+        inputs['ground_truth']['gt_lig_has_coords'][:] = 1
+        inputs['ground_truth']['gt_bb_affine'][:, 0] = 1
+        inputs['ground_truth']['gt_rigidgroups_gt_frames'][:] = torch.tensor([1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0])
+        inputs['ground_truth']['gt_rigidgroups_gt_exists'][:, :5] = 1
+        inputs['ground_truth']['gt_rigidgroups_alt_gt_frames'] = inputs['ground_truth']['gt_rigidgroups_gt_frames'].clone()
+
+        if num_hh == 0:
+            del inputs['hhpred']
+
+        if num_frag_extra + num_frag_main == 0:
+            del inputs['fragments']
+        elif num_frag_main == 0:
+            del inputs['fragments']['main']
+        elif num_frag_extra == 0:
+            del inputs['fragments']['extra']
+
+        return inputs
+
+    def __getitem__(self, ix):
+        return self._get_item()
 
 
 def main():
@@ -306,6 +440,16 @@ def find_bug():
             for k2, v2 in v1.items():
                 v1[k2] = torch.as_tensor(v2)[None].cuda()
                 print('    ', k2, v1[k2].shape, v1[k2].dtype)
+
+
+def simulate():
+    ds = DockingDatasetSimulated(num_hh=0, num_frag_extra=0)
+    item = ds[0]
+    for k1, v1 in item.items():
+        print(k1)
+        for k2, v2 in v1.items():
+            v1[k2] = torch.as_tensor(v2)[None].cuda()
+            print('    ', k2, v1[k2].shape, v1[k2].dtype)
 
 
 if __name__ == '__main__':

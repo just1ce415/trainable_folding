@@ -62,3 +62,5 @@ pip install -r requirements/pipeline.txt
 python setup.py install
 cd ../
 rm -rf sb-lab-utils
+
+pip install -e $SRC_DIR

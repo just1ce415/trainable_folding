@@ -47,6 +47,7 @@ class DockerIteration(nn.Module):
             'pair': pair.to(self.config['StructureModule']['device']),
             'rec_bb_affine': input['target']['rec_bb_affine'],
             'rec_bb_affine_mask': input['target']['rec_bb_affine_mask'],
+            'rec_torsions': input['target']['rec_torsions_sin_cos'],
             'lig_starts': input['target']['lig_starts'],
             'lig_ends': input['target']['lig_ends'],
         })

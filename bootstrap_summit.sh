@@ -8,12 +8,12 @@ NUMPROC=$(nproc)
 
 module reset
 set +u
-module load open-ce/1.2.0-py38-0
+module load open-ce/1.4.0-py38-0
 set -u
 
 # Setup conda env
 if [ ! -d "${ENV_DIR}" ]; then
-    conda create --prefix "${ENV_DIR}" --clone open-ce-1.2.0-py38-0
+    conda create --prefix "${ENV_DIR}" --clone open-ce-1.4.0-py38-0
 fi
 
 # Create conda environment in the current directory
@@ -42,3 +42,5 @@ python setup.py build
 python setup.py install
 cd -
 rm -rf v1.10.11.tar.gz ProDy-1.10.11
+
+pip install -e $SRC_DIR

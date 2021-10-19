@@ -222,7 +222,7 @@ class StructureModuleIteration(torch.nn.Module):
         lig_T = lig_T.pre_compose(self.lig_atoms_update(lig_1d.clone()))
 
         # sidechains
-        rec_torsions = self.PredictSidechains(rec_1d, rec_1d_init)
+        rec_torsions = inputs['rec_torsions'] + self.PredictSidechains(rec_1d, rec_1d_init)
 
         return {
             'rec_1d': rec_1d,
@@ -295,6 +295,7 @@ class StructureModule(torch.nn.Module):
         rec_T.requires_grad = True
 
         # Set up ligand starting frames
+        # TODO: maybe use COM of rec instead of zeros ?
         lig_T = torch.zeros((1, lig_1d.shape[1], 7), device=lig_1d.device, dtype=lig_1d.dtype)
         lig_T[:, :, 0] = 1
         lig_T.requires_grad = True
@@ -305,7 +306,8 @@ class StructureModule(torch.nn.Module):
             'lig_1d': lig_1d,
             'rep_2d': pair,
             'rec_T': rec_T,
-            'lig_T': lig_T
+            'lig_T': lig_T,
+            'rec_torsions': inputs['rec_torsions']
         }
 
         rec_T_inter = []

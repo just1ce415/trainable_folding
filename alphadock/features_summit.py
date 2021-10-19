@@ -284,7 +284,7 @@ def rec_to_features(case_dict):
 
     rec_ag = prody.parsePDB(case_dir / 'AF_orig.pdb')
     af_aln, ent_aln = utils.global_align(af_seq, entity_seq)[0][:2]
-    #print(case_dict['case_name'] + '\n' + af_aln + '\n' + ent_aln + '\n' + 'mm_num: ' + str(sum([x != y and x != '-' and y != '-' for x, y in zip(af_aln, ent_aln)])))
+    print(case_dict['case_name'] + '\n' + af_aln + '\n' + ent_aln + '\n' + 'mm_num: ' + str(sum([x != y and x != '-' and y != '-' for x, y in zip(af_aln, ent_aln)])))
 
     feats = ag_to_features(rec_ag, af_aln, ent_aln, no_mismatch=True)
 
@@ -443,6 +443,8 @@ def target_rec_featurize(case_dict):
     rec_atom37_coords = all_atom.atom14_to_atom37(torch.from_numpy(rec_feats['atom14_coords']).float(), torch.from_numpy(rec_feats['seq_aatype_num']))
     rec_atom37_mask = all_atom.atom14_to_atom37(torch.from_numpy(rec_feats['atom14_has_coords']).float(), torch.from_numpy(rec_feats['seq_aatype_num']))
     rec_all_frames = all_atom.atom37_to_frames(torch.from_numpy(rec_feats['seq_aatype_num']), rec_atom37_coords.float(), rec_atom37_mask.float())
+    # TODO: decide about placeholder
+    rec_torsions = all_atom.atom37_to_torsion_angles(torch.from_numpy(rec_feats['seq_aatype_num'][None]), rec_atom37_coords[None].float(), rec_atom37_mask[None].float(), placeholder_for_undefined=True)
 
     rec_bb_affine = r3.rigids_to_quataffine(r3.rigids_from_tensor_flat12(rec_all_frames['rigidgroups_gt_frames'][..., 0, :]))
     rec_bb_affine.quaternion = quat_affine.rot_to_quat(rec_bb_affine.rotation)
@@ -457,11 +459,16 @@ def target_rec_featurize(case_dict):
         'rec_atom14_has_coords': rec_feats['atom14_has_coords'].astype(DTYPE_FLOAT),
         'rec_atom37_coords': rec_atom37_coords.numpy().astype(DTYPE_FLOAT),
         'rec_atom37_has_coords': rec_atom37_mask.numpy().astype(DTYPE_FLOAT),
+
         'rec_aatype': rec_feats['seq_aatype_num'].astype(DTYPE_INT),
         'rec_bb_affine': rec_bb_affine.astype(DTYPE_FLOAT),
         'rec_bb_affine_mask': rec_bb_affine_mask.astype(DTYPE_FLOAT),
         'rec_atom14_atom_is_ambiguous': atom14_atom_is_ambiguous.astype(DTYPE_FLOAT),
-        'rec_atom14_atom_exists': residue_constants.restype_atom14_mask[rec_feats['seq_aatype_num']].astype(DTYPE_FLOAT)
+        'rec_atom14_atom_exists': residue_constants.restype_atom14_mask[rec_feats['seq_aatype_num']].astype(DTYPE_FLOAT),
+
+        'rec_torsions_sin_cos': rec_torsions['torsion_angles_sin_cos'][0].numpy().astype(DTYPE_FLOAT),
+        'rec_torsions_sin_cos_alt': rec_torsions['alt_torsion_angles_sin_cos'][0].numpy().astype(DTYPE_FLOAT),
+        'rec_torsions_mask': rec_torsions['torsion_angles_mask'][0].numpy().astype(DTYPE_FLOAT),
     }
     out.update({k: v.numpy() for k, v in rec_all_frames.items()})
 
@@ -883,7 +890,11 @@ def fragment_template_list_featurize(tpl_case_dicts, tpl_group_dicts, mappings):
 def fragment_extra_featurize(tpl_case_dict, tpl_group_dict, mapping):
     lig_feats = fragment_template_group_featurize(tpl_case_dict, tpl_group_dict)
 
-    rec_ag = prody.parsePDB(DATA_DIR / 'cases' / tpl_case_dict['case_name'] / 'rec_orig.pdb')
+    rec_file = DATA_DIR / 'featurized' / tpl_case_dict['case_name'] + '.' + tpl_group_dict['name'] + '.pocket_ca.pdb'
+    if not rec_file.exists():
+        rec_file = DATA_DIR / 'cases' / tpl_case_dict['case_name'] / 'rec_orig.pdb'
+    rec_ag = prody.parsePDB(rec_file)
+
     rec_coords = rec_ag.calpha.getCoords()
     rec_aatype = np.array([AATYPE_WITH_X.get(x, AATYPE_WITH_X['X']) for x in rec_ag.calpha.getSequence()], dtype=np.int)
     lr_dmat = utils.calc_dmat(lig_feats['atom_coords_1d'], rec_coords)
@@ -896,6 +907,7 @@ def fragment_extra_featurize(tpl_case_dict, tpl_group_dict, mapping):
     lr_dram = dmat_to_distogram(lr_dmat, LIG_EXTRA_DISTANCE['min'], LIG_EXTRA_DISTANCE['max'], LIG_EXTRA_DISTANCE['num_bins'])
 
     counts = np.matmul(lr_dram.swapaxes(1, 2), rec_aatype_onehot[None]).reshape(lr_dram.shape[0], -1)
+    #counts = np.ones((lig_feats['atom_feats_1d'].shape[0], 236 - lig_feats['atom_feats_1d'].shape[-1]))
 
     out = np.zeros((len(mapping), lig_feats['atom_feats_1d'].shape[-1] + 1 + counts.shape[1] + 1), dtype=DTYPE_FLOAT)
     mapping = np.array(mapping, dtype=np.int)
@@ -906,6 +918,11 @@ def fragment_extra_featurize(tpl_case_dict, tpl_group_dict, mapping):
     out *= (mapping > -1).astype(DTYPE_FLOAT)[:, None]
     out[mapping == -1, -1] = 1  # gap (unmapped target atoms)
     return out  # (Natoms, Nfeats)
+
+
+def fragment_extra_featurize_mockup_(tpl_case_dict, tpl_group_dict, mapping):
+    lig_feats = fragment_template_group_featurize(tpl_case_dict, tpl_group_dict)
+    return np.zeros((len(mapping), 238), dtype=DTYPE_FLOAT)
 
 
 def fragment_extra_list_featurize(tpl_case_dicts, tpl_group_dicts, mappings):
