@@ -169,7 +169,7 @@ class DockingDataset(Dataset):
         group_dict = {x['name']: x for x in case_dict['ligand_groups']}[item['group_name']]
         group_dir = case_dir / group_dict['name']
 
-        print(': getting sample #', ix)
+        #print(': getting sample #', ix)
         print(':', group_dir)
         sys.stdout.flush()
 

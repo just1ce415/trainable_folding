@@ -4,6 +4,7 @@ import logging
 import sys
 from copy import deepcopy
 from path import Path
+import math
 
 from alphadock import docker
 from alphadock import config
@@ -116,7 +117,8 @@ def horovod_average_stats(stats_list):
         for k, v in stats_instance.items():
             if k not in stats:
                 stats[k] = []
-            stats[k].append(v)
+            if not math.isnan(v):
+                stats[k].append(v)
     for k in stats.keys():
         stats[k] = sum(stats[k]) / len(stats[k]) if len(stats[k]) > 0 else 0.
     return stats
@@ -199,7 +201,7 @@ def report_epoch_end(epoch, global_stats, total_steps, train=True):
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': global_stats,
                 'global_step': global_step,
-            }, log_dir / f'{stage.lower()}_epoch_{epoch}_loss_{global_stats["Loss_Total"]:.3f}.pth')
+            }, log_dir / f'{stage.lower()}_epoch_{epoch}_loss_{global_stats["Loss_Total"] / total_steps:.3f}.pth')
         print('Epoch_stats', global_stats)
 
 
@@ -304,7 +306,7 @@ if __name__ == '__main__':
     sys.stdout.flush()
 
     kwargs = {'num_workers': 0, 'pin_memory': True}
-    lr = 0.0001
+    lr = 0.0005
     model = docker.DockerIteration(config_summit, config_summit)
     print(HOROVOD_RANK, ': 2')
     print('Num params:', sum(p.numel() for p in model.parameters() if p.requires_grad))
@@ -318,6 +320,18 @@ if __name__ == '__main__':
     #optimizer = optim.SGD(model.parameters(), lr=lr * lr_scaler, momentum=0.9, nesterov=True)
     print(HOROVOD_RANK, ': 3')
     sys.stdout.flush()
+
+    start_epoch = 1
+    if len(sys.argv) > 1:
+        if HOROVOD_RANK == 0:
+            pth = torch.load(sys.argv[1])
+            global_step = pth['global_step']
+            start_epoch = pth['epoch'] + 1
+            model.load_state_dict(pth['model_state_dict'])
+            optimizer.load_state_dict(pth['optimizer_state_dict'])
+        if HOROVOD:
+            global_step = hvd.broadcast_object(global_step, root_rank=0)
+            start_epoch = hvd.broadcast_object(start_epoch, root_rank=0)
 
     if HOROVOD:
         hvd.broadcast_parameters(model.state_dict(), root_rank=0)
@@ -335,8 +349,8 @@ if __name__ == '__main__':
     amp_scaler = torch.cuda.amp.GradScaler()
 
     if HOROVOD_RANK == 0:
-        writer = SummaryWriter(log_dir) #, purge_step=None)
+        writer = SummaryWriter(log_dir)
 
-    for epoch in range(1, 100):
+    for epoch in range(start_epoch, 100):
         train(epoch)
         validate(epoch)

@@ -3,5 +3,5 @@
 ROOT="$(cd "$(dirname ${BASH_SOURCE})" && pwd)"
 
 module reset
-module load open-ce/1.2.0-py38-0
+module load open-ce/1.4.0-py38-0
 conda activate ${ROOT}/venv

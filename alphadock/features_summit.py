@@ -241,7 +241,7 @@ def ag_to_features(rec_ag, ag_aln, tar_aln, no_mismatch=False, residues_mask=Non
                         # TODO: decide what to do with mismatching residues when
                         #       the residues in the structure to do correspond to
                         #       the entry sequence. Treating them as missing for now
-                        print('Mismatch:', a, b)
+                        #print('Mismatch:', a, b)
                         residue = None
                     else:
                         residue = residues[ag_resi]
@@ -284,7 +284,7 @@ def rec_to_features(case_dict):
 
     rec_ag = prody.parsePDB(case_dir / 'AF_orig.pdb')
     af_aln, ent_aln = utils.global_align(af_seq, entity_seq)[0][:2]
-    print(case_dict['case_name'] + '\n' + af_aln + '\n' + ent_aln + '\n' + 'mm_num: ' + str(sum([x != y and x != '-' and y != '-' for x, y in zip(af_aln, ent_aln)])))
+    #print(case_dict['case_name'] + '\n' + af_aln + '\n' + ent_aln + '\n' + 'mm_num: ' + str(sum([x != y and x != '-' and y != '-' for x, y in zip(af_aln, ent_aln)])))
 
     feats = ag_to_features(rec_ag, af_aln, ent_aln, no_mismatch=True)
 
