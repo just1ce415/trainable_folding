@@ -5,6 +5,7 @@ import sys
 from copy import deepcopy
 from path import Path
 import math
+from tqdm import tqdm
 
 from alphadock import docker
 from alphadock import config
@@ -13,6 +14,7 @@ from alphadock import all_atom
 from alphadock import utils
 
 import torchvision
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.tensorboard import SummaryWriter
 
 
@@ -78,8 +80,16 @@ config_summit = utils.merge_dicts(deepcopy(config.config), config_diff)
 log_dir = Path('.').mkdir_p()
 train_json = 'train_split/train_12k.json'
 valid_json = 'train_split/valid_12k.json'
-pdb_log_interval = 1
+pdb_log_interval = 5
 global_step = 0
+
+LEARNING_RATE = 0.0001
+SCHEDULER_PATIENCE = 2
+SCHEDULER_FACTOR = 1. / 3
+SCHEDULER_MIN_LR = 1e-8
+CLIP_GRADIENT = True
+CLIP_GRADIENT_VALUE = 5.0
+USE_AMP = True
 
 HOROVOD = True
 HOROVOD_RANK = 0
@@ -111,24 +121,9 @@ def pred_to_pdb(out_pdb, input_dict, out_dict):
         )
 
 
-def horovod_average_stats(stats_list):
-    stats = {}
-    for stats_instance in stats_list:
-        for k, v in stats_instance.items():
-            if k not in stats:
-                stats[k] = []
-            if not math.isnan(v):
-                stats[k].append(v)
-    for k in stats.keys():
-        stats[k] = sum(stats[k]) / len(stats[k]) if len(stats[k]) > 0 else 0.
-    return stats
-
-
-def report_step(input, output, epoch, local_step, total_steps, dataset, global_stats, train=True):
+def report_step(input, output, epoch, local_step, dataset, global_stats, train=True):
     stage = 'Train' if train else 'Valid'
     loss = output['loss']['loss_total'].item()
-    if HOROVOD_RANK == 0:
-        print(f'{stage} Epoch: {epoch} [{local_step}/{total_steps} ({100. * local_step / total_steps:.0f}%)]\tLoss: {loss:.6f}')
 
     stats = {}
     stats['Loss_Total'] = output['loss']['loss_total'].item()
@@ -149,6 +144,14 @@ def report_step(input, output, epoch, local_step, total_steps, dataset, global_s
     if 'loss_affinity' in output['loss']:
         stats['Loss_Affinity'] = output['loss']['loss_affinity'].item()
 
+    for k, v in stats.items():
+        any_nan = 0
+        if math.isnan(v):
+            any_nan += 1
+            print(f'Process {HOROVOD_RANK}: {k} is nan')
+        if any_nan > 0:
+            print(output)
+
     if (train and local_step % pdb_log_interval == 0 and HOROVOD_RANK == 0) or not train:
         ix = input['target']['ix'][0].item()
         case_name = dataset.data[ix]['case_name']
@@ -161,47 +164,47 @@ def report_step(input, output, epoch, local_step, total_steps, dataset, global_s
         utils.write_json(stats, (log_dir / 'pdbs' / file_name).stripext() + '.json')
 
     if HOROVOD:
-        stats_gathered = hvd.allgather_object(stats)
-        if HOROVOD_RANK == 0:
-            stats = horovod_average_stats(stats_gathered)
+        all_stats = hvd.allgather_object(stats)
+    else:
+        all_stats = [stats]
 
     if HOROVOD_RANK == 0:
+        for idx, case_stats in enumerate(all_stats):
+            for key, val in case_stats.items():
+                if key not in global_stats:
+                    global_stats[key] = []
+                global_stats[key].append(val)
+
+                if train:
+                    writer.add_scalar(key + '/Step/' + stage, case_stats[key], global_step + idx)
+
         for x in range(torch.cuda.device_count()):
             print('cuda:' + str(x), ':', torch.cuda.memory_stats(x)['allocated_bytes.all.peak'] / 1024**2)
         print('global step', global_step)
         print(stats)
         sys.stdout.flush()
 
-        for key, val in stats.items():
-            if key not in global_stats:
-                global_stats[key] = 0.0
-            global_stats[key] += val
-
-        for key in stats.keys():
-            if train:
-                writer.add_scalar(key + '/Step/' + stage, stats[key], global_step)
-
-    #stats['step_size'] = 1
-    #if HOROVOD:
-    #    stats['step_size'] = len(stats_gathered)
-
-    return stats
+    return all_stats
 
 
-def report_epoch_end(epoch, global_stats, total_steps, train=True):
+def report_epoch_end(epoch, global_stats, stage='Train', save_model=True):
     if HOROVOD_RANK == 0:
-        stage = 'Train' if train else 'Valid'
-        for key in global_stats.keys():
-            writer.add_scalar(key + '/Epoch/' + stage, global_stats[key] / total_steps, epoch)
         global global_step
-        if train:
+        writer.add_scalar('HasNans/Epoch/' + stage, math.isnan(sum(global_stats['Loss_Total'])), epoch)
+        for key in global_stats.keys():
+            vals = [x for x in global_stats[key] if not math.isnan(x)]
+            global_stats[key] = sum(vals) / len(vals) if len(vals) > 0 else math.nan
+            writer.add_scalar(key + '/Epoch/' + stage, global_stats[key], epoch)
+        writer.add_scalar('LearningRate/Epoch/' + stage, optimizer.param_groups[0]['lr'], epoch)
+        if save_model:
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
                 'loss': global_stats,
                 'global_step': global_step,
-            }, log_dir / f'{stage.lower()}_epoch_{epoch}_loss_{global_stats["Loss_Total"] / total_steps:.3f}.pth')
+            }, log_dir / f'epoch_{epoch}_loss_{global_stats["Loss_Total"]:.3f}.pth')
         print('Epoch_stats', global_stats)
 
 
@@ -221,26 +224,26 @@ def validate(epoch):
     #dset = dataset.DockingDatasetSimulated(size=4, num_frag_main=64, num_frag_extra=256, num_res=350, num_hh=4)
 
     if HOROVOD:
-        sampler = torch.utils.data.distributed.DistributedSampler(dset, num_replicas=hvd.size(), rank=hvd.rank())
-        loader = torch.utils.data.DataLoader(dset, batch_size=1, sampler=sampler, **kwargs)
+        sampler = torch.utils.data.distributed.DistributedSampler(dset, num_replicas=hvd.size(), rank=hvd.rank(), shuffle=False)
+        loader = torch.utils.data.DataLoader(dset, batch_size=1, sampler=sampler, shuffle=False, **kwargs)
         sampler.set_epoch(epoch)
     else:
-        loader = torch.utils.data.DataLoader(dset, batch_size=1, **kwargs)
+        loader = torch.utils.data.DataLoader(dset, batch_size=1, shuffle=False, **kwargs)
 
     global_stats = {}
     local_step = 0
-    for inputs in loader:
-        print(HOROVOD_RANK, ':', 'batch', local_step)
+
+    for inputs in (tqdm(loader, desc=f'Epoch {epoch} (valid)') if HOROVOD_RANK == 0 else loader):
         with torch.no_grad():
-            with torch.cuda.amp.autocast():
+            with torch.cuda.amp.autocast(USE_AMP):
                 output = model(inputs)
 
-        total_steps = len(loader)
-        report_step(inputs, output, epoch, local_step, total_steps, dset, global_stats, train=False)
+        step_stats = report_step(inputs, output, epoch, local_step, dset, global_stats, train=False)
         sys.stdout.flush()
-        local_step += 1
+        local_step += 1 #len(step_stats)
+        torch.cuda.empty_cache()
 
-    report_epoch_end(epoch, global_stats, local_step + 1, train=False)
+    report_epoch_end(epoch, global_stats, stage='Valid', save_model=False)
 
 
 def train(epoch):
@@ -257,100 +260,122 @@ def train(epoch):
     #dset = dataset.DockingDatasetSimulated(size=4, num_frag_main=64, num_frag_extra=256, num_res=400, num_hh=6)
 
     if HOROVOD:
-        sampler = torch.utils.data.distributed.DistributedSampler(dset, num_replicas=hvd.size(), rank=hvd.rank())
-        loader = torch.utils.data.DataLoader(dset, batch_size=1, sampler=sampler, **kwargs)
+        sampler = torch.utils.data.distributed.DistributedSampler(dset, num_replicas=hvd.size(), rank=hvd.rank(), shuffle=False)
+        loader = torch.utils.data.DataLoader(dset, batch_size=1, sampler=sampler, shuffle=False, **kwargs)
         sampler.set_epoch(epoch)
     else:
-        loader = torch.utils.data.DataLoader(dset, batch_size=1, shuffle=True, **kwargs)
+        loader = torch.utils.data.DataLoader(dset, batch_size=1, shuffle=False, **kwargs)
 
     global_stats = {}
     local_step = 0
     global global_step
-    for inputs in loader:
-        print(HOROVOD_RANK, ':', 'batch', local_step)
+
+    for inputs in (tqdm(loader, desc=f'Epoch {epoch} (train)') if HOROVOD_RANK == 0 else loader):
         optimizer.zero_grad()
-        with torch.cuda.amp.autocast():
+        with torch.cuda.amp.autocast(USE_AMP):
             output = model(inputs)
             loss = output['loss']['loss_total']
-            amp_scaler.scale(loss).backward()
+            if USE_AMP:
+                amp_scaler.scale(loss).backward()
+            else:
+                loss.backward()
+
+            grads_are_nan = sum([torch.isnan(x.grad).any().item() for x in model.parameters() if x.grad is not None])
+            if grads_are_nan > 0:
+                print(f'Process {HOROVOD_RANK}: gradients are nan')
 
         if HOROVOD:
             optimizer.synchronize()
-            amp_scaler.unscale_(optimizer)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            if USE_AMP and CLIP_GRADIENT:
+                amp_scaler.unscale_(optimizer)
+            if CLIP_GRADIENT:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), CLIP_GRADIENT_VALUE)
             with optimizer.skip_synchronize():
-                amp_scaler.step(optimizer)
+                if USE_AMP:
+                    amp_scaler.step(optimizer)
+                else:
+                    optimizer.step()
         else:
-            amp_scaler.unscale_(optimizer)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            amp_scaler.step(optimizer)
+            if USE_AMP and CLIP_GRADIENT:
+                amp_scaler.unscale_(optimizer)
+            if CLIP_GRADIENT:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), CLIP_GRADIENT_VALUE)
 
-        # Update scaler in case of overflow/underflow
-        amp_scaler.update()
+            if USE_AMP:
+                amp_scaler.step(optimizer)
+            else:
+                optimizer.step()
 
-        total_steps = len(loader)
-        report_step(inputs, output, epoch, local_step, total_steps, dset, global_stats, train=True)
+        if USE_AMP:
+            amp_scaler.update()
+
+        step_stats = report_step(inputs, output, epoch, local_step, dset, global_stats, train=True)
         sys.stdout.flush()
         local_step += 1
-        global_step += 1
+        global_step += len(step_stats)
+        torch.cuda.empty_cache()
 
-    report_epoch_end(epoch, global_stats, local_step + 1, train=True)
+    report_epoch_end(epoch, global_stats, stage='Train', save_model=True)
+    if HOROVOD:
+        global_stats = hvd.broadcast_object(global_stats, root_rank=0)
+    scheduler.step(global_stats['Loss_Total'], epoch=epoch)
+
+
+def find_last_pth(dir):
+    pths = Path(dir).glob('epoch_*.pth')
+    if len(pths) == 0:
+        return None
+    return sorted(pths, key=lambda x: -int(x.basename().split('_')[1]))[0]
 
 
 if __name__ == '__main__':
     torch.set_num_threads(1)
     torch.manual_seed(123456)
-    torch.cuda.manual_seed(123456)
     logging.getLogger('.prody').setLevel('CRITICAL')
-    print(HOROVOD_RANK, ': 1')
-    sys.stdout.flush()
 
     kwargs = {'num_workers': 0, 'pin_memory': True}
-    lr = 0.0005
     model = docker.DockerIteration(config_summit, config_summit)
-    print(HOROVOD_RANK, ': 2')
-    print('Num params:', sum(p.numel() for p in model.parameters() if p.requires_grad))
-    print('Num param sets:', len([p for p in model.parameters() if p.requires_grad]))
-    for x in range(torch.cuda.device_count()):
-        print('cuda:' + str(x), ':', torch.cuda.memory_stats(x)['allocated_bytes.all.peak'] / 1024**2)
-    sys.stdout.flush()
 
-    lr_scaler = 1 #if not HOROVOD else hvd.size()
-    optimizer = optim.Adam(model.parameters(), lr=lr * lr_scaler) #, momentum=args.momentum)
+    if HOROVOD_RANK == 0:
+        print('Num params:', sum(p.numel() for p in model.parameters() if p.requires_grad))
+        print('Num param sets:', len([p for p in model.parameters() if p.requires_grad]))
+        for x in range(torch.cuda.device_count()):
+            print('cuda:' + str(x), ':', torch.cuda.memory_stats(x)['allocated_bytes.all.peak'] / 1024**2)
+        sys.stdout.flush()
+
+    lr_scaler = 1 #if not HOROVOD else hvd.size() / (4 * 3)
+    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE * lr_scaler) #, momentum=args.momentum)
+    scheduler = ReduceLROnPlateau(optimizer, factor=SCHEDULER_FACTOR, patience=SCHEDULER_PATIENCE, min_lr=SCHEDULER_MIN_LR)
     #optimizer = optim.SGD(model.parameters(), lr=lr * lr_scaler, momentum=0.9, nesterov=True)
-    print(HOROVOD_RANK, ': 3')
-    sys.stdout.flush()
 
     start_epoch = 1
-    if len(sys.argv) > 1:
-        if HOROVOD_RANK == 0:
-            pth = torch.load(sys.argv[1])
-            global_step = pth['global_step']
-            start_epoch = pth['epoch'] + 1
-            model.load_state_dict(pth['model_state_dict'])
-            optimizer.load_state_dict(pth['optimizer_state_dict'])
-        if HOROVOD:
-            global_step = hvd.broadcast_object(global_step, root_rank=0)
-            start_epoch = hvd.broadcast_object(start_epoch, root_rank=0)
+    scheduler_state = scheduler.state_dict()
+    pth_file = find_last_pth(log_dir)
+    if pth_file is not None and HOROVOD_RANK == 0:
+        pth = torch.load(pth_file)
+        print('Loading saved model from', pth_file)
+        global_step = pth['global_step']
+        start_epoch = pth['epoch'] + 1
+        model.load_state_dict(pth['model_state_dict'])
+        optimizer.load_state_dict(pth['optimizer_state_dict'])
+        scheduler_state = pth['scheduler_state_dict']
 
     if HOROVOD:
+        global_step = hvd.broadcast_object(global_step, root_rank=0)
+        start_epoch = hvd.broadcast_object(start_epoch, root_rank=0)
         hvd.broadcast_parameters(model.state_dict(), root_rank=0)
-        print(HOROVOD_RANK, ': 4')
-        sys.stdout.flush()
-
         hvd.broadcast_optimizer_state(optimizer, root_rank=0)
-        print(HOROVOD_RANK, ': 5')
-        sys.stdout.flush()
-
+        scheduler_state = hvd.broadcast_object(scheduler_state, root_rank=0)
         optimizer = hvd.DistributedOptimizer(optimizer, named_parameters=model.named_parameters(), op=hvd.Average)
-        print(HOROVOD_RANK, ': 6')
-        sys.stdout.flush()
 
-    amp_scaler = torch.cuda.amp.GradScaler()
+    scheduler.load_state_dict(scheduler_state)
+
+    if USE_AMP:
+        amp_scaler = torch.cuda.amp.GradScaler()
 
     if HOROVOD_RANK == 0:
         writer = SummaryWriter(log_dir)
 
-    for epoch in range(start_epoch, 100):
+    for epoch in range(start_epoch, start_epoch + 1):
         train(epoch)
         validate(epoch)
