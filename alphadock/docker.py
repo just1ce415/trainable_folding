@@ -1,11 +1,28 @@
 import torch
 from torch import nn
 from torch.utils.checkpoint import checkpoint
+import sys
+from copy import copy
 
 from alphadock import modules
 from alphadock import structure
 from alphadock import all_atom
 from alphadock import loss
+
+
+def flatten_input(input, output=[], path=''):
+    '''
+    Wrote this to use in hooks but it turned out to be too slow
+    '''
+    if isinstance(input, tuple) or isinstance(input, list):
+        for i, x in enumerate(input):
+            flatten_input(x, output, path + '.' + str(i))
+    if isinstance(input, dict):
+        for k, v in input.items():
+            flatten_input(v, output, path + '.' + str(k))
+    if isinstance(input, torch.Tensor):
+        output += [(path, input)]
+    return output
 
 
 class DockerIteration(nn.Module):
@@ -20,6 +37,19 @@ class DockerIteration(nn.Module):
         self.config = config
         self.global_config = global_config
 
+        for name, module in self.Evoformer.named_modules():
+            module.man_name = name
+            def nan_hook(self, input, output):
+                if any([torch.any(torch.isnan(x)) for x in output]):
+                    print(f'Module {self.man_name} generated nans')
+                    print('Inputs contains nan: ', [torch.any(torch.isnan(x)) for x in input])
+                    print('Output contains nan: ', [torch.any(torch.isnan(x)) for x in output])
+                    print('Inputs were: ', input)
+                    print('Outputs were: ', output)
+                    sys.stdout.flush()
+                    raise RuntimeError(f'Module {self.man_name} generated nans')
+            module.register_forward_hook(nan_hook)
+
     def forward(self, input):
         x = self.InputEmbedder(input)
         #return {'loss_total': x['r1d'].sum()}
@@ -30,7 +60,7 @@ class DockerIteration(nn.Module):
         def checkpoint_fun(function):
             return lambda a, b, c: function(a.clone(), b.clone(), c.clone())
 
-        for evo_iter in self.Evoformer:
+        for evo_i, evo_iter in enumerate(self.Evoformer):
             if self.config['Evoformer']['EvoformerIteration']['checkpoint']:
                 x['r1d'], x['l1d'], x['pair'] = checkpoint(checkpoint_fun(evo_iter), x['r1d'], x['l1d'], x['pair'])
             else:
@@ -150,4 +180,12 @@ def example_profiler():
 
 
 if __name__ == '__main__':
-    example4()
+    tmp = {
+        'a': {
+            'b': [torch.zeros(3), torch.ones(2), {'g': torch.tensor(3)}],
+            'c': torch.ones(5)
+        }
+    }
+    output = []
+    print(flatten_input(tmp, output))
+    print(output)

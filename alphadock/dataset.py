@@ -180,13 +180,13 @@ class DockingDataset(Dataset):
         target_dict.update(features_summit.target_group_featurize(case_dict, group_dict))
         # add atom types from onehot encoding
         target_dict['lig_atom_types'] = np.where(target_dict['lig_1d'][:, :len(features_summit.ELEMENTS_ORDER)] > 0)[1]
-        target_dict['ix'] = ix
 
         out_dict['target'] = target_dict
         out_dict['ground_truth'] = features_summit.ground_truth_featurize(case_dict, group_dict)
         out_dict['ground_truth']['clamp_fape'] = torch.tensor(0)
         if self.rng.random() < self.clamp_fape_prob:
             out_dict['ground_truth']['clamp_fape'] = torch.tensor(1)
+        out_dict['target']['ix'] = ix
 
         fragment_matches = []
         frag_json = Path(f"{DATA_DIR}/featurized/{case_dict['case_name']}.{group_dict['name']}.fragment_matches.json")
@@ -271,7 +271,12 @@ class DockingDataset(Dataset):
         return out_dict
 
     def __getitem__(self, ix):
-        return self._get_item(ix)
+        try:
+            return self._get_item(ix)
+        except Exception:
+            print(f'Error getting item {ix}: {self.data[ix]}')
+            traceback.print_exc()
+            return {'target': {'ix': ix}}
 
 
 class DockingDatasetSimulated(Dataset):

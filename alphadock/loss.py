@@ -178,6 +178,15 @@ def total_loss(batch, struct_out, final_all_atom, config):
     return out_dict
 
 
+def lig_lig_dmat_loss(
+        lig_traj,  # (Ntraj, natoms, 3)
+        lig_gt_coords,  # (nsym, natoms, 3)
+        lig_gt_mask,   # (nsym, natoms, 3)
+        clip=10
+):
+    pass
+
+
 def torsion_loss(batch, struct_out):
     eps = 1e-6
 

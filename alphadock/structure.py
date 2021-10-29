@@ -324,9 +324,9 @@ class StructureModule(torch.nn.Module):
         for l in self.layers:
             if self.config['StructureModuleIteration']['checkpoint']:
                 update = checkpoint(checkpoint_fun(l), x)
-                x.update(update)
             else:
-                x.update(l(x))
+                update = l(x)
+            x.update(update)
             rec_T_inter.append(x['rec_T'])
             lig_T_inter.append(x['lig_T'])
             rec_torsions_inter.append(x['rec_torsions'])

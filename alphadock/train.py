@@ -6,6 +6,7 @@ from copy import deepcopy
 from path import Path
 import math
 from tqdm import tqdm
+import traceback
 
 from alphadock import docker
 from alphadock import config
@@ -84,12 +85,13 @@ pdb_log_interval = 5
 global_step = 0
 
 LEARNING_RATE = 0.0001
-SCHEDULER_PATIENCE = 2
+SCHEDULER_PATIENCE = 3
 SCHEDULER_FACTOR = 1. / 3
 SCHEDULER_MIN_LR = 1e-8
 CLIP_GRADIENT = True
-CLIP_GRADIENT_VALUE = 5.0
+CLIP_GRADIENT_VALUE = 0.1
 USE_AMP = True
+USE_AMP_SCALER = False
 
 HOROVOD = True
 HOROVOD_RANK = 0
@@ -123,48 +125,57 @@ def pred_to_pdb(out_pdb, input_dict, out_dict):
 
 def report_step(input, output, epoch, local_step, dataset, global_stats, train=True):
     stage = 'Train' if train else 'Valid'
-    loss = output['loss']['loss_total'].item()
-
     stats = {}
-    stats['Loss_Total'] = output['loss']['loss_total'].item()
-    stats['LDDT_Rec_Final'] = output['loss']['lddt_values']['rec_rec_lddt_true_total'][-1].item()
-    stats['LDDT_Lig_Final'] = output['loss']['lddt_values']['lig_rec_lddt_true_total'][-1].item()
-    stats['LDDT_Rec_MeanTraj'] = output['loss']['lddt_values']['rec_rec_lddt_true_total'].mean().item()
-    stats['LDDT_Lig_MeanTraj'] = output['loss']['lddt_values']['lig_rec_lddt_true_total'].mean().item()
-    stats['Loss_LDDT_Rec'] = output['loss']['lddt_loss_rec_rec'].item()
-    stats['Loss_LDDT_Lig'] = output['loss']['lddt_loss_lig_rec'].item()
-    stats['Loss_Torsions'] = output['loss']['loss_torsions']['chi_loss'].mean().item()
-    stats['Loss_Norm'] = output['loss']['loss_torsions']['norm_loss'].mean().item()
-    stats['Loss_FAPE_BB_Rec_Rec_Final'] = output['loss']['loss_fape']['loss_bb_rec_rec'][-1].item()
-    stats['Loss_FAPE_BB_Rec_Lig_Final'] = output['loss']['loss_fape']['loss_bb_rec_lig'][-1, :].min().item()
-    stats['Loss_FAPE_AA_Rec_Rec_Final'] = output['loss']['loss_fape']['loss_aa_rec_rec'].item()
-    stats['Loss_FAPE_AA_Rec_Lig_Final'] = output['loss']['loss_fape']['loss_aa_rec_lig'].min().item()
-    stats['Loss_FAPE_BB_Rec_Rec_MeanTraj'] = output['loss']['loss_fape']['loss_bb_rec_rec'].mean().item()
-    stats['Loss_FAPE_BB_Rec_Lig_MeanTraj'] = output['loss']['loss_fape']['loss_bb_rec_lig'].min(-1).values.mean().item()
-    if 'loss_affinity' in output['loss']:
-        stats['Loss_Affinity'] = output['loss']['loss_affinity'].item()
 
-    for k, v in stats.items():
-        any_nan = 0
-        if math.isnan(v):
-            any_nan += 1
-            print(f'Process {HOROVOD_RANK}: {k} is nan')
-        if any_nan > 0:
-            print(output)
+    if len(output) > 0:
+        loss = output['loss']['loss_total'].item()
+        stats['Loss_Total'] = output['loss']['loss_total'].item()
+        stats['LDDT_Rec_Final'] = output['loss']['lddt_values']['rec_rec_lddt_true_total'][-1].item()
+        stats['LDDT_Lig_Final'] = output['loss']['lddt_values']['lig_rec_lddt_true_total'][-1].item()
+        stats['LDDT_Rec_MeanTraj'] = output['loss']['lddt_values']['rec_rec_lddt_true_total'].mean().item()
+        stats['LDDT_Lig_MeanTraj'] = output['loss']['lddt_values']['lig_rec_lddt_true_total'].mean().item()
+        stats['Loss_LDDT_Rec'] = output['loss']['lddt_loss_rec_rec'].item()
+        stats['Loss_LDDT_Lig'] = output['loss']['lddt_loss_lig_rec'].item()
+        stats['Loss_Torsions'] = output['loss']['loss_torsions']['chi_loss'].mean().item()
+        stats['Loss_Norm'] = output['loss']['loss_torsions']['norm_loss'].mean().item()
+        stats['Loss_FAPE_BB_Rec_Rec_Final'] = output['loss']['loss_fape']['loss_bb_rec_rec'][-1].item()
+        stats['Loss_FAPE_BB_Rec_Lig_Final'] = output['loss']['loss_fape']['loss_bb_rec_lig'][-1, :].min().item()
+        stats['Loss_FAPE_AA_Rec_Rec_Final'] = output['loss']['loss_fape']['loss_aa_rec_rec'].item()
+        stats['Loss_FAPE_AA_Rec_Lig_Final'] = output['loss']['loss_fape']['loss_aa_rec_lig'].min().item()
+        stats['Loss_FAPE_BB_Rec_Rec_MeanTraj'] = output['loss']['loss_fape']['loss_bb_rec_rec'].mean().item()
+        stats['Loss_FAPE_BB_Rec_Lig_MeanTraj'] = output['loss']['loss_fape']['loss_bb_rec_lig'].min(-1).values.mean().item()
+        if 'loss_affinity' in output['loss']:
+            stats['Loss_Affinity'] = output['loss']['loss_affinity'].item()
 
-    if (train and local_step % pdb_log_interval == 0 and HOROVOD_RANK == 0) or not train:
-        ix = input['target']['ix'][0].item()
-        case_name = dataset.data[ix]['case_name']
-        group_name = dataset.data[ix]['group_name']
-        if train:
-            file_name = f'train_step_{global_step:06d}_{case_name}_{group_name}_{loss:.3f}.pdb'
-        else:
-            file_name = f'valid_epoch_{epoch}_{case_name}_{group_name}_{loss:.3f}.pdb'
-        pred_to_pdb((log_dir / 'pdbs').mkdir_p() / file_name, input, output)
-        utils.write_json(stats, (log_dir / 'pdbs' / file_name).stripext() + '.json')
+        for k, v in stats.items():
+            any_nan = 0
+            if math.isnan(v):
+                any_nan += 1
+                print(f'Process {HOROVOD_RANK}: {k} is nan')
+            #if any_nan > 0:
+            #    print(output)
+
+        if pdb_log_interval is not None and ((train and local_step % pdb_log_interval == 0 and HOROVOD_RANK == 0) or not train):
+            ix = input['target']['ix'][0].item()
+            case_name = dataset.data[ix]['case_name']
+            group_name = dataset.data[ix]['group_name']
+            if train:
+                file_name = f'train_step_{global_step:06d}_{case_name}_{group_name}_{loss:.3f}.pdb'
+            else:
+                file_name = f'valid_epoch_{epoch}_{case_name}_{group_name}_{loss:.3f}.pdb'
+            pred_to_pdb((log_dir / 'pdbs').mkdir_p() / file_name, input, output)
+            stats_dump = stats.copy()
+            stats_dump['Used_HH_templates'] = 'hhpred' in input
+            stats_dump['Used_frag_templates'] = 'fragments' in input
+            stats_dump['HH_lig_coverage'] = None
+            if 'hhpred' in input:
+                stats_dump['HH_lig_coverage'] = (input['hhpred']['lig_1d'][0, :, :, -1].sum(-1) / input['hhpred']['lig_1d'].shape[2]).detach().numpy().tolist()
+            utils.write_json(stats_dump, (log_dir / 'pdbs' / file_name).stripext() + '.json')
 
     if HOROVOD:
+        print(HOROVOD_RANK, ':', 'gathering')
         all_stats = hvd.allgather_object(stats)
+        print(HOROVOD_RANK, ':', 'gathered')
     else:
         all_stats = [stats]
 
@@ -234,13 +245,19 @@ def validate(epoch):
     local_step = 0
 
     for inputs in (tqdm(loader, desc=f'Epoch {epoch} (valid)') if HOROVOD_RANK == 0 else loader):
-        with torch.no_grad():
-            with torch.cuda.amp.autocast(USE_AMP):
-                output = model(inputs)
+        try:
+            with torch.no_grad():
+                with torch.cuda.amp.autocast(USE_AMP):
+                    output = model(inputs)
+        except Exception:
+            print(HOROVOD_RANK, ':', 'Exception in validation')
+            traceback.print_exc()
+            sys.stdout.flush()
+            output = {}
 
         step_stats = report_step(inputs, output, epoch, local_step, dset, global_stats, train=False)
+        local_step += 1
         sys.stdout.flush()
-        local_step += 1 #len(step_stats)
         torch.cuda.empty_cache()
 
     report_epoch_end(epoch, global_stats, stage='Valid', save_model=False)
@@ -251,13 +268,14 @@ def train(epoch):
     dset = dataset.DockingDataset(
         config.DATA_DIR,
         train_json,
-        max_hh_templates=6,
+        max_hh_templates=4,
         max_frag_main=64,
         max_frag_extra=256,
-        sample_to_size=5000,
+        sample_to_size=3500,
         seed=epoch * 100
     )
     #dset = dataset.DockingDatasetSimulated(size=4, num_frag_main=64, num_frag_extra=256, num_res=400, num_hh=6)
+    #dset.data = dset.data[30 * 6:]
 
     if HOROVOD:
         sampler = torch.utils.data.distributed.DistributedSampler(dset, num_replicas=hvd.size(), rank=hvd.rank(), shuffle=False)
@@ -272,47 +290,58 @@ def train(epoch):
 
     for inputs in (tqdm(loader, desc=f'Epoch {epoch} (train)') if HOROVOD_RANK == 0 else loader):
         optimizer.zero_grad()
-        with torch.cuda.amp.autocast(USE_AMP):
-            output = model(inputs)
-            loss = output['loss']['loss_total']
-            if USE_AMP:
+        try:
+            print(HOROVOD_RANK, ": sample id - ", inputs['target']['ix'])
+            with torch.cuda.amp.autocast(USE_AMP):
+                output = model(inputs)
+                loss = output['loss']['loss_total']
+                print(HOROVOD_RANK, ':', 'loss', loss.item()); sys.stdout.flush()
+            if USE_AMP and USE_AMP_SCALER:
                 amp_scaler.scale(loss).backward()
             else:
                 loss.backward()
+        except Exception:
+            print(HOROVOD_RANK, ':', 'Exception in training', 'sample id:', inputs['target']['ix'])
+            traceback.print_exc()
+            sys.stdout.flush()
+            output = {}
 
-            grads_are_nan = sum([torch.isnan(x.grad).any().item() for x in model.parameters() if x.grad is not None])
-            if grads_are_nan > 0:
-                print(f'Process {HOROVOD_RANK}: gradients are nan')
+        grads_are_nan = sum([torch.isnan(x.grad).any().item() for x in model.parameters() if x.grad is not None])
+        if grads_are_nan > 0:
+            print(f'Process {HOROVOD_RANK}: gradients are nan'); sys.stdout.flush()
 
         if HOROVOD:
             optimizer.synchronize()
-            if USE_AMP and CLIP_GRADIENT:
-                amp_scaler.unscale_(optimizer)
-            if CLIP_GRADIENT:
-                torch.nn.utils.clip_grad_norm_(model.parameters(), CLIP_GRADIENT_VALUE)
+            print(HOROVOD_RANK, ':', 'optimizer.synchronize()'); sys.stdout.flush()
+
+        if USE_AMP and USE_AMP_SCALER and CLIP_GRADIENT:
+            amp_scaler.unscale_(optimizer)
+        print(HOROVOD_RANK, ':', 'amp_scaler.unscale_(optimizer)'); sys.stdout.flush()
+        if CLIP_GRADIENT:
+            torch.nn.utils.clip_grad_norm_(model.parameters(), CLIP_GRADIENT_VALUE)
+        print(HOROVOD_RANK, ':', 'torch.nn.utils.clip_grad_norm_(model.parameters(), CLIP_GRADIENT_VALUE)'); sys.stdout.flush()
+
+        if HOROVOD:
             with optimizer.skip_synchronize():
-                if USE_AMP:
+                if USE_AMP and USE_AMP_SCALER:
                     amp_scaler.step(optimizer)
                 else:
                     optimizer.step()
         else:
-            if USE_AMP and CLIP_GRADIENT:
-                amp_scaler.unscale_(optimizer)
-            if CLIP_GRADIENT:
-                torch.nn.utils.clip_grad_norm_(model.parameters(), CLIP_GRADIENT_VALUE)
-
-            if USE_AMP:
+            if USE_AMP and USE_AMP_SCALER:
                 amp_scaler.step(optimizer)
             else:
                 optimizer.step()
+        print(HOROVOD_RANK, ':', 'optimizer.step()'); sys.stdout.flush()
 
-        if USE_AMP:
+        if USE_AMP and USE_AMP_SCALER:
             amp_scaler.update()
+        print(HOROVOD_RANK, ':', 'amp_scaler.update()'); sys.stdout.flush()
 
         step_stats = report_step(inputs, output, epoch, local_step, dset, global_stats, train=True)
-        sys.stdout.flush()
-        local_step += 1
         global_step += len(step_stats)
+        local_step += 1
+        sys.stdout.flush()
         torch.cuda.empty_cache()
 
     report_epoch_end(epoch, global_stats, stage='Train', save_model=True)
@@ -359,6 +388,8 @@ if __name__ == '__main__':
         model.load_state_dict(pth['model_state_dict'])
         optimizer.load_state_dict(pth['optimizer_state_dict'])
         scheduler_state = pth['scheduler_state_dict']
+        scheduler_state['patience'] = SCHEDULER_PATIENCE
+        scheduler_state['factor'] = SCHEDULER_FACTOR
 
     if HOROVOD:
         global_step = hvd.broadcast_object(global_step, root_rank=0)
@@ -370,12 +401,13 @@ if __name__ == '__main__':
 
     scheduler.load_state_dict(scheduler_state)
 
-    if USE_AMP:
+    if USE_AMP and USE_AMP_SCALER:
         amp_scaler = torch.cuda.amp.GradScaler()
 
     if HOROVOD_RANK == 0:
         writer = SummaryWriter(log_dir)
 
     for epoch in range(start_epoch, start_epoch + 1):
+        #with torch.autograd.detect_anomaly():
         train(epoch)
         validate(epoch)
