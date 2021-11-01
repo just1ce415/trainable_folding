@@ -84,7 +84,7 @@ valid_json = 'train_split/valid_12k.json'
 pdb_log_interval = 5
 global_step = 0
 
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.00001
 SCHEDULER_PATIENCE = 3
 SCHEDULER_FACTOR = 1. / 3
 SCHEDULER_MIN_LR = 1e-8
@@ -144,6 +144,7 @@ def report_step(input, output, epoch, local_step, dataset, global_stats, train=T
         stats['Loss_FAPE_AA_Rec_Lig_Final'] = output['loss']['loss_fape']['loss_aa_rec_lig'].min().item()
         stats['Loss_FAPE_BB_Rec_Rec_MeanTraj'] = output['loss']['loss_fape']['loss_bb_rec_rec'].mean().item()
         stats['Loss_FAPE_BB_Rec_Lig_MeanTraj'] = output['loss']['loss_fape']['loss_bb_rec_lig'].min(-1).values.mean().item()
+        stats['Loss_LigDmat_MeanTraj'] = output['loss']['loss_lig_dmat'].mean().item()
         if 'loss_affinity' in output['loss']:
             stats['Loss_Affinity'] = output['loss']['loss_affinity'].item()
 

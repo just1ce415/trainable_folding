@@ -10,9 +10,10 @@
 #?SUB -e RunSim123.%J
 
 source /ccs/home/ignatovmg/projects/alphadock/activate_summit.sh
-wdir=/ccs/home/ignatovmg/projects/alphadock/data_preparation/data/runs/run1
+wdir=/ccs/home/ignatovmg/projects/alphadock/data_preparation/data/runs/run2
 train=/ccs/home/ignatovmg/projects/alphadock/alphadock/train.py
-cd $wdir
+
+mkdir -p $wdir && cd $wdir
 cp $train .
 
 jsrun -n $((6 * 4)) -r 6 -a 1 -g 1 -c 4 python $train &> log.$LSB_JOBID

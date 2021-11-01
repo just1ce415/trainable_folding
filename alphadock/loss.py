@@ -121,6 +121,8 @@ def total_loss(batch, struct_out, final_all_atom, config):
         fape_clamp_distance
     )
 
+    loss_lig_dmat = lig_lig_dmat_loss(lig_traj, lig_gt_coords, lig_gt_mask, clip=10)
+
     loss_chi = torsion_loss(batch, struct_out)
 
     lddt_vals = lddt_calc(batch, struct_out)
@@ -149,6 +151,7 @@ def total_loss(batch, struct_out, final_all_atom, config):
         loss_bb_rec_lig.min(-1).values.mean() * config['loss']['loss_bb_rec_lig_weight'] + \
         loss_aa_rec_rec * config['loss']['loss_aa_rec_rec_weight'] + \
         loss_aa_rec_lig.min() * config['loss']['loss_aa_rec_lig_weight'] + \
+        loss_lig_dmat.mean() * config['loss']['loss_lig_dmat_weight'] + \
         loss_chi['chi_loss'].mean() * config['loss']['loss_chi_value_weight'] + \
         loss_chi['norm_loss'].mean() * config['loss']['loss_chi_norm_weight'] + \
         lddt_loss_rec_rec * config['loss']['loss_rec_rec_lddt_weight'] + \
@@ -166,6 +169,7 @@ def total_loss(batch, struct_out, final_all_atom, config):
             'loss_aa_rec_rec': loss_aa_rec_rec,  # Scalar
             'loss_aa_rec_lig': loss_aa_rec_lig,  # (Symm)
         },
+        'loss_lig_dmat': loss_lig_dmat,  # (Traj)
 
         'lddt_values': lddt_vals, # rec_rec_lddt_true: (Traj, N), lig_rec_lddt_true: (Traj, N), lig_best_mask_per_traj: (Traj, N), lig_best_mask_id_per_traj: (Traj)
         'lddt_loss_rec_rec': lddt_loss_rec_rec,  # Scalar
@@ -181,10 +185,27 @@ def total_loss(batch, struct_out, final_all_atom, config):
 def lig_lig_dmat_loss(
         lig_traj,  # (Ntraj, natoms, 3)
         lig_gt_coords,  # (nsym, natoms, 3)
-        lig_gt_mask,   # (nsym, natoms, 3)
-        clip=10
+        lig_gt_mask,   # (nsym, natoms)
+        clip=10,
+        epsilon=1e-6
 ):
-    pass
+    '''
+    Calculates masked mean difference between squared distance matrices
+    of ground truth ligand and predicted trajectories.
+
+    TODO: Ideally we want to compare actual distances, not their squared values,
+          but using torch.sqrt results in nans in the gradients for some reason,
+          need to look into that. Same for FAPE loss
+    '''
+    dmat2_gt = torch.square(lig_gt_coords[:, None] - lig_gt_coords[:, :, None]).sum(-1)
+    dmat2_pred = torch.square(lig_traj[:, None] - lig_traj[:, :, None]).sum(-1)
+    delta2 = torch.clip(torch.abs(dmat2_pred[:, None] - dmat2_gt[None]), 0, clip * clip)
+    mask_2d = lig_gt_mask[:, None] * lig_gt_mask[:, :, None]
+
+    delta2 *= mask_2d[None]
+    losses = (delta2 / (clip * clip)).sum([-2, -1]) / (mask_2d.sum([-2, -1])[None] + epsilon)
+    losses = losses.min(-1).values  # select best ligand symmtry
+    return losses  # (Ntraj)
 
 
 def torsion_loss(batch, struct_out):
@@ -198,11 +219,11 @@ def torsion_loss(batch, struct_out):
     pred_torsions_norm = all_atom.l2_normalize(pred_torsions_unnorm, axis=-1)
     chi_squared = utils.squared_difference(pred_torsions_norm, gt_torsions[None]).sum(-1)
     chi_squared_alt = utils.squared_difference(pred_torsions_norm, gt_torsions_alt[None]).sum(-1)
-    chi_loss = (torch.minimum(chi_squared, chi_squared_alt) * gt_torsions_mask[None]).sum((1, 2)) / gt_torsions_mask.sum()
+    chi_loss = (torch.minimum(chi_squared, chi_squared_alt) * gt_torsions_mask[None]).sum((1, 2)) / (gt_torsions_mask.sum() + eps)
 
     norm_loss = torch.abs(torch.sqrt(torch.sum(torch.square(pred_torsions_unnorm), dim=-1) + eps) - 1.0)
     norm_loss *= gt_torsions_mask[None]
-    norm_loss = norm_loss.sum((1, 2)) / gt_torsions_mask.sum()
+    norm_loss = norm_loss.sum((1, 2)) / (gt_torsions_mask.sum() + eps)
 
     return {
         'chi_loss': chi_loss,
@@ -314,5 +335,30 @@ def lddt_loss_calc(
     return loss
 
 
+def _loss_dmat_checking():
+    from alphadock.dataset import DockingDataset
+    from alphadock.config import DATA_DIR
+    ds = DockingDataset(DATA_DIR , 'train_split/train_12k.json')
+    item = ds[0]
+    for k1, v1 in item.items():
+        print(k1)
+        for k2, v2 in v1.items():
+            v1[k2] = torch.as_tensor(v2)[None].cuda()
+            print('    ', k2, v1[k2].shape, v1[k2].dtype)
+
+    lig_gt_mask = item['ground_truth']['gt_lig_has_coords'][0]
+    lig_gt_coords = item['ground_truth']['gt_lig_coords'][0]
+    print(lig_gt_coords)
+    print(lig_gt_mask)
+
+    lig_traj = lig_gt_coords[[0, 2]].clone()
+    #lig_traj[1, 0, 0] += 10
+    lig_traj[:, :] = lig_traj[0].mean(0)
+    #lig_gt_mask[:] = 0
+
+    print(lig_lig_dmat_loss(lig_traj, lig_gt_coords, lig_gt_mask))
+
+
 if __name__ == '__main__':
     pass
+    #_loss_dmat_checking()

@@ -42,7 +42,7 @@ class RowAttentionWithPairBias(nn.Module):
         num_cep = lig_profile.shape[1]
 
         rec_profile = self.rec_norm(rec_profile)
-        lig_profile = self.rec_norm(lig_profile)
+        lig_profile = self.lig_norm(lig_profile)
 
         rec_q, rec_k, rec_v = torch.chunk(self.rec_qkv(rec_profile).view(*rec_profile.shape[:-1], self.attn_num_c, 3 * self.num_heads), 3, dim=-1)
         lig_q, lig_k, lig_v = torch.chunk(self.lig_qkv(lig_profile).view(*lig_profile.shape[:-1], self.attn_num_c, 3 * self.num_heads), 3, dim=-1)
@@ -157,6 +157,8 @@ class OuterProductMean(nn.Module):
         super().__init__()
         in_c, out_c = global_config['rep_1d']['num_c'], global_config['rep_2d']['num_c']
         mid_c = config['mid_c']
+        self.r_norm = nn.LayerNorm(in_c)
+        self.l_norm = nn.LayerNorm(in_c)
         self.r_l1 = nn.Linear(in_c, mid_c)
         self.r_l2 = nn.Linear(in_c, mid_c)
         self.l_l1 = nn.Linear(in_c, mid_c)
@@ -169,6 +171,9 @@ class OuterProductMean(nn.Module):
         self.out_c = out_c
 
     def forward(self, rec_1d, lig_1d, pw_rep):
+        rec_1d = self.r_norm(rec_1d)
+        lig_1d = self.l_norm(lig_1d)
+
         r_i = self.r_l1(rec_1d)
         r_j = self.r_l2(rec_1d)
         l_i = self.l_l1(lig_1d)
@@ -476,7 +481,7 @@ class CEPPairStack(nn.Module):
 
         # masked mean over rec residues of fragment-receptor interaction
         # (Nfrag, Natoms, C)
-        frag_rec = full_2d[:, rr.shape[1]:, :rr.shape[1]].sum(2) / mask_2d[:, rr.shape[1]:, :rr.shape[1]].sum(2)[..., None]
+        frag_rec = full_2d[:, rr.shape[1]:, :rr.shape[1]].sum(2) / (mask_2d[:, rr.shape[1]:, :rr.shape[1]].sum(2)[..., None] + 1e-6)
 
         out_2d_list = []
         out_1d_list = []

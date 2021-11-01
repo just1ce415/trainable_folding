@@ -55,6 +55,7 @@ config = {
         'loss_rec_rec_lddt_weight': 0.01 * 0.5,
         'loss_lig_rec_lddt_weight': 0.01 * 0.5,
         'loss_affinity_weight': 0.01,
+        'loss_lig_dmat_weight': 0.5,
         'lddt_rec_bin_size': 2,
         'lddt_rec_num_bins': 50,
         'lddt_lig_bin_size': 2,
