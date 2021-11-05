@@ -121,7 +121,7 @@ def total_loss(batch, struct_out, final_all_atom, config):
         fape_clamp_distance
     )
 
-    loss_lig_dmat = lig_lig_dmat_loss(lig_traj, lig_gt_coords, lig_gt_mask, clip=10)
+    loss_lig_dmat = lig_dmat_loss(lig_traj, lig_gt_coords, lig_gt_mask, clip=10)
 
     loss_chi = torsion_loss(batch, struct_out)
 
@@ -182,28 +182,32 @@ def total_loss(batch, struct_out, final_all_atom, config):
     return out_dict
 
 
-def lig_lig_dmat_loss(
+def lig_dmat_loss(
         lig_traj,  # (Ntraj, natoms, 3)
         lig_gt_coords,  # (nsym, natoms, 3)
         lig_gt_mask,   # (nsym, natoms)
         clip=10,
-        epsilon=1e-6
+        epsilon=1e-6,
+        square=False
 ):
     '''
     Calculates masked mean difference between squared distance matrices
     of ground truth ligand and predicted trajectories.
-
-    TODO: Ideally we want to compare actual distances, not their squared values,
-          but using torch.sqrt results in nans in the gradients for some reason,
-          need to look into that. Same for FAPE loss
     '''
-    dmat2_gt = torch.square(lig_gt_coords[:, None] - lig_gt_coords[:, :, None]).sum(-1)
-    dmat2_pred = torch.square(lig_traj[:, None] - lig_traj[:, :, None]).sum(-1)
-    delta2 = torch.clip(torch.abs(dmat2_pred[:, None] - dmat2_gt[None]), 0, clip * clip)
+    dmat_gt = torch.square(lig_gt_coords[:, None] - lig_gt_coords[:, :, None]).sum(-1)
+    dmat_pred = torch.square(lig_traj[:, None] - lig_traj[:, :, None]).sum(-1)
+
+    if not square:
+        dmat_gt = torch.sqrt(dmat_gt + epsilon)
+        dmat_pred = torch.sqrt(dmat_pred + epsilon)
+    else:
+        clip = clip**2
+
+    delta = torch.clip(torch.abs(dmat_pred[:, None] - dmat_gt[None]), 0, clip)
     mask_2d = lig_gt_mask[:, None] * lig_gt_mask[:, :, None]
 
-    delta2 *= mask_2d[None]
-    losses = (delta2 / (clip * clip)).sum([-2, -1]) / (mask_2d.sum([-2, -1])[None] + epsilon)
+    delta *= mask_2d[None]
+    losses = (delta / clip).sum([-2, -1]) / (mask_2d.sum([-2, -1])[None] + epsilon)
     losses = losses.min(-1).values  # select best ligand symmtry
     return losses  # (Ntraj)
 
@@ -356,7 +360,7 @@ def _loss_dmat_checking():
     lig_traj[:, :] = lig_traj[0].mean(0)
     #lig_gt_mask[:] = 0
 
-    print(lig_lig_dmat_loss(lig_traj, lig_gt_coords, lig_gt_mask))
+    print(lig_dmat_loss(lig_traj, lig_gt_coords, lig_gt_mask))
 
 
 if __name__ == '__main__':

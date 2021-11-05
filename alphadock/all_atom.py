@@ -1106,8 +1106,8 @@ def frame_aligned_point_error(
         positions_mask: torch.Tensor,  # shape (..., num_positions)
         length_scale: float,
         l1_clamp_distance: Optional[float] = None,
-        epsilon=1e-4,
-        squared=True
+        epsilon=1e-6,
+        squared=False
 ) -> torch.Tensor:  # shape ()
     """Measure point error under different alignments.
 
@@ -1152,14 +1152,15 @@ def frame_aligned_point_error(
     # Compute errors between the structures.
     error_dist = r3.vecs_squared_distance(local_pred_pos, local_target_pos)
     if not squared:
-        error_dist = torch.sqrt(error_dist)
+        error_dist = torch.sqrt(error_dist + epsilon * epsilon)
+    else:
         l1_clamp_distance = l1_clamp_distance**2 if l1_clamp_distance is not None else None
         length_scale = length_scale**2
 
     if l1_clamp_distance:
-        error_dist = torch.clip(error_dist, 0, l1_clamp_distance**2)
+        error_dist = torch.clip(error_dist, 0, l1_clamp_distance)
 
-    normed_error = error_dist / length_scale**2
+    normed_error = error_dist / length_scale
     normed_error *= frames_mask.unsqueeze(-1)
     normed_error *= positions_mask.unsqueeze(-2)
 

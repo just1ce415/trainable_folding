@@ -200,24 +200,31 @@ def report_step(input, output, epoch, local_step, dataset, global_stats, train=T
 
 
 def report_epoch_end(epoch, global_stats, stage='Train', save_model=True):
+    global global_step
+
     if HOROVOD_RANK == 0:
-        global global_step
         writer.add_scalar('HasNans/Epoch/' + stage, math.isnan(sum(global_stats['Loss_Total'])), epoch)
         for key in global_stats.keys():
             vals = [x for x in global_stats[key] if not math.isnan(x)]
             global_stats[key] = sum(vals) / len(vals) if len(vals) > 0 else math.nan
             writer.add_scalar(key + '/Epoch/' + stage, global_stats[key], epoch)
         writer.add_scalar('LearningRate/Epoch/' + stage, optimizer.param_groups[0]['lr'], epoch)
-        if save_model:
-            torch.save({
-                'epoch': epoch,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'scheduler_state_dict': scheduler.state_dict(),
-                'loss': global_stats,
-                'global_step': global_step,
-            }, log_dir / f'epoch_{epoch}_loss_{global_stats["Loss_Total"]:.3f}.pth')
         print('Epoch_stats', global_stats)
+
+    if HOROVOD:
+        global_stats = hvd.broadcast_object(global_stats, root_rank=0)
+
+    scheduler.step(global_stats['Loss_Total'], epoch=epoch)
+
+    if HOROVOD_RANK == 0 and save_model:
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict(),
+            'loss': global_stats,
+            'global_step': global_step,
+        }, log_dir / f'epoch_{epoch}_loss_{global_stats["Loss_Total"]:.3f}.pth')
 
 
 def validate(epoch):
@@ -346,9 +353,6 @@ def train(epoch):
         torch.cuda.empty_cache()
 
     report_epoch_end(epoch, global_stats, stage='Train', save_model=True)
-    if HOROVOD:
-        global_stats = hvd.broadcast_object(global_stats, root_rank=0)
-    scheduler.step(global_stats['Loss_Total'], epoch=epoch)
 
 
 def find_last_pth(dir):
