@@ -30,10 +30,15 @@ class DockingDataset(Dataset):
             sample_to_size=None,
             clamp_fape_prob=0.5,
             max_num_res=None,
+            rot_file=DATA_DIR / 'rot70k.0.0.6.jm.mol2',
             seed=123456
     ):
         self.dataset_dir = Path(dataset_dir).abspath()
         self.json_file = self.dataset_dir / json_file
+
+        self.rotations = None
+        if rot_file is not None:
+            self.rotations = np.loadtxt(rot_file).reshape((-1, 3, 3))
 
         dataset = utils.read_json(self.json_file)
         self.data = dataset['cases']
@@ -54,6 +59,9 @@ class DockingDataset(Dataset):
             probs /= probs.sum()
             self.data = self.rng.choice(self.data, size=min(sample_to_size, len(self.data)), replace=False, p=probs)
             #self.rng = np.random.default_rng(seed)
+
+        if self.rotations is not None:
+            self.rng.shuffle(self.rotations)
 
     #def set_seed(self, seed):
     #    self.rng = np.random.default_rng(seed)
@@ -176,7 +184,8 @@ class DockingDataset(Dataset):
         out_dict = {}
 
         # process target group
-        target_dict = features_summit.target_rec_featurize(case_dict)
+        rand_rot = self.rotations[ix % len(self.rotations)] if self.rotations is not None else None
+        target_dict = features_summit.target_rec_featurize(case_dict, rot_mat=rand_rot)
         target_dict.update(features_summit.target_group_featurize(case_dict, group_dict))
         # add atom types from onehot encoding
         target_dict['lig_atom_types'] = np.where(target_dict['lig_1d'][:, :len(features_summit.ELEMENTS_ORDER)] > 0)[1]

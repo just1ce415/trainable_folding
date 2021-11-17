@@ -1,6 +1,5 @@
 import torch
 import torch.optim as optim
-import torch.nn.functional as F
 import logging
 import sys
 from copy import deepcopy
@@ -86,7 +85,7 @@ pdb_log_interval = 5
 global_step = 0
 
 LEARNING_RATE = 0.001
-SCHEDULER_PATIENCE = 5
+SCHEDULER_PATIENCE = 10
 SCHEDULER_FACTOR = 1. / 3
 SCHEDULER_MIN_LR = 1e-8
 CLIP_GRADIENT = True
@@ -148,18 +147,6 @@ def report_step(input, output, epoch, local_step, dataset, global_stats, train=T
         stats['Loss_LigDmat_MeanTraj'] = output['loss']['loss_lig_dmat'].mean().item()
         if 'loss_affinity' in output['loss']:
             stats['Loss_Affinity'] = output['loss']['loss_affinity'].item()
-            aff_lig_id = input['ground_truth']['gt_affinity_lig_id'][0].item()
-            aff_probs = F.softmax(output['struct_out']['lig_affinity'].detach()[0, aff_lig_id])  # (6)
-            aff_label_true = input['ground_truth']['gt_affinity_label'][0].item()
-            aff_label_pred = torch.argmax(aff_probs).item()
-            #aff_probs = F.softmax(aff_pred)
-            stats[f'Affinity/Label_{aff_label_true}/TP'] = int(aff_label_pred == aff_label_true)
-            if HOROVOD_RANK == 0:
-                print('Affinity preds', aff_probs)
-                sys.stdout.flush()
-            for i in range(aff_probs.shape[0]):
-                stats[f'Affinity/Label_{i}/Prediction'] = int(i == aff_label_pred)
-            #stats[f'Affinity/Label{aff_label}/Count'] = 1
 
         if HOROVOD_RANK == 0:
             print('LDDT true')
@@ -415,12 +402,8 @@ if __name__ == '__main__':
         scheduler_state['patience'] = SCHEDULER_PATIENCE
         scheduler_state['factor'] = SCHEDULER_FACTOR
 
-        if start_epoch == 69:
-            for g in optimizer.param_groups:
-                g['lr'] = g['lr'] / 2
-
-        if start_epoch > 83:
-            scheduler_state['patience'] = 5
+        #for g in optimizer.param_groups:
+        #    g['lr'] = g['lr'] * 4
 
     if HOROVOD:
         global_step = hvd.broadcast_object(global_step, root_rank=0)

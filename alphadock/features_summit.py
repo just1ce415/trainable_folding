@@ -431,13 +431,17 @@ def rec_literal_to_numeric(rec_dict, seq_include_gap=False):
     return out_dict
 
 
-def target_rec_featurize(case_dict):
+def target_rec_featurize(case_dict, rot_mat=None):
     rec_feats = rec_literal_to_numeric(rec_to_features(case_dict), seq_include_gap=False)
     rec_1d = np.concatenate([rec_feats['seq_aatype'], rec_feats['crd_mask'][..., None], rec_feats['crd_beta_mask'][..., None], rec_feats['sasa'], rec_feats['confidence']], axis=-1)
     rec_2d = np.concatenate([rec_feats['distogram_2d'], rec_feats['crd_beta_mask_2d'][..., None]], axis=-1)
 
     renaming_mats = all_atom.RENAMING_MATRICES[rec_feats['seq_aatype_num']]  # (N, 14, 14)
     atom14_atom_is_ambiguous = (renaming_mats * np.eye(14)[None]).sum(1) == 0
+
+    # apply random rotation
+    if rot_mat is not None:
+        rec_feats['atom14_coords'] = np.dot(rec_feats['atom14_coords'], rot_mat.T)
 
     # calculate atom37 representations and backbone frames
     rec_atom37_coords = all_atom.atom14_to_atom37(torch.from_numpy(rec_feats['atom14_coords']).float(), torch.from_numpy(rec_feats['seq_aatype_num']))

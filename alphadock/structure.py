@@ -346,7 +346,7 @@ class StructureModule(torch.nn.Module):
             'rec_1d': x['rec_1d'],
             'rec_lddt': torch.stack(rec_lddt, dim=1),
             'lig_lddt': torch.stack(lig_lddt, dim=1),
-            'lig_affinity': torch.stack(affinities, dim=1)
+            'lig_affinity': torch.stack(affinities, dim=1)  # (1, num_ligs, num_labels)
         }
 
 
