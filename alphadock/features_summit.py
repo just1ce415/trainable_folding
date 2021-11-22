@@ -465,6 +465,7 @@ def target_rec_featurize(case_dict, rot_mat=None):
         'rec_atom37_has_coords': rec_atom37_mask.numpy().astype(DTYPE_FLOAT),
 
         'rec_aatype': rec_feats['seq_aatype_num'].astype(DTYPE_INT),
+        'rec_index': rec_feats['resi_1d'].astype(DTYPE_INT),
         'rec_bb_affine': rec_bb_affine.astype(DTYPE_FLOAT),
         'rec_bb_affine_mask': rec_bb_affine_mask.astype(DTYPE_FLOAT),
         'rec_atom14_atom_is_ambiguous': atom14_atom_is_ambiguous.astype(DTYPE_FLOAT),
@@ -617,6 +618,7 @@ def target_group_featurize(case_dict, group_dict):
     return {
         'lig_1d': group_1d.astype(DTYPE_FLOAT),
         'lig_2d': group_2d.astype(DTYPE_FLOAT),
+        'lig_bonded_2d': (group_2d.sum(-1) > 0).astype(DTYPE_FLOAT),
         'lig_starts': np.array(start_list, dtype=DTYPE_INT),
         'lig_ends': np.array(end_list, dtype=DTYPE_INT)
     }

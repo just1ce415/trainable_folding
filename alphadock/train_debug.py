@@ -1,5 +1,6 @@
 import torch
 import torch.optim as optim
+import torch.nn.functional as F
 import logging
 import sys
 from copy import deepcopy
@@ -43,6 +44,9 @@ config_diff = {
     'StructureModule': {
         'num_iter': 4,
         'device': 'cuda:0',
+    },
+    'loss': {
+        'loss_violation_weight': 0.1
     }
 }
 
@@ -85,7 +89,7 @@ pdb_log_interval = 5
 global_step = 0
 
 LEARNING_RATE = 0.001
-SCHEDULER_PATIENCE = 10
+SCHEDULER_PATIENCE = 5
 SCHEDULER_FACTOR = 1. / 3
 SCHEDULER_MIN_LR = 1e-8
 CLIP_GRADIENT = True
@@ -145,8 +149,45 @@ def report_step(input, output, epoch, local_step, dataset, global_stats, train=T
         stats['Loss_FAPE_BB_Rec_Rec_MeanTraj'] = output['loss']['loss_fape']['loss_bb_rec_rec'].mean().item()
         stats['Loss_FAPE_BB_Rec_Lig_MeanTraj'] = output['loss']['loss_fape']['loss_bb_rec_lig'].min(-1).values.mean().item()
         stats['Loss_LigDmat_MeanTraj'] = output['loss']['loss_lig_dmat'].mean().item()
+
         if 'loss_affinity' in output['loss']:
             stats['Loss_Affinity'] = output['loss']['loss_affinity'].item()
+            aff_lig_id = input['ground_truth']['gt_affinity_lig_id'][0].item()
+            aff_probs = F.softmax(output['struct_out']['lig_affinity'].detach()[0, aff_lig_id])  # (6)
+            aff_label_true = input['ground_truth']['gt_affinity_label'][0].item()
+            aff_label_pred = torch.argmax(aff_probs).item()
+            #aff_probs = F.softmax(aff_pred)
+            stats[f'Affinity/Label_{aff_label_true}/TP'] = int(aff_label_pred == aff_label_true)
+            if HOROVOD_RANK == 0:
+                print('Affinity preds', aff_probs)
+                sys.stdout.flush()
+            for i in range(aff_probs.shape[0]):
+                stats[f'Affinity/Label_{i}/Prediction'] = int(i == aff_label_pred)
+            #stats[f'Affinity/Label{aff_label}/Count'] = 1
+
+        if 'violations' in output['loss']:
+            viol = output['loss']['violations']
+            stats['Violations/Loss'] = viol['loss'].item()
+            stats['Violations/Extreme_CA_CA'] = viol['between_residues']['violations_extreme_ca_ca'].item()
+
+            stats['Violations/Inter_ResRes_Bonds'] = viol['between_residues']['connections_per_residue_violation_mask'].mean().item()
+            stats['Violations/Inter_ResRes_Clash'] = viol['between_residues']['clashes_per_atom_clash_mask'].max(-1).values.mean().item()
+            stats['Violations/Intra_Residue_Violations'] = viol['within_residues']['per_atom_violations'].max(-1).values.mean().item()
+            stats['Violations/Total_Residue_Violations'] = viol['total_per_residue_violations_mask'].mean().item()
+
+            stats['Violations/Inter_LigRes_Clash'] = viol['lig_rec']['clashes_lig_per_atom_clash_mask'].mean().item()
+            stats['Violations/Inter_ResLig_Clash'] = viol['lig_rec']['clashes_rec_per_atom_clash_mask'].max(-1).values.mean().item()
+            stats['Violations/Intra_Ligand_Violations'] = viol['lig']['per_atom_violations'].mean().item()
+            stats['Violations/Total_Ligand_Violations'] = viol['total_per_lig_atom_violations_mask'].mean().item()
+
+            num_rec_atoms = torch.sum(input['target']['rec_atom14_atom_exists'][0]).item()
+            stats['Violations/between_bonds_c_n_mean_loss'] = viol['between_residues']['bonds_c_n_loss_mean'].item()
+            stats['Violations/between_angles_ca_c_n_mean_loss'] = viol['between_residues']['angles_ca_c_n_loss_mean'].item()
+            stats['Violations/between_angles_c_n_ca_mean_loss'] = viol['between_residues']['angles_c_n_ca_loss_mean'].item()
+            stats['Violations/between_clashes_mean_loss'] = viol['between_residues']['clashes_per_atom_loss_sum'].sum().item() / (1e-6 + num_rec_atoms)
+            stats['Violations/within_mean_loss'] = viol['within_residues']['per_atom_loss_sum'].sum().item() / (1e-6 + num_rec_atoms)
+            stats['Violations/lig_rec_clashes_mean_loss'] = viol['lig_rec']['clashes_mean_loss'].mean().item()
+            stats['Violations/lig_lig_mean_loss'] = viol['lig']['per_atom_loss_sum'].mean().item()
 
         if HOROVOD_RANK == 0:
             print('LDDT true')
@@ -199,7 +240,8 @@ def report_step(input, output, epoch, local_step, dataset, global_stats, train=T
         for x in range(torch.cuda.device_count()):
             print('cuda:' + str(x), ':', torch.cuda.memory_stats(x)['allocated_bytes.all.peak'] / 1024**2)
         print('global step', global_step)
-        print(stats)
+        for k, v in stats.items():
+            print(k, ":", v)
         sys.stdout.flush()
 
     return all_stats
@@ -285,7 +327,7 @@ def train(epoch):
         max_hh_templates=4,
         max_frag_main=64,
         max_frag_extra=256,
-        sample_to_size=3500,
+        sample_to_size=3500 if epoch < 106 else 2000,
         seed=epoch * 100
     )
     #dset = dataset.DockingDatasetSimulated(size=4, num_frag_main=64, num_frag_extra=256, num_res=400, num_hh=6)
@@ -398,12 +440,20 @@ if __name__ == '__main__':
         start_epoch = pth['epoch'] + 1
         model.load_state_dict(pth['model_state_dict'])
         optimizer.load_state_dict(pth['optimizer_state_dict'])
-        scheduler_state = pth['scheduler_state_dict']
-        scheduler_state['patience'] = SCHEDULER_PATIENCE
-        scheduler_state['factor'] = SCHEDULER_FACTOR
+        if start_epoch != 106:
+            scheduler_state = pth['scheduler_state_dict']
+            #scheduler_state['patience'] = SCHEDULER_PATIENCE
+            #scheduler_state['factor'] = SCHEDULER_FACTOR
+        else:
+            for g in optimizer.param_groups:
+                g['lr'] = 0.0005
 
-        #for g in optimizer.param_groups:
-        #    g['lr'] = g['lr'] * 4
+        if start_epoch == 69:
+            for g in optimizer.param_groups:
+                g['lr'] = g['lr'] / 2
+
+        if start_epoch > 83:
+            scheduler_state['patience'] = 5
 
     if HOROVOD:
         global_step = hvd.broadcast_object(global_step, root_rank=0)
@@ -421,7 +471,7 @@ if __name__ == '__main__':
     if HOROVOD_RANK == 0:
         writer = SummaryWriter(log_dir)
 
-    for epoch in range(start_epoch, start_epoch + 1):
+    for epoch in range(start_epoch, start_epoch + 20):
         #with torch.autograd.detect_anomaly():
         train(epoch)
         validate(epoch)

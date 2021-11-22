@@ -178,7 +178,7 @@ class DockingDataset(Dataset):
         group_dir = case_dir / group_dict['name']
 
         #print(': getting sample #', ix)
-        print(':', group_dir)
+        print(ix, ':', group_dir)
         sys.stdout.flush()
 
         out_dict = {}
@@ -331,6 +331,7 @@ class DockingDatasetSimulated(Dataset):
                 'rec_bb_affine_mask': torch.ones(torch.Size([num_res]) , dtype= torch.float32),
                 'rec_atom14_atom_is_ambiguous': torch.zeros(torch.Size([num_res, 14]) , dtype= torch.float32),
                 'rec_atom14_atom_exists': torch.zeros(torch.Size([num_res, 14]), dtype=  torch.float32),
+                'rec_index': torch.from_numpy(np.arange(num_res), dtype=torch.int64),
                 'rigidgroups_gt_frames': torch.zeros(torch.Size([num_res, 8, 12]) , dtype= torch.float32),
                 'rigidgroups_gt_exists': torch.zeros(torch.Size([num_res, 8]) , dtype= torch.float32),
                 'rigidgroups_group_exists': torch.zeros(torch.Size([num_res, 8]) , dtype= torch.float32),
@@ -341,6 +342,7 @@ class DockingDatasetSimulated(Dataset):
                 'rec_torsions_mask': torch.zeros(torch.Size([num_res, 7]) , dtype=torch.float32),
                 'lig_1d': torch.ones(torch.Size([num_atoms, 47]) , dtype= torch.float32),
                 'lig_2d': torch.ones(torch.Size([num_atoms, num_atoms, 6]), dtype=  torch.float32),
+                'lig_bonded_2d': torch.ones(torch.Size([num_atoms, num_atoms]), dtype=  torch.float32),
                 'lig_starts': torch.tensor([0], dtype=torch.int64),
                 'lig_ends': torch.tensor([num_atoms], dtype=torch.int64),
                 'lig_atom_types': torch.zeros(num_atoms, dtype=torch.int64),

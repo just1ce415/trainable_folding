@@ -2,6 +2,7 @@ from path import Path
 import numpy as np
 
 DATA_DIR = Path(__file__).abspath().dirname().dirname() / 'data_preparation' / 'data'
+SRC_DIR = Path(__file__).abspath().dirname()
 
 TEST_DATA_DIR = Path(__file__).abspath().dirname() / 'test_data'
 
@@ -56,10 +57,13 @@ config = {
         'loss_lig_rec_lddt_weight': 0.01 * 0.5,
         'loss_affinity_weight': 0.01,
         'loss_lig_dmat_weight': 0.5,
+        'loss_violation_weight': 1.0,
         'lddt_rec_bin_size': 2,
         'lddt_rec_num_bins': 50,
         'lddt_lig_bin_size': 2,
         'lddt_lig_num_bins': 50,
+        'violation_tolerance_factor': 12.0,
+        'clash_overlap_tolerance': 1.5
     },
 
     'Evoformer': {

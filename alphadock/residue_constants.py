@@ -19,6 +19,7 @@ import functools
 from typing import List, Mapping, Tuple
 
 import numpy as np
+from alphadock import config
 
 # Internal import (35fd).
 
@@ -401,8 +402,7 @@ def load_stereo_chemical_props() -> Tuple[Mapping[str, List[Bond]],
       residue_virtual_bonds: dict that maps resname --> list of Bond tuples
       residue_bond_angles: dict that maps resname --> list of BondAngle tuples
     """
-    stereo_chemical_props_path = (
-        'alphafold/common/stereo_chemical_props.txt')
+    stereo_chemical_props_path = config.SRC_DIR / 'stereo_chemical_props.txt'
     with open(stereo_chemical_props_path, 'rt') as f:
         stereo_chemical_props = f.read()
     lines_iter = iter(stereo_chemical_props.splitlines())
@@ -522,6 +522,10 @@ restype_name_to_atom14_names = {
     'UNK': ['',  '',   '',  '',  '',   '',    '',    '',    '',    '',    '',    '',    '',    ''],
 
 }
+
+
+restype_name_to_atom14_atom_radius = {k: [van_der_waals_radius[name[0]] if name != '' else 0.0 for name in v]
+                                      for k, v in restype_name_to_atom14_names.items()}
 
 
 # This is the standard residue order when coding AA type as a number.
@@ -917,3 +921,23 @@ def make_atom14_dists_bounds(overlap_tolerance=1.5,
 
 ELEMENTS_ORDER = ['O', 'C', 'N', 'S', 'P', 'ZN', 'CL', 'MG', 'F', 'NA', 'CA', 'FE', 'MN', 'K', 'BR', 'I', 'X']
 ELEMENTS = {x[1]: x[0] for x in enumerate(ELEMENTS_ORDER)}
+ELEMENTS_VDW = {
+    'O': 1.52,
+    'C': 1.7,
+    'N': 1.55,
+    'S': 1.8,
+    'P': 1.8,
+    'ZN': 1.39,
+    'CL': 1.75,
+    'MG': 1.73,
+    'F': 1.47,
+    'NA': 2.27,
+    'CA': 2.31,
+    'FE': 1.26,
+    'MN': 1.0,  # placeholder
+    'K': 2.75,
+    'BR': 1.85,
+    'I': 1.98,
+    'X': 1.0  # placeholder
+}
+ELEMENTS_VDW_NUM = [ELEMENTS_VDW[x] for x in ELEMENTS_ORDER]

@@ -1,11 +1,14 @@
 import torch
 import torch.nn.functional as F
+import numpy as np
+from typing import Dict, Optional
 
 from alphadock import r3
 from alphadock import quat_affine
 from alphadock import all_atom
 from alphadock import utils
 from alphadock import lddt
+from alphadock import violations
 
 
 def total_loss(batch, struct_out, final_all_atom, config):
@@ -160,6 +163,18 @@ def total_loss(batch, struct_out, final_all_atom, config):
     if loss_aff is not None:
         loss_total += loss_aff * config['loss']['loss_affinity_weight']
 
+    violation_loss = None
+    if config['loss']['loss_violation_weight'] > 0:
+        violations_dict = violations.find_structural_violations(
+            batch,
+            rec_final_atom14_pred_coords_tensor,
+            lig_final_pred_coords_tensor,
+            lddt_vals['lig_best_mask_id_per_traj'][-1],
+            config
+        )
+        violation_loss = structural_violation_loss(batch, violations_dict)
+        loss_total += config['loss']['loss_violation_weight'] * violation_loss
+
     out_dict = {
         'loss_total': loss_total,  # Scalar
         'loss_torsions': loss_chi,  # chi_loss: (Traj), norm_loss: (Traj)
@@ -178,6 +193,12 @@ def total_loss(batch, struct_out, final_all_atom, config):
 
     if loss_aff is not None:
         out_dict['loss_affinity'] = loss_aff  # Scalar
+
+    if violation_loss is not None:
+        out_dict['violations'] = {
+            'loss': violation_loss
+        }
+        out_dict['violations'].update(violations_dict)
 
     return out_dict
 
@@ -336,6 +357,25 @@ def lddt_loss_calc(
 
     # calc mean loss
     loss = F.cross_entropy(lddt_pred.flatten(end_dim=1), lddt_label.flatten().to(dtype=torch.long), ignore_index=-100, reduction='mean')
+    return loss
+
+
+def structural_violation_loss(batch, violations):
+    """Computes loss for structural violations."""
+
+    # Put all violation losses together to one large loss.
+    num_rec_atoms = torch.sum(batch['target']['rec_atom14_atom_exists'][0])
+    loss = (
+            violations['between_residues']['bonds_c_n_loss_mean'] +
+            violations['between_residues']['angles_ca_c_n_loss_mean'] +
+            violations['between_residues']['angles_c_n_ca_loss_mean'] +
+            (torch.sum(
+                violations['between_residues']['clashes_per_atom_loss_sum'] +
+                violations['within_residues']['per_atom_loss_sum']
+            ) / (1e-6 + num_rec_atoms)) +
+            violations['lig_rec']['clashes_mean_loss'] +
+            violations['lig']['per_atom_loss_sum'].mean()
+        )
     return loss
 
 
