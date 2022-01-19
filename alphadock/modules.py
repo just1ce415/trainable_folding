@@ -4,6 +4,8 @@ import torch.functional as F
 from torch.utils.checkpoint import checkpoint
 import math
 
+from alphadock import utils
+
 
 class RowAttentionWithPairBias(nn.Module):
     '''
@@ -21,8 +23,8 @@ class RowAttentionWithPairBias(nn.Module):
         self.rec_norm = nn.LayerNorm(rec_num_c)
         self.lig_norm = nn.LayerNorm(lig_num_c)
 
-        self.rec_qkv = nn.Linear(rec_num_c, 3 * attn_num_c * num_heads, bias=False)
-        self.lig_qkv = nn.Linear(lig_num_c, 3 * attn_num_c * num_heads, bias=False)
+        self.rec_qkv = nn.Linear(rec_num_c, 6 * attn_num_c * num_heads, bias=False)
+        self.lig_qkv = nn.Linear(lig_num_c, 6 * attn_num_c * num_heads, bias=False)
 
         self.rec_rec_project = nn.Linear(pair_rep_num_c, num_heads, bias=False)
         self.lig_lig_project = nn.Linear(pair_rep_num_c, num_heads, bias=False)
@@ -44,15 +46,15 @@ class RowAttentionWithPairBias(nn.Module):
         rec_profile = self.rec_norm(rec_profile)
         lig_profile = self.lig_norm(lig_profile)
 
-        rec_q, rec_k, rec_v = torch.chunk(self.rec_qkv(rec_profile).view(*rec_profile.shape[:-1], self.attn_num_c, 3 * self.num_heads), 3, dim=-1)
-        lig_q, lig_k, lig_v = torch.chunk(self.lig_qkv(lig_profile).view(*lig_profile.shape[:-1], self.attn_num_c, 3 * self.num_heads), 3, dim=-1)
+        rec_lq, rec_lk, rec_lv, rec_rq, rec_rk, rec_rv = torch.chunk(self.rec_qkv(rec_profile).view(*rec_profile.shape[:-1], self.attn_num_c, 6 * self.num_heads), 6, dim=-1)
+        lig_lq, lig_lk, lig_lv, lig_rq, lig_rk, lig_rv = torch.chunk(self.lig_qkv(lig_profile).view(*lig_profile.shape[:-1], self.attn_num_c, 6 * self.num_heads), 6, dim=-1)
 
         weights = torch.zeros((batch_size, num_cep, num_res + num_atoms, num_res + num_atoms, self.num_heads), device=rec_profile.device, dtype=rec_profile.dtype)
         
-        rec_rec_aff = torch.einsum('bich,bjch->bijh', rec_q, rec_k)
-        rec_lig_aff = torch.einsum('bich,bmjch->bmijh', rec_q, lig_k)
-        lig_rec_aff = torch.einsum('bich,bmjch->bmjih', rec_k, lig_q)
-        lig_lig_aff = torch.einsum('bmich,bmjch->bmijh', lig_q, lig_k)
+        rec_rec_aff = torch.einsum('bich,bjch->bijh', rec_rq, rec_rk)
+        rec_lig_aff = torch.einsum('bich,bmjch->bmijh', rec_lq, lig_rk)
+        lig_rec_aff = torch.einsum('bich,bmjch->bmjih', rec_lk, lig_rq)
+        lig_lig_aff = torch.einsum('bmich,bmjch->bmijh', lig_lq, lig_lk)
 
         rec_rec = pair[:, :num_res, :num_res]
         rec_lig = pair[:, :num_res, num_res:]
@@ -73,8 +75,8 @@ class RowAttentionWithPairBias(nn.Module):
         weights[:, :, num_res:, num_res:] = lig_lig_aff + lig_lig_bias
         weights = torch.softmax(weights, dim=-2)
 
-        rec_profile = torch.einsum('brch,birh->bich', rec_v, weights[:, 0, :num_res, :num_res]) + torch.einsum('bmrch,bmirh->bmich', lig_v, weights[:, :, :num_res, num_res:]).mean(1)
-        lig_profile = torch.einsum('bmrch,bmirh->bmich', lig_v, weights[:, :, num_res:, num_res:]) + torch.einsum('brch,bmirh->bmich', rec_v, weights[:, :, num_res:, :num_res])
+        rec_profile = torch.einsum('brch,birh->bich', rec_rv, weights[:, 0, :num_res, :num_res]) + torch.einsum('bmrch,bmirh->bmich', lig_rv, weights[:, :, :num_res, num_res:]).mean(1)
+        lig_profile = torch.einsum('bmrch,bmirh->bmich', lig_lv, weights[:, :, num_res:, num_res:]) + torch.einsum('brch,bmirh->bmich', rec_lv, weights[:, :, num_res:, :num_res])
 
         rec_profile = self.rec_final(rec_profile.reshape(*rec_profile.shape[:-2], -1))
         lig_profile = self.lig_final(lig_profile.reshape(*lig_profile.shape[:-2], -1))
@@ -159,10 +161,8 @@ class OuterProductMean(nn.Module):
         mid_c = config['mid_c']
         self.r_norm = nn.LayerNorm(in_c)
         self.l_norm = nn.LayerNorm(in_c)
-        self.r_l1 = nn.Linear(in_c, mid_c)
-        self.r_l2 = nn.Linear(in_c, mid_c)
-        self.l_l1 = nn.Linear(in_c, mid_c)
-        self.l_l2 = nn.Linear(in_c, mid_c)
+        self.r_l = nn.Linear(in_c, mid_c * 4)
+        self.l_l = nn.Linear(in_c, mid_c * 4)
         self.rr_final = nn.Linear(mid_c * mid_c, out_c)
         self.rl_final = nn.Linear(mid_c * mid_c, out_c)
         self.lr_final = nn.Linear(mid_c * mid_c, out_c)
@@ -174,15 +174,13 @@ class OuterProductMean(nn.Module):
         rec_1d = self.r_norm(rec_1d)
         lig_1d = self.l_norm(lig_1d)
 
-        r_i = self.r_l1(rec_1d)
-        r_j = self.r_l2(rec_1d)
-        l_i = self.l_l1(lig_1d)
-        l_j = self.l_l2(lig_1d)
+        r_ri, r_rj, r_li, r_lj = [x[..., -1] for x in torch.chunk(self.r_l(rec_1d).view(*rec_1d.shape[:-1], self.mid_c, 4), 4, dim=-1)]
+        l_ri, l_rj, l_li, l_lj = [x[..., -1] for x in torch.chunk(self.l_l(lig_1d).view(*lig_1d.shape[:-1], self.mid_c, 4), 4, dim=-1)]
 
-        rr = torch.einsum('bix,bjy->bijxy', r_i.clone(), r_j.clone())
-        rl = torch.einsum('bmix,bmjy->bijxy', r_i.unsqueeze(1).repeat((1, lig_1d.shape[1], 1, 1)), l_j) / lig_1d.shape[1]
-        lr = torch.einsum('bmix,bmjy->bjixy', r_j.unsqueeze(1).repeat((1, lig_1d.shape[1], 1, 1)), l_i) / lig_1d.shape[1]
-        ll = torch.einsum('bmix,bmjy->bijxy', l_i, l_j) / lig_1d.shape[1]
+        rr = torch.einsum('bix,bjy->bijxy', r_ri.clone(), r_rj.clone())
+        rl = torch.einsum('bmix,bmjy->bijxy', r_li.unsqueeze(1).repeat((1, lig_1d.shape[1], 1, 1)), l_rj) / lig_1d.shape[1]
+        lr = torch.einsum('bmix,bmjy->bjixy', r_lj.unsqueeze(1).repeat((1, lig_1d.shape[1], 1, 1)), l_ri) / lig_1d.shape[1]
+        ll = torch.einsum('bmix,bmjy->bijxy', l_li, l_lj) / lig_1d.shape[1]
 
         num_res = rec_1d.shape[1]
         pw_update = torch.zeros_like(pw_rep)
@@ -223,6 +221,32 @@ class TriangleMultiplicationOutgoing(nn.Module):
         return out
 
 
+class TriangleMultiplicationOutgoingRecLig(nn.Module):
+    def __init__(self, config, global_config):
+        super().__init__()
+        in_c = global_config['rep_2d']['num_c']
+        mid_c = config['mid_c']
+        #self.norm1 = nn.LayerNorm(in_c)
+        self.norm2 = nn.LayerNorm(mid_c)
+        self.l1i = nn.Linear(in_c, mid_c)
+        self.l1j = nn.Linear(in_c, mid_c)
+        self.l1i_sigm = nn.Linear(in_c, mid_c)
+        self.l1j_sigm = nn.Linear(in_c, mid_c)
+        self.l2_proj = nn.Linear(mid_c, in_c)
+        self.l3_sigm = nn.Linear(in_c, in_c)
+
+    def forward(self, x2d, i_range, j_range):
+        #x2d = self.norm1(x2d)
+        x2d_i, x2d_j = x2d[:, i_range[0]:i_range[1]], x2d[:, j_range[0]:j_range[1]]
+        i = self.l1i(x2d_i) * torch.sigmoid(self.l1i_sigm(x2d_i))
+        j = self.l1j(x2d_j) * torch.sigmoid(self.l1j_sigm(x2d_j))
+        out = torch.einsum('bikc,bjkc->bijc', i, j)
+        out = self.norm2(out)
+        out = self.l2_proj(out)
+        out = out * torch.sigmoid(self.l3_sigm(x2d[:, i_range[0]:i_range[1], j_range[0]:j_range[1]]))
+        return out
+
+
 class TriangleMultiplicationIngoing(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
@@ -250,6 +274,32 @@ class TriangleMultiplicationIngoing(nn.Module):
         out = out * torch.sigmoid(self.l3_sigm(x2d))
         if mask is not None:
             out *= mask[..., None]
+        return out
+
+
+class TriangleMultiplicationIngoingRecLig(nn.Module):
+    def __init__(self, config, global_config):
+        super().__init__()
+        in_c = global_config['rep_2d']['num_c']
+        mid_c = config['mid_c']
+        #self.norm1 = nn.LayerNorm(in_c)
+        self.norm2 = nn.LayerNorm(mid_c)
+        self.l1i = nn.Linear(in_c, mid_c)
+        self.l1j = nn.Linear(in_c, mid_c)
+        self.l1i_sigm = nn.Linear(in_c, mid_c)
+        self.l1j_sigm = nn.Linear(in_c, mid_c)
+        self.l2_proj = nn.Linear(mid_c, in_c)
+        self.l3_sigm = nn.Linear(in_c, in_c)
+
+    def forward(self, x2d, i_range, j_range):
+        #x2d = self.norm1(x2d)
+        x2d_i, x2d_j = x2d[:, :, i_range[0]:i_range[1]], x2d[:, :, j_range[0]:j_range[1]]
+        i = self.l1i(x2d_i) * torch.sigmoid(self.l1i_sigm(x2d_i))
+        j = self.l1j(x2d_j) * torch.sigmoid(self.l1j_sigm(x2d_j))
+        out = torch.einsum('bkic,bkjc->bijc', i, j)
+        out = self.norm2(out)
+        out = self.l2_proj(out)
+        out = out * torch.sigmoid(self.l3_sigm(x2d[:, i_range[0]:i_range[1], j_range[0]:j_range[1]]))
         return out
 
 
@@ -589,11 +639,27 @@ class EvoformerIteration(nn.Module):
         self.LigTransition = Transition(global_config['rep_1d']['num_c'], config['LigTransition']['n'])
         self.RecTransition = Transition(global_config['rep_1d']['num_c'], config['RecTransition']['n'])
         self.OuterProductMean = OuterProductMean(config['OuterProductMean'], global_config)
-        self.TriangleMultiplicationOutgoing = TriangleMultiplicationOutgoing(config['TriangleMultiplicationOutgoing'], global_config)
-        self.TriangleMultiplicationIngoing = TriangleMultiplicationIngoing(config['TriangleMultiplicationOutgoing'], global_config)
+
+        self.TriangleMultiplicationOutgoing_norm = nn.LayerNorm(global_config['rep_1d']['num_c'])
+        self.TriangleMultiplicationOutgoing_rr = TriangleMultiplicationOutgoingRecLig(config['TriangleMultiplicationOutgoing'], global_config)
+        self.TriangleMultiplicationOutgoing_rl = TriangleMultiplicationOutgoingRecLig(config['TriangleMultiplicationOutgoing'], global_config)
+        self.TriangleMultiplicationOutgoing_lr = TriangleMultiplicationOutgoingRecLig(config['TriangleMultiplicationOutgoing'], global_config)
+        self.TriangleMultiplicationOutgoing_ll = TriangleMultiplicationOutgoingRecLig(config['TriangleMultiplicationOutgoing'], global_config)
+
+        self.TriangleMultiplicationIngoing_norm = nn.LayerNorm(global_config['rep_1d']['num_c'])
+        self.TriangleMultiplicationIngoing_rr = TriangleMultiplicationIngoingRecLig(config['TriangleMultiplicationIngoing'], global_config)
+        self.TriangleMultiplicationIngoing_rl = TriangleMultiplicationIngoingRecLig(config['TriangleMultiplicationIngoing'], global_config)
+        self.TriangleMultiplicationIngoing_lr = TriangleMultiplicationIngoingRecLig(config['TriangleMultiplicationIngoing'], global_config)
+        self.TriangleMultiplicationIngoing_ll = TriangleMultiplicationIngoingRecLig(config['TriangleMultiplicationIngoing'], global_config)
+
         self.TriangleAttentionStartingNode = TriangleAttentionStartingNode(config['TriangleAttentionStartingNode'], global_config)
         self.TriangleAttentionEndingNode = TriangleAttentionEndingNode(config['TriangleAttentionEndingNode'], global_config)
-        self.PairTransition = Transition(global_config['rep_2d']['num_c'], config['PairTransition']['n'])
+
+        self.PairTransition_rr = Transition(global_config['rep_2d']['num_c'], config['PairTransition']['n'])
+        self.PairTransition_rl = Transition(global_config['rep_2d']['num_c'], config['PairTransition']['n'])
+        self.PairTransition_lr = Transition(global_config['rep_2d']['num_c'], config['PairTransition']['n'])
+        self.PairTransition_ll = Transition(global_config['rep_2d']['num_c'], config['PairTransition']['n'])
+
         self.dropout1d_15 = nn.Dropout(0.15)
         self.dropout2d_15 = nn.Dropout2d(0.15)
         self.dropout2d_25 = nn.Dropout2d(0.25)
@@ -607,13 +673,38 @@ class EvoformerIteration(nn.Module):
         r1d += self.RecTransition(r1d.clone())
         l1d += self.LigTransition(l1d.clone())
         pair += self.OuterProductMean(r1d.clone(), l1d.clone(), pair)
-        buf = self.TriangleMultiplicationOutgoing(pair.clone())
-        pair += buf #self.dropout2d_25(buf)
-        buf = self.TriangleMultiplicationIngoing(pair.clone())
-        pair += buf #self.dropout2d_25(buf)
+
+        lig_size = l1d.shape[2]
+        rec_size = r1d.shape[1]
+
+        pair_copy = self.TriangleMultiplicationOutgoing_norm(pair.clone())
+        rr = self.TriangleMultiplicationOutgoing_rr(pair_copy, [0, rec_size], [0, rec_size])
+        rl = self.TriangleMultiplicationOutgoing_rl(pair_copy, [0, rec_size], [rec_size, rec_size+lig_size])
+        lr = self.TriangleMultiplicationOutgoing_lr(pair_copy, [rec_size, rec_size+lig_size], [0, rec_size])
+        ll = self.TriangleMultiplicationOutgoing_ll(pair_copy, [rec_size, rec_size+lig_size], [rec_size, rec_size+lig_size])
+        pair[:, :rec_size, :rec_size] += rr
+        pair[:, :rec_size, rec_size:] += rl
+        pair[:, rec_size:, :rec_size] += lr
+        pair[:, rec_size:, rec_size:] += ll
+
+        pair_copy = self.TriangleMultiplicationIngoing_norm(pair.clone())
+        rr = self.TriangleMultiplicationIngoing_rr(pair_copy, [0, rec_size], [0, rec_size])
+        rl = self.TriangleMultiplicationIngoing_rl(pair_copy, [0, rec_size], [rec_size, rec_size+lig_size])
+        lr = self.TriangleMultiplicationIngoing_lr(pair_copy, [rec_size, rec_size+lig_size], [0, rec_size])
+        ll = self.TriangleMultiplicationIngoing_ll(pair_copy, [rec_size, rec_size+lig_size], [rec_size, rec_size+lig_size])
+        pair[:, :rec_size, :rec_size] += rr
+        pair[:, :rec_size, rec_size:] += rl
+        pair[:, rec_size:, :rec_size] += lr
+        pair[:, rec_size:, rec_size:] += ll
+
         pair += self.TriangleAttentionStartingNode(pair.clone())
         pair += self.TriangleAttentionEndingNode(pair.clone())
-        pair += self.PairTransition(pair.clone())
+
+        pair_copy = pair.clone()
+        pair[:, :rec_size, :rec_size] += self.PairTransition_rr(pair_copy[:, :rec_size, :rec_size])
+        pair[:, :rec_size, rec_size:] += self.PairTransition_rl(pair_copy[:, :rec_size, rec_size:])
+        pair[:, rec_size:, :rec_size] += self.PairTransition_lr(pair_copy[:, rec_size:, :rec_size])
+        pair[:, rec_size:, rec_size:] += self.PairTransition_ll(pair_copy[:, rec_size:, rec_size:])
         return r1d.clone(), l1d.clone(), pair.clone()
 
 
@@ -739,6 +830,52 @@ class InitPairRepresentation(torch.nn.Module):
         return pair
 
 
+class RecyclingEmbedder(torch.nn.Module):
+    def __init__(self, config, global_config):
+        super().__init__()
+        self.rec_norm = nn.LayerNorm(global_config['rep_1d']['num_c'])
+        self.lig_norm = nn.LayerNorm(global_config['rep_1d']['num_c'])
+        self.x2d_norm = nn.LayerNorm(global_config['rep_2d']['num_c'])
+        self.rr_proj = nn.Linear(global_config['rep_2d']['num_c'], config['rec_num_bins'])
+        self.ll_proj = nn.Linear(global_config['rep_2d']['num_c'], config['lig_num_bins'])
+        self.rl_proj = nn.Linear(global_config['rep_2d']['num_c'], config['rec_lig_num_bins'])
+        self.lr_proj = nn.Linear(global_config['rep_2d']['num_c'], config['rec_lig_num_bins'])
+
+        self.config = config
+
+    def forward(self, inputs):
+        #for k, v in inputs.items():
+        #    print(k, v.device)
+
+        rec_1d = self.rec_norm(inputs['rec_1d_prev'])
+        lig_1d = self.lig_norm(inputs['lig_1d_prev'])
+        rep_2d = self.x2d_norm(inputs['rep_2d_prev'])
+
+        rec_size = rec_1d.shape[1]
+
+        rec_crd = inputs['rec_cbeta_prev'][0]
+        rec_mask = inputs['rec_mask_prev'][0]
+        assert len(rec_crd.shape) == 2 and rec_crd.shape[-1] == 3, rec_crd.shape
+
+        lig_crd = inputs['lig_coords_prev'][0]
+        assert len(lig_crd.shape) == 2 and lig_crd.shape[-1] == 3, lig_crd.shape
+
+        dmat = torch.sqrt(torch.square(rec_crd[:, None, :] - rec_crd[None, :, :]).sum(-1) + 10e-10)
+        dgram = utils.dmat_to_dgram(dmat, self.config['rec_min_dist'], self.config['rec_max_dist'], self.config['rec_num_bins'])[1]
+        rep_2d[0, :rec_size, :rec_size] += self.rr_proj(dgram * rec_mask[:, None, None] * rec_mask[None, :, None])
+
+        dmat = torch.sqrt(torch.square(lig_crd[:, None, :] - lig_crd[None, :, :]).sum(-1) + 10e-10)
+        dgram = utils.dmat_to_dgram(dmat, self.config['lig_min_dist'], self.config['lig_max_dist'], self.config['lig_num_bins'])[1]
+        rep_2d[0, rec_size:, rec_size:] += self.ll_proj(dgram)
+
+        dmat = torch.sqrt(torch.square(rec_crd[:, None, :] - lig_crd[None, :, :]).sum(-1) + 10e-10)
+        dgram = utils.dmat_to_dgram(dmat, self.config['rec_lig_min_dist'], self.config['rec_lig_max_dist'], self.config['rec_lig_num_bins'])[1]
+        rep_2d[0, :rec_size, rec_size:] += self.rl_proj(dgram * rec_mask[:, None, None])
+        rep_2d[0, rec_size:, :rec_size] += self.lr_proj((dgram * rec_mask[:, None, None]).transpose(0, 1))
+
+        return {'pair_update': rep_2d, 'lig_1d_update': lig_1d, 'rec_1d_update': rec_1d}
+
+
 class InputEmbedder(torch.nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
@@ -756,12 +893,26 @@ class InputEmbedder(torch.nn.Module):
         self.TemplatePairStack = TemplatePairStack(config['TemplatePairStack'], global_config).to(config['TemplatePairStack']['device'])
         self.TemplatePointwiseAttention = TemplatePointwiseAttention(config['TemplatePointwiseAttention'], global_config).to(config['TemplatePointwiseAttention']['device'])
         self.FragExtraStack = FragExtraStack(config['FragExtraStack'], global_config).to(config['FragExtraStack']['device'])
+        self.RecyclingEmbedder = RecyclingEmbedder(config['RecyclingEmbedder'], global_config).to(config['device'])
 
         self.config = config
 
-    def forward(self, inputs):
+    def forward(self, inputs, recycling=None):
         # create pair representation
         pair = self.InitPairRepresentation({k: v.to(self.config['device']) for k, v in inputs['target'].items()})
+        rec_1d = self.rec_1d_project(inputs['target']['rec_1d'].to(self.config['device']))
+
+        # make lig 1d rep
+        lig_1d = self.lig_1d_project(inputs['target']['lig_1d'].to(self.config['device'])).unsqueeze(1)
+        if 'fragments' in inputs:
+            lig_1d = self.frag_main_project(inputs['fragments']['main'].to(self.config['device'])) + lig_1d.clone()
+
+        # add recycling
+        if recycling is not None:
+            recyc_out = self.RecyclingEmbedder({k: v.to(self.config['device']) for k, v in recycling.items()})
+            pair += recyc_out['pair_update']
+            rec_1d += recyc_out['rec_1d_update']
+            lig_1d[:, 0] += recyc_out['lig_1d_update']
 
         # make template embedding
         if 'hhpred' in inputs:
@@ -775,8 +926,6 @@ class InputEmbedder(torch.nn.Module):
             # add embeddings to the pair rep
             pair += template_embedding.to(pair.device)
 
-        rec_1d = self.rec_1d_project(inputs['target']['rec_1d'].to(self.config['device']))
-
         # embed extra stack
         if 'fragments' in inputs and 'extra' in inputs['fragments']:
             rec_1d, pair = self.FragExtraStack(
@@ -785,35 +934,7 @@ class InputEmbedder(torch.nn.Module):
                 pair.to(self.config['FragExtraStack']['device'])
             )
 
-        # make lig 1d rep
-        lig_1d = self.lig_1d_project(inputs['target']['lig_1d'].to(self.config['device'])).unsqueeze(1)
-        if 'fragments' in inputs:
-            lig_1d = self.frag_main_project(inputs['fragments']['main'].to(self.config['device'])) + lig_1d.clone()
-
         return {'l1d': lig_1d, 'r1d': rec_1d, 'pair': pair}
-
-
-class RecyclingEmbedder(torch.nn.Module):
-    def __init__(self, global_config):
-        super().__init__()
-        self.m_norm = nn.LayerNorm(global_config['cep_num_c'])
-        self.z_norm = nn.LayerNorm(global_config['rep_2d']['num_c'])
-        self.d_linear = nn.Linear(global_config['rec_dist_num_bins'], global_config['rep_2d']['num_c'])
-
-    def forward(self, x):
-        pass
-
-
-class EvoformerWithEmbedding(torch.nn.Module):
-    def __init__(self, config, global_config):
-        super().__init__()
-        self.InputEmbedder = InputEmbedder(config['InputEmbedder'], global_config)
-        self.Evoformer = Evoformer(config['Evoformer'], global_config)
-
-    def forward(self, feats: dict, recycled=None):
-        x = self.InputEmbedder(feats)
-        x = self.Evoformer(x)
-        return x
 
 
 def example():

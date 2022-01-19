@@ -44,6 +44,9 @@ config = {
     'rec_dist_num_bins': 40,
     'num_single_c': 384,
 
+    'recycling_on': True,
+    'recycling_num_iter': 3,
+
     'loss': {
         'fape_loss_unit_distance': 10.0,
         'fape_clamp_distance': 10.0,
@@ -57,7 +60,10 @@ config = {
         'loss_lig_rec_lddt_weight': 0.01 * 0.5,
         'loss_affinity_weight': 0.01,
         'loss_lig_dmat_weight': 0.5,
-        'loss_violation_weight': 1.0,
+        'loss_pred_dmat_rr_weight': 0.3 * 0.33,
+        'loss_pred_dmat_ll_weight': 0.3 * 0.33,
+        'loss_pred_dmat_rl_weight': 0.3 * 0.33,
+        'loss_violation_weight': 0.0,
         'lddt_rec_bin_size': 2,
         'lddt_rec_num_bins': 50,
         'lddt_lig_bin_size': 2,
@@ -111,6 +117,17 @@ config = {
     },
     'InputEmbedder': {
         'device': 'cuda:0',
+        'RecyclingEmbedder': {
+            'rec_num_bins': 64,
+            'rec_min_dist': 0,
+            'rec_max_dist': 20,
+            'lig_num_bins': 64,
+            'lig_min_dist': 0,
+            'lig_max_dist': 20,
+            'rec_lig_num_bins': 64,
+            'rec_lig_min_dist': 0,
+            'rec_lig_max_dist': 20
+        },
         'TemplatePairStack': {
             'num_iter': 2,
             'checkpoint': True,
@@ -216,6 +233,17 @@ config = {
         'PredictAffinity': {
             'num_c': 128,
             'num_bins': 6
+        },
+        'PredictDistogram': {
+            'rec_num_bins': 64,
+            'rec_min_dist': 0,
+            'rec_max_dist': 20,
+            'lig_num_bins': 64,
+            'lig_min_dist': 0,
+            'lig_max_dist': 20,
+            'rec_lig_num_bins': 64,
+            'rec_lig_min_dist': 0,
+            'rec_lig_max_dist': 20,
         }
     }
 }

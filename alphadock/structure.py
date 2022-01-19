@@ -34,7 +34,8 @@ class InvariantPointAttention(torch.nn.Module):
         self.rl_kqv_2d = nn.Linear(self.rep_2d_num_c, self.num_head, bias=False)
         self.lr_kqv_2d = nn.Linear(self.rep_2d_num_c, self.num_head, bias=False)
 
-        self.final = nn.Linear(self.num_head * (self.rep_2d_num_c + self.num_scalar_v + 4 * self.num_point_v), self.num_output_c)
+        self.final_r = nn.Linear(self.num_head * (self.rep_2d_num_c + self.num_scalar_v + 4 * self.num_point_v), self.num_output_c)
+        self.final_l = nn.Linear(self.num_head * (self.rep_2d_num_c + self.num_scalar_v + 4 * self.num_point_v), self.num_output_c)
 
     def forward(self, rec_1d, lig_1d, rep_2d, rec_T, lig_T):
         batch = rec_1d.shape[0]
@@ -109,7 +110,8 @@ class InvariantPointAttention(torch.nn.Module):
         # add norm
         out.append(torch.sqrt(torch.square(out_local).sum(-1)).flatten(start_dim=2))  # [b, a+r, p*h]
 
-        return self.final(torch.cat(out, dim=-1))
+        out_cat = torch.cat(out, dim=-1)
+        return self.final_r(out_cat[:, num_res]), self.final_l(out_cat[:, num_res:])
 
 
 class PredictSidechains(torch.nn.Module):
@@ -180,7 +182,14 @@ class StructureModuleIteration(torch.nn.Module):
         self.lig_norm = nn.LayerNorm(global_config['num_single_c'])
 
         num_1dc = global_config['num_single_c']
-        self.transition = nn.Sequential(
+        self.transition_r = nn.Sequential(
+            nn.Linear(num_1dc, num_1dc),
+            nn.ReLU(),
+            nn.Linear(num_1dc, num_1dc),
+            nn.ReLU(),
+            nn.Linear(num_1dc, num_1dc)
+        )
+        self.transition_l = nn.Sequential(
             nn.Linear(num_1dc, num_1dc),
             nn.ReLU(),
             nn.Linear(num_1dc, num_1dc),
@@ -203,22 +212,23 @@ class StructureModuleIteration(torch.nn.Module):
         num_atoms = lig_1d.shape[1]
 
         # IPA
-        s_update = self.InvariantPointAttention(rec_1d.clone(), lig_1d.clone(), rep_2d, rec_T, lig_T)
-        rec_1d += s_update[:, :num_res]
-        lig_1d += s_update[:, num_res:]
+        rec_1d_update, lig_1d_update = self.InvariantPointAttention(rec_1d.clone(), lig_1d.clone(), rep_2d, rec_T, lig_T)
+        rec_1d += rec_1d_update
+        lig_1d += lig_1d_update
 
         rec_1d = self.rec_norm(self.drop(rec_1d))
         lig_1d = self.lig_norm(self.drop(lig_1d))
 
         # transition
-        s_update = self.transition(torch.cat([rec_1d, lig_1d], dim=1))
-        rec_1d = self.drop(rec_1d + s_update[:, :num_res])
-        lig_1d = self.drop(lig_1d + s_update[:, num_res:])
+        rec_1d_update = self.transition_r(rec_1d)
+        lig_1d_update = self.transition_r(lig_1d)
+        rec_1d = self.drop(rec_1d + rec_1d_update)
+        lig_1d = self.drop(lig_1d + lig_1d_update)
 
         # update backbone
         rec_T = quat_affine.QuatAffine.from_tensor(rec_T)
         lig_T = quat_affine.QuatAffine.from_tensor(lig_T)
-        rec_T = rec_T.pre_compose(self.backbone_update(rec_1d.clone()))
+        #rec_T = rec_T.pre_compose(self.backbone_update(rec_1d.clone()))
         lig_T = lig_T.pre_compose(self.lig_atoms_update(lig_1d.clone()))
 
         # sidechains
@@ -238,13 +248,12 @@ class StructureModuleIteration(torch.nn.Module):
 class PredictAffinity(torch.nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        num_in_c = global_config['num_single_c']
         num_c = config['num_c']
         num_bins = config['num_bins']
 
-        self.layers = nn.Sequential(
-            nn.LayerNorm(num_in_c),
-            nn.Linear(num_in_c, num_c),
+        self.proj_1d = nn.Sequential(
+            nn.LayerNorm(global_config['num_single_c']),
+            nn.Linear(global_config['num_single_c'], num_c),
             nn.ReLU(),
             nn.Linear(num_c, num_c),
             nn.ReLU(),
@@ -252,8 +261,35 @@ class PredictAffinity(torch.nn.Module):
             #nn.Softmax(-1)
         )
 
-    def forward(self, rep_1d):
-        return self.layers(rep_1d)
+        self.proj_2d = nn.Sequential(
+            nn.LayerNorm(global_config['rep_2d']['num_c']),
+            nn.Linear(global_config['rep_2d']['num_c'], num_c),
+            nn.ReLU(),
+            nn.Linear(num_c, num_c),
+            nn.ReLU(),
+            nn.Linear(num_c, num_bins)
+            #nn.Softmax(-1)
+        )
+
+    def forward(self, lig_1d, pair):
+        lig_size = lig_1d.shape[1]
+        return self.proj_1d(lig_1d) + self.proj_2d((pair + pair.transpose(1, 2))[:, -lig_size:]).mean(2)
+
+
+class PredictDistogram(torch.nn.Module):
+    def __init__(self, config, global_config):
+        super().__init__()
+        num_in_c = global_config['rep_2d']['num_c']
+        self.rr_proj = nn.Linear(num_in_c, config['rec_num_bins'])
+        self.ll_proj = nn.Linear(num_in_c, config['lig_num_bins'])
+        self.rl_proj = nn.Linear(num_in_c, config['rec_lig_num_bins'])
+
+    def forward(self, rep_2d, rec_size):
+        sym = rep_2d + rep_2d.transpose(1, 2)
+        rr = self.rr_proj(sym[:, :rec_size, :rec_size])
+        ll = self.ll_proj(sym[:, rec_size:, rec_size:])
+        rl = self.rl_proj(sym[:, :rec_size, rec_size:])
+        return {'rr': rr, 'll': ll, 'rl': rl}
 
 
 class StructureModule(torch.nn.Module):
@@ -269,6 +305,7 @@ class StructureModule(torch.nn.Module):
         self.rec_1d_proj = nn.Linear(num_1dc, num_1dc)
         self.lig_1d_proj = nn.Linear(num_1dc, num_1dc)
         self.pred_affinity = PredictAffinity(config['PredictAffinity'], global_config)
+        self.pred_distogram = PredictDistogram(config['PredictDistogram'], global_config)
 
         self.position_scale = global_config['position_scale']
         self.config = config
@@ -333,7 +370,7 @@ class StructureModule(torch.nn.Module):
             rec_lddt.append(x['rec_lddt'])
             lig_lddt.append(x['lig_lddt'])
 
-        aff_rep = self.pred_affinity(x['lig_1d'])
+        aff_rep = self.pred_affinity(x['lig_1d'], pair)
         affinities = []
         for start, end in zip(inputs['lig_starts'][0], inputs['lig_ends'][0]):
             affinities.append(aff_rep[:, start:end].mean(-2))
@@ -346,7 +383,8 @@ class StructureModule(torch.nn.Module):
             'rec_1d': x['rec_1d'],
             'rec_lddt': torch.stack(rec_lddt, dim=1),
             'lig_lddt': torch.stack(lig_lddt, dim=1),
-            'lig_affinity': torch.stack(affinities, dim=1)  # (1, num_ligs, num_labels)
+            'lig_affinity': torch.stack(affinities, dim=1), # (1, num_ligs, num_labels)
+            'distogram': self.pred_distogram(pair, rec_1d.shape[1])
         }
 
 

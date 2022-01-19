@@ -10,10 +10,15 @@ from io import StringIO
 from path import Path
 from copy import deepcopy
 import torch
+import torch.nn.functional as F
 
 import Bio
 from Bio.SubsMat import MatrixInfo as matlist
 from Bio.pairwise2 import format_alignment
+
+
+class GeneratedNans(Exception):
+    pass
 
 
 @contextlib.contextmanager
@@ -133,6 +138,18 @@ def calc_dmat(crd1, crd2):
 
 def squared_difference(x, y):
     return torch.square(x - y)
+
+
+def dmat_to_dgram(dmat, dmin, dmax, num_bins):
+    shape = dmat.shape
+    dmat = dmat.flatten()
+    bin_size = (dmax - dmin) / num_bins
+    bin_ids = torch.minimum((F.relu(dmat - dmin) // bin_size).to(int), torch.tensor(num_bins - 1, dtype=int, device=dmat.device))
+
+    dgram = torch.zeros((len(dmat), num_bins), dtype=dmat.dtype, device=dmat.device)
+    dgram[range(dgram.shape[0]), bin_ids] = 1.0
+    dgram = dgram.reshape(*shape, num_bins)
+    return bin_ids, dgram
 
 
 def merge_dicts(a, b, compare_types=True, _path=None, ):

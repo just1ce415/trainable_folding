@@ -8,6 +8,7 @@ from alphadock import modules
 from alphadock import structure
 from alphadock import all_atom
 from alphadock import loss
+from alphadock import utils
 
 
 def flatten_input(input, output=[], path=''):
@@ -47,11 +48,11 @@ class DockerIteration(nn.Module):
                     print('Inputs were: ', input)
                     print('Outputs were: ', output)
                     sys.stdout.flush()
-                    raise RuntimeError(f'Module {self.man_name} generated nans')
+                    raise utils.GeneratedNans(f'Module {self.man_name} generated nans')
             module.register_forward_hook(nan_hook)
 
-    def forward(self, input):
-        x = self.InputEmbedder(input)
+    def forward(self, input, recycling=None):
+        x = self.InputEmbedder(input, recycling=recycling)
         #return {'loss_total': x['r1d'].sum()}
 
         #x = {k: v.to('cuda:1') for k, v in x.items()}
@@ -98,6 +99,26 @@ class DockerIteration(nn.Module):
         out_dict['loss'] = loss.total_loss(input, struct_out, final_all_atom, self.global_config)
         out_dict['final_all_atom'] = final_all_atom
         out_dict['struct_out'] = struct_out
+
+        # make recycling input
+        cbeta_coords, cbeta_mask = all_atom.atom14_to_cbeta_coords(
+            final_all_atom['atom_pos_tensor'],
+            input['target']['rec_atom14_has_coords'][0],
+            input['target']['rec_aatype'][0]
+        )
+        #for i in range(len(input['target']['rec_aatype'][0])):
+        #    print(input['target']['rec_aatype'][0][i])
+        #    print(final_all_atom['atom_pos_tensor'][i])
+        #    print(cbeta_mask[i])
+        out_dict['recycling_input'] = {
+            'rec_1d_prev': x['r1d'],
+            'lig_1d_prev': x['l1d'][:, 0],
+            'rep_2d_prev': pair,
+            'rec_cbeta_prev': cbeta_coords[None],
+            'rec_mask_prev': cbeta_mask[None],
+            'lig_coords_prev': struct_out['lig_T'][:, -1, :, -3:]
+        }
+
         return out_dict
 
 
