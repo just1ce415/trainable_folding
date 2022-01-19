@@ -5,18 +5,15 @@ import gc
 import numpy as np
 import prody
 import torch
-import subprocess
 from path import Path
 from rdkit import Chem
 from sblu.ft import read_rotations, read_ftresults, apply_ftresults_atom_group
-from sblu.rmsd import calc_rmsd
-from sblu.cli.docking.cmd_cluster import cluster as cluster_sblu
 from tqdm import tqdm
-import pybel
 from rdkit.Chem import AllChem
-import traceback
 from io import StringIO
-import torch.multiprocessing as mp
+
+import sys
+sys.path.insert(0, '/home/ignatovmg/projects/fft_affinity/trainings/run14_summit')
 
 import lig_to_json
 import utils_loc
@@ -263,6 +260,7 @@ def _sample_ligand(
     # take best energy half of the conformers
     low_e_confs = np.argsort([x[1] for x in energies])
     low_e_confs = [x for x in low_e_confs if energies[x][0] == 0]
+    assert len(low_e_confs) != 0, 'No conformations converged'
     low_e_confs = low_e_confs[:max(1, int(len(low_e_confs) * frac))]
     energies = [energies[x][1] for x in low_e_confs]
 
@@ -295,7 +293,7 @@ def _sample_ligand(
     return lig_ag_final, clusters, energies, rmsds
 
 
-def _get_ligand_confs(lig_mol, lig_rd_target, symms, rots, cluster_radius=1.5):
+def _get_ligand_confs(lig_mol, lig_rd_target, symms, rots, cluster_radius=2.0):
     assert len(rots.shape) == 3 and list(rots.shape[1:]) == [3, 3], rots.shape
 
     lig_ag, clusters, energies, rmsds = _sample_ligand(lig_mol, lig_rd_target, cluster_radius, num_confs=100, num_threads=16)
@@ -365,6 +363,7 @@ def _dock_with_sampling(
     prody.writePDB('lig.pdb', lig_ag)
 
     rots = read_rotations(rot_file, num_rots)
+    rots = np.insert(rots, 0, np.eye(3, 3), axis=0)[:num_rots]
     lig_ag_sampled = _get_ligand_confs(frag_mol, lig_rd_orig, symmetries, rots)
     prody.writePDB('lig_sampled.pdb', lig_ag_sampled)
 
@@ -419,35 +418,41 @@ def cwd(path):
         os.chdir(oldpwd)
 
 
-def dock_valid_cases():
-    cases = utils_loc.read_json('dataset/train_split/valid.json')
+import traceback
+
+
+def dock_cases():
+    cases = utils_loc.read_json('data/train_split/train_12k_cleaned.json')['cases'] + utils_loc.read_json('data/train_split/valid_12k_cleaned.json')['cases']
     oldpwd = Path.getcwd()
-    checkpoint = Path('runs/run14_summit_tune_one_evo/epoch_119_loss_3.131.pth').abspath()
+    checkpoint = Path('/home/ignatovmg/projects/fft_affinity/trainings/run14_summit/runs/run14_summit_tune_one_evo/epoch_119_loss_3.131.pth').abspath()
     for case in cases:
-        if case['ligand']['num_heavy_atoms'] > 25:
-            continue
-        case_dir = Path('dataset/data/' + case['case_name']).abspath()
+        case_dir = Path('data/cases/' + case['case_name']).abspath()
         rec_pdb = case_dir / 'AF_aln.pdb'
         crys_pdb = case_dir / 'rec_orig.pdb'
-        lig_mol = case_dir / 'lig_crys.mol'
-        wdir = (Path('runs/run14_summit_tune_one_evo/docking/epoch_119_valid_full_lig_AF').mkdir_p().abspath() / case['case_name']).mkdir_p()
-        with cwd(wdir):
-            Path(lig_mol).copy('lig_input.mol')
-            Path(rec_pdb).copy('AF_aln.pdb')
-            Path(crys_pdb).copy('rec_crys.pdb')
-            prody.writePDB('AF_slice.pdb', _select_AF_aln(prody.parsePDB('AF_aln.pdb'), prody.parsePDB('rec_crys.pdb')))
-
-            _dock_with_sampling(
-                'AF_slice.pdb',
-                'lig_input.mol',
-                oldpwd / '../../prms/rot70k.0.0.6.jm.mol2',
-                checkpoint,
-                clus_radius=4,
-                device='cuda:0',
-                crys_mol='lig_input.mol',
-                num_rots=500
-            )
+        for lig_mol in sorted(case_dir.glob(case['group_name'] + '/*_.mol')):
+            wdir = (Path('data/decoys').mkdir_p().abspath() / lig_mol.basename().stripext()).mkdir_p()
+            print(wdir)
+            with cwd(wdir):
+                if Path('rmsd_tr1.txt').exists():
+                    continue
+                Path(lig_mol).copy('lig_input.mol')
+                Path(rec_pdb).copy('AF_aln.pdb')
+                Path(crys_pdb).copy('rec_crys.pdb')
+                prody.writePDB('AF_slice.pdb', _select_AF_aln(prody.parsePDB('AF_aln.pdb'), prody.parsePDB('rec_crys.pdb')))
+                try:
+                    _dock_with_sampling(
+                        'AF_slice.pdb',
+                        'lig_input.mol',
+                        oldpwd / '/home/ignatovmg/projects/fft_affinity/prms/rot70k.0.0.6.jm.mol2',
+                        checkpoint,
+                        clus_radius=4,
+                        device='cuda:0',
+                        crys_mol='lig_input.mol',
+                        num_rots=10
+                    )
+                except:
+                    traceback.print_exc()
 
 
 if __name__ == '__main__':
-    dock_valid_cases()
+    dock_cases()
