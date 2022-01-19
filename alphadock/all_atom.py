@@ -597,6 +597,22 @@ def backbone_affine_and_torsions_to_all_atom(
     return outputs
 
 
+def atom14_to_cbeta_coords(
+        atom14_positions,   # (N, 14, 3)
+        atom14_mask,   # (N, 14)
+        aatype    # (N)
+):
+    assert len(aatype.shape) == 1, aatype.shape
+    assert len(atom14_mask.shape) == 2 and atom14_mask.shape[-1] == 14, atom14_mask.shape
+    assert len(atom14_positions.shape) == 3 and list(atom14_positions.shape[-2:]) == [14, 3], atom14_positions.shape
+
+    gly_index = residue_constants.restype_order['G']
+    cbeta_index = [4 if x != gly_index else 1 for x in aatype]
+    cbeta_coords = atom14_positions[range(len(cbeta_index)), cbeta_index]
+    cbeta_mask = atom14_mask[range(len(cbeta_index)), cbeta_index]
+    return cbeta_coords, cbeta_mask
+
+
 def find_optimal_renaming(
         atom14_gt_positions: torch.Tensor,  # (N, 14, 3)
         atom14_alt_gt_positions: torch.Tensor,  # (N, 14, 3)

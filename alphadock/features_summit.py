@@ -358,7 +358,7 @@ def dmat_to_distogram(dmat, dmin, dmax, num_bins, mask=None):
     dmat = dmat.copy().flatten()
     dgram = np.zeros((len(dmat), num_bins), dtype=DTYPE_FLOAT)
     bin_size = (dmax - dmin) / num_bins
-    bin_ids = np.minimum(np.abs(((dmat - dmin) // bin_size).astype(int)), num_bins - 1)
+    bin_ids = np.minimum(np.maximum(((dmat - dmin) // bin_size).astype(int), 0), num_bins - 1)
     dgram[np.arange(dgram.shape[0]), bin_ids] = 1.0
     dgram = dgram.reshape(*shape, num_bins)
 
