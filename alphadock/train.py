@@ -22,7 +22,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 config_diff = {
     'Evoformer': {
-        'num_iter': 16,
+        'num_iter': 4,
         'device': 'cuda:0'
     },
     'InputEmbedder': {
@@ -46,7 +46,7 @@ config_diff = {
         'device': 'cuda:0',
     },
     'loss': {
-        'loss_violation_weight': 0.1
+        'loss_violation_weight': 0.0
     }
 }
 
@@ -83,13 +83,13 @@ if False:
 
 config_summit = utils.merge_dicts(deepcopy(config.config), config_diff)
 log_dir = Path('.').mkdir_p()
-train_json = 'train_split/train_12k_cleaned.json'
-valid_json = 'train_split/valid_12k_cleaned.json'
+train_json = 'train_split/train_lig_sampled.json'
+valid_json = 'train_split/valid_lig_sampled.json'
 pdb_log_interval = 100
 global_step = 0
 
 LEARNING_RATE = 0.001 / 128  # same as AF, lr=0.001 for 128 batch size
-SCHEDULER_PATIENCE = 10
+SCHEDULER_PATIENCE = 20
 SCHEDULER_FACTOR = 1. / 3
 SCHEDULER_MIN_LR = 1e-6 / 128  # same as AF
 CLIP_GRADIENT = True
@@ -108,6 +108,7 @@ if HOROVOD:
 
 def pred_to_pdb(out_pdb, input_dict, out_dict):
     with open(out_pdb, 'w') as f:
+        f.write(f'HEADER {out_pdb.basename().stripext()}.pred\n')
         serial = all_atom.atom14_to_pdb_stream(
             f,
             input_dict['target']['rec_aatype'][0].cpu(),
@@ -124,6 +125,33 @@ def pred_to_pdb(out_pdb, input_dict, out_dict):
             resnum=1,
             chain='B',
             serial_start=serial
+        )
+        f.write(f'HEADER {out_pdb.basename().stripext()}.crys\n')
+        serial = all_atom.atom14_to_pdb_stream(
+            f,
+            input_dict['ground_truth']['gt_aatype'][0].cpu(),
+            input_dict['ground_truth']['gt_atom14_coords'][0].detach().cpu(),
+            chain='A',
+            serial_start=1,
+            resnum_start=1
+        )
+        all_atom.ligand_to_pdb_stream(
+            f,
+            input_dict['target']['lig_atom_types'][0].cpu(),
+            input_dict['ground_truth']['gt_lig_coords'][0, 0, :, :].detach().cpu(),
+            resname='LIG',
+            resnum=1,
+            chain='B',
+            serial_start=serial
+        )
+        f.write(f'HEADER {out_pdb.basename().stripext()}.init\n')
+        all_atom.ligand_to_pdb_stream(
+            f,
+            input_dict['target']['lig_atom_types'][0].cpu(),
+            input_dict['target']['lig_init_coords'][0, :, :].detach().cpu(),
+            resname='LIG',
+            resnum=1,
+            chain='B'
         )
 
 
@@ -152,6 +180,11 @@ def report_step(input, output, epoch, local_step, dataset, global_stats, train=T
         stats['Loss_PredDmat_RecRec'] = output['loss']['loss_pred_dmat']['rr'].item()
         stats['Loss_PredDmat_LigLig'] = output['loss']['loss_pred_dmat']['ll'].item()
         stats['Loss_PredDmat_RecLig'] = output['loss']['loss_pred_dmat']['rl'].item()
+
+        if 'lig_init_rec_lddt_true_total' in output['loss']['lddt_values']:
+            stats['LDDT_Lig_Init'] = output['loss']['lddt_values']['lig_init_rec_lddt_true_total'].min().item()
+            stats['LDDT_Lig_Pred_Minus_Init'] = stats['LDDT_Lig_Final'] - stats['LDDT_Lig_Init']
+            stats['LDDT_Lig_Improved'] = 1 if stats['LDDT_Lig_Final'] > stats['LDDT_Lig_Init'] else 0
 
         if 'loss_affinity' in output['loss']:
             stats['Loss_Affinity'] = output['loss']['loss_affinity'].item()
@@ -210,7 +243,7 @@ def report_step(input, output, epoch, local_step, dataset, global_stats, train=T
             #if any_nan > 0:
             #    print(output)
 
-        if (not train) or (pdb_log_interval is not None and (global_step % pdb_log_interval == 0)):
+        if (not train) or (pdb_log_interval is not None and ((global_step + HOROVOD_RANK) % pdb_log_interval == 0)):
             ix = input['target']['ix'][0].item()
             case_name = dataset.data[ix]['case_name']
             group_name = dataset.data[ix]['group_name']
@@ -293,11 +326,11 @@ def validate(epoch):
     dset = dataset.DockingDataset(
         config.DATA_DIR,
         valid_json,
-        max_hh_templates=4,
-        max_frag_main=64,
-        max_frag_extra=256,
+        max_hh_templates=0,
+        max_frag_main=0,
+        max_frag_extra=0,
         clamp_fape_prob=0,
-        max_num_res=350,
+        max_num_res=None,
         seed=123456
     )
     #dset.data = dset.data[:7]
@@ -321,7 +354,7 @@ def validate(epoch):
                     for recycle_iter in range(num_recycles):
                         output = model(inputs, recycling=output['recycling_input'] if recycle_iter > 0 else None)
 
-        except RuntimeError:
+        except:
             print(HOROVOD_RANK, ':', 'Exception in validation')
             traceback.print_exc()
             sys.stdout.flush()
@@ -340,9 +373,9 @@ def train(epoch):
     dset = dataset.DockingDataset(
         config.DATA_DIR,
         train_json,
-        max_hh_templates=4,
-        max_frag_main=64,
-        max_frag_extra=256,
+        max_hh_templates=0,
+        max_frag_main=0,
+        max_frag_extra=0,
         sample_to_size=3000,
         seed=epoch * 101
     )
@@ -366,6 +399,12 @@ def train(epoch):
 
     for inputs in (tqdm(loader, desc=f'Epoch {epoch} (train)') if HOROVOD_RANK == 0 else loader):
         optimizer.zero_grad()
+
+        if False:
+            for k1, v1 in inputs.items():
+                print(k1)
+                for k2, v2 in v1.items():
+                    print('    ', k2, v1[k2].shape, v1[k2].dtype)
 
         # sync recycling iteration for which the grad will be computed
         recycle_iter_grad_on = torch.randint(0, num_recycles, [1])[0].item() if HOROVOD_RANK == 0 and recycling_on else 0
@@ -478,13 +517,14 @@ if __name__ == '__main__':
         start_epoch = pth['epoch'] + 1
         model.load_state_dict(pth['model_state_dict'])
         optimizer.load_state_dict(pth['optimizer_state_dict'])
+        scheduler_state = pth['scheduler_state_dict']
 
-        #scheduler_state['patience'] = SCHEDULER_PATIENCE
-        #scheduler_state['factor'] = SCHEDULER_FACTOR
+        #if start_epoch != 64:
+        #    scheduler_state = pth['scheduler_state_dict']
 
-        #if start_epoch == 78:
+        #if start_epoch == 64:
         #    for g in optimizer.param_groups:
-        #        g['lr'] = g['lr'] / 3
+        #        g['lr'] = g['lr'] * SCHEDULER_FACTOR
 
     if HOROVOD:
         global_step = hvd.broadcast_object(global_step, root_rank=0)

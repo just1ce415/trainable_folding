@@ -327,6 +327,15 @@ def _select_AF_aln(af_ag, pdb_ag):
     return af_slice
 
 
+def _calc_rmsd(ag, ref_ag, ref_matches, symmetries):
+    rmsd = []
+    for match in ref_matches:
+        assert np.all(ag.getElements()[list(symmetries[0])] == ref_ag.getElements()[list(match)])
+        rmsd.append(prody.calcRMSD(ref_ag.getCoords()[list(match)], ag.getCoordsets()[:, list(symmetries[0])]))
+    rmsd = np.stack(rmsd).min(0)
+    return rmsd
+
+
 def _dock_with_sampling(
         rec_pdb,
         frag_mol,
@@ -366,6 +375,8 @@ def _dock_with_sampling(
     rots = np.insert(rots, 0, np.eye(3, 3), axis=0)[:num_rots]
     lig_ag_sampled = _get_ligand_confs(frag_mol, lig_rd_orig, symmetries, rots)
     prody.writePDB('lig_sampled.pdb', lig_ag_sampled)
+    #lig_ag_sampled = prody.parsePDB('lig_sampled.pdb')
+    np.savetxt('rmsd_lig_sampled.txt', _calc_rmsd(lig_ag_sampled, lig_ag_crys, crys_matches, symmetries))
 
     with torch.no_grad():
         rec_grid = make_protein_grids(rec_ag, cell=1.0, padding=7, mode='point')
@@ -396,14 +407,7 @@ def _dock_with_sampling(
         lig_clus_ag._setCoords(lig_ft_ag.getCoordsets()[[x[0] for x in clusters]], overwrite=True)
         prody.writePDB(f'lig_clus_bzman_tr{num_tr}.pdb', lig_clus_ag)
 
-        rmsd = []
-        for match in crys_matches:
-            ag1 = lig_ft_ag  # select heavy atoms only
-            ag2 = lig_ag_crys
-            #_assert_equal_elements_ag_ag(ag1, ag2)
-            assert np.all(ag1.getElements()[list(symmetries[0])] == ag2.getElements()[list(match)])
-            rmsd.append(prody.calcRMSD(ag2.getCoords()[list(match)], ag1.getCoordsets()[:, list(symmetries[0])]))
-        rmsd = np.stack(rmsd).min(0)
+        rmsd = _calc_rmsd(lig_ft_ag, lig_ag_crys, crys_matches, symmetries)
         np.savetxt(f'rmsd_tr{num_tr}.txt', rmsd)
         np.savetxt(f'rmsd_clus_bzman_tr{num_tr}.txt', rmsd[[x[0] for x in clusters]])
 

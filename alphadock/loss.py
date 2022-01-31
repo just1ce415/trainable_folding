@@ -375,7 +375,7 @@ def lddt_calc(batch, struct_out):
         exclude_self=False
     )  # (Ntraj)
 
-    return {
+    out = {
         'rec_rec_lddt_true_per_residue': rec_rec_lddt,
         'lig_rec_lddt_true_per_atom': lig_rec_lddt,
         'rec_rec_lddt_true_total': rec_rec_lddt_total,
@@ -383,6 +383,21 @@ def lddt_calc(batch, struct_out):
         'lig_best_mask_per_traj': lig_best_mask_per_traj,
         'lig_best_mask_id_per_traj': lig_best_mask_id_per_traj
     }
+
+    if 'lig_init_coords' in batch['target']:
+        # compute lddt using the best mask for each trajectory frame
+        out['lig_init_rec_lddt_true_total'] = lddt.lddt(
+            batch['target']['lig_init_coords'].repeat(num_symm, 1, 1),
+            rec_pred_coords[-1:].repeat(num_symm, 1, 1),
+            lig_true_coords,
+            rec_true_coords[None].repeat(num_symm, 1, 1),
+            lig_true_mask[:, :, None],
+            rec_true_mask[None, :, None].repeat(num_symm, 1, 1),
+            per_residue=False,
+            exclude_self=False
+        )  # (Nsymm)
+
+    return out
 
 
 def lddt_loss_calc(

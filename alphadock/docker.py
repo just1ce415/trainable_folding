@@ -81,6 +81,7 @@ class DockerIteration(nn.Module):
             'rec_torsions': input['target']['rec_torsions_sin_cos'],
             'lig_starts': input['target']['lig_starts'],
             'lig_ends': input['target']['lig_ends'],
+            'lig_init_coords': input['target']['lig_init_coords']
         })
 
         # rescale to angstroms

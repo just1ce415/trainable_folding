@@ -44,7 +44,7 @@ config = {
     'rec_dist_num_bins': 40,
     'num_single_c': 384,
 
-    'recycling_on': True,
+    'recycling_on': False,
     'recycling_num_iter': 3,
 
     'loss': {

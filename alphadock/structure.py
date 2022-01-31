@@ -335,6 +335,7 @@ class StructureModule(torch.nn.Module):
         # TODO: maybe use COM of rec instead of zeros ?
         lig_T = torch.zeros((1, lig_1d.shape[1], 7), device=lig_1d.device, dtype=lig_1d.dtype)
         lig_T[:, :, 0] = 1
+        lig_T[:, :, -3:] = inputs['lig_init_coords'].clone().to(rec_1d.device) / self.position_scale
         lig_T.requires_grad = True
 
         x = {

@@ -12,7 +12,7 @@ import torch
 import sys
 #import horovod.torch as hvd
 
-from config import DATA_DIR
+from config import DATA_DIR, DTYPE_FLOAT
 from alphadock import utils
 from alphadock import features_summit
 from alphadock import residue_constants
@@ -29,8 +29,9 @@ class DockingDataset(Dataset):
             use_hh_prob=0.5,
             sample_to_size=None,
             clamp_fape_prob=0.5,
+            bsite_radius=12,
             max_num_res=None,
-            rot_file=DATA_DIR / 'rot70k.0.0.6.jm.mol2',
+            rot_file=None, #DATA_DIR / 'rot70k.0.0.6.jm.mol2',
             seed=123456
     ):
         self.dataset_dir = Path(dataset_dir).abspath()
@@ -49,6 +50,7 @@ class DockingDataset(Dataset):
         self.max_frag_extra = max_frag_extra
         self.use_hh_prob = use_hh_prob
         self.clamp_fape_prob = clamp_fape_prob
+        self.bsite_radius = bsite_radius
         self.rng = np.random.default_rng(seed)
 
         if max_num_res is not None:
@@ -166,11 +168,71 @@ class DockingDataset(Dataset):
         selected = self.rng.choice(np.array(choices, dtype=object), size=min(len(choices), size), replace=False, p=weights)
         return selected
 
+    def _get_initial_coordinate_guess(self, group_dict):
+        group_coords = []
+        group_rmsds = []
+        for lig_dict in group_dict['ligands']:
+            lig_feats = np.load(DATA_DIR / 'featurized' / lig_dict['sdf_id'] + '.ligand_feats.npy', allow_pickle=True).item()
+            lig_atom_types = np.where(lig_feats['atom_feats'][:, :len(features_summit.ELEMENTS_ORDER)] > 0)[1]
+            match = self.rng.choice(lig_feats['matches'])
+
+            coords = lig_feats['coords']
+            rmsd = 0.0
+            rmsd_file = DATA_DIR / 'decoys' / lig_dict['sdf_id'] / 'rmsd_lig_sampled.txt'
+            if rmsd_file.exists():
+                rmsds = np.loadtxt(rmsd_file, ndmin=1)
+                if (rmsds < 4.0).any():
+                    conf_ids = np.where(rmsds < 4.0)[0]
+                    conf_id = self.rng.choice(conf_ids)
+                    ag = prody.parsePDB(DATA_DIR / 'decoys' / lig_dict['sdf_id'] / 'lig_sampled.pdb', model=conf_id + 1)
+
+                    lig_atom_types = lig_atom_types[list(match)]
+                    assert lig_atom_types.tolist() == [features_summit.ELEMENTS.get(x.upper(), features_summit.ELEMENTS['X']) for x in ag.getElements()], \
+                        (lig_dict['sdf_id'], [features_summit[x] for x in lig_atom_types], ag.getElements().tolist())
+                    coords = ag.getCoords()
+                    rmsd = rmsds[conf_id]
+
+            #assert coords.shape[0] == lig_feats['atom_feats'].shape[0], (lig_dict['sdf_id'], coords.shape[0], lig_feats['atom_feats'].shape[0])
+            _coords = np.zeros((lig_feats['atom_feats'].shape[0], 3), dtype=DTYPE_FLOAT)
+            _coords[list(match)] = coords
+            group_coords.append(_coords)
+            #group_coords.append(coords[np.argsort(match)].copy())
+            group_rmsds.append(rmsd)
+
+        return np.concatenate(group_coords)
+
+    def _select_binding_site(self, out_dict):
+        dmat = np.square(out_dict['target']['lig_init_coords'][:, None, None] - out_dict['target']['rec_atom14_coords'][None]).sum(-1)  # (lig_size, num_res, 14)
+        rec_bsite_mask = np.any(((dmat <= self.bsite_radius**2) * out_dict['target']['rec_atom14_has_coords'][None]) > 0, axis=(0, 2))
+        assert np.any(rec_bsite_mask), ('No residues selected for the binding site', rec_bsite_mask)
+
+        for key in ['rec_1d', 'rec_atom14_coords', 'rec_atom14_has_coords', 'rec_atom37_coords',
+                    'rec_atom37_has_coords', 'rec_aatype', 'rec_bb_affine', 'rec_bb_affine_mask', 'rec_atom14_atom_is_ambiguous',
+                    'rec_atom14_atom_exists', 'rec_index', 'rigidgroups_gt_frames',
+                    'rigidgroups_gt_exists', 'rigidgroups_group_exists', 'rigidgroups_group_is_ambiguous', 'rigidgroups_alt_gt_frames',
+                    'rec_torsions_sin_cos', 'rec_torsions_sin_cos_alt', 'rec_torsions_mask']:
+            out_dict['target'][key] = out_dict['target'][key][rec_bsite_mask]
+        out_dict['target']['rec_2d'] = out_dict['target']['rec_2d'][rec_bsite_mask][:, rec_bsite_mask]
+        out_dict['target']['rec_relpos'] = out_dict['target']['rec_relpos'][rec_bsite_mask][:, rec_bsite_mask]
+
+        for key in ['gt_aatype', 'gt_atom14_coords', 'gt_atom14_has_coords', 'gt_atom14_coords_alt', 'gt_atom14_has_coords_alt',
+                    'gt_atom14_atom_is_ambiguous', 'gt_torsions_sin_cos', 'gt_torsions_sin_cos_alt', 'gt_torsions_mask',
+                    'gt_rigidgroups_gt_frames', 'gt_rigidgroups_alt_gt_frames', 'gt_rigidgroups_gt_exists', 'gt_rigidgroups_group_is_ambiguous',
+                    'gt_bb_affine', 'gt_bb_affine_mask', 'gt_residue_index', 'gt_has_frame']:
+            out_dict['ground_truth'][key] = out_dict['ground_truth'][key][rec_bsite_mask]
+
+        if 'hhpred' in out_dict:
+            out_dict['hhpred']['rec_1d'] = out_dict['hhpred']['rec_1d'][:, rec_bsite_mask]
+            out_dict['hhpred']['rr_2d'] = out_dict['hhpred']['rr_2d'][:, rec_bsite_mask][:, :, rec_bsite_mask]
+            out_dict['hhpred']['rl_2d'] = out_dict['hhpred']['rl_2d'][:, rec_bsite_mask]
+            out_dict['hhpred']['lr_2d'] = out_dict['hhpred']['lr_2d'][:, :, rec_bsite_mask]
+        return out_dict
+
     def _get_item(self, ix):
         item = self.data[ix]
         #item = {}
-        #item['case_name'] = '3ASK_D'
-        #item['group_name'] = 'M3L'
+        #item['case_name'] = '4N3U_A'
+        #item['group_name'] = 'CU_FLC'
 
         case_dir = DATA_DIR / 'cases' / item['case_name']
         case_dict = utils.read_json(case_dir / 'case.json')
@@ -189,6 +251,7 @@ class DockingDataset(Dataset):
         target_dict.update(features_summit.target_group_featurize(case_dict, group_dict))
         # add atom types from onehot encoding
         target_dict['lig_atom_types'] = np.where(target_dict['lig_1d'][:, :len(features_summit.ELEMENTS_ORDER)] > 0)[1]
+        target_dict['lig_init_coords'] = self._get_initial_coordinate_guess(group_dict)
 
         out_dict['target'] = target_dict
         out_dict['ground_truth'] = features_summit.ground_truth_featurize(case_dict, group_dict)
@@ -234,6 +297,9 @@ class DockingDataset(Dataset):
                     tpl_group_dicts,
                     tpl_mappings
                 )
+
+        if self.bsite_radius is not None:
+            out_dict = self._select_binding_site(out_dict)
 
         if False:
             # Print fragment matches aligned to the target ligand group
@@ -285,6 +351,7 @@ class DockingDataset(Dataset):
         except Exception:
             print(f'Error getting item {ix}: {self.data[ix]}')
             traceback.print_exc()
+            sys.stdout.flush()
             return {'target': {'ix': ix}}
 
 
@@ -346,6 +413,7 @@ class DockingDatasetSimulated(Dataset):
                 'lig_starts': torch.tensor([0], dtype=torch.int64),
                 'lig_ends': torch.tensor([num_atoms], dtype=torch.int64),
                 'lig_atom_types': torch.zeros(num_atoms, dtype=torch.int64),
+                'lig_init_coords': torch.zeros([num_atoms, 3], dtype=torch.float32),
                 'ix': torch.tensor(0)
             },
             'ground_truth': {
@@ -428,7 +496,7 @@ class DockingDatasetSimulated(Dataset):
 
 
 def main():
-    ds = DockingDataset(DATA_DIR , 'train_split/train_12k.json')
+    ds = DockingDataset(DATA_DIR , 'train_split/train_12k_cleaned.json')
     #print(ds[0]['affinity_class'])
     #print(ds[0])
 

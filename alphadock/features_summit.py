@@ -282,7 +282,7 @@ def rec_to_features(case_dict):
     af_seq = case_dict['alphafold']['seq']
     entity_seq = case_dict['entity_info']['pdbx_seq_one_letter_code_can']
 
-    rec_ag = prody.parsePDB(case_dir / 'AF_orig.pdb')
+    rec_ag = prody.parsePDB(case_dir / 'AF_aln.pdb')
     af_aln, ent_aln = utils.global_align(af_seq, entity_seq)[0][:2]
     #print(case_dict['case_name'] + '\n' + af_aln + '\n' + ent_aln + '\n' + 'mm_num: ' + str(sum([x != y and x != '-' and y != '-' for x, y in zip(af_aln, ent_aln)])))
 
