@@ -42,7 +42,7 @@ config_diff = {
         }
     },
     'StructureModule': {
-        'num_iter': 4,
+        'num_iter': 8,
         'device': 'cuda:0',
     },
     'loss': {

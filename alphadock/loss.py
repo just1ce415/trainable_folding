@@ -173,10 +173,10 @@ def total_loss(batch, struct_out, final_all_atom, config):
         loss_aff = F.cross_entropy(struct_out['lig_affinity'][:, batch['ground_truth']['gt_affinity_lig_id'][0]], batch['ground_truth']['gt_affinity_label'].flatten())
 
     loss_total = loss_bb_rec_rec.mean() * config['loss']['loss_bb_rec_rec_weight'] + \
-        loss_bb_rec_lig.min(-1).values.mean() * config['loss']['loss_bb_rec_lig_weight'] + \
+        loss_bb_rec_lig.min(-1).values[-1] * config['loss']['loss_bb_rec_lig_weight'] + \
         loss_aa_rec_rec * config['loss']['loss_aa_rec_rec_weight'] + \
         loss_aa_rec_lig.min() * config['loss']['loss_aa_rec_lig_weight'] + \
-        loss_lig_dmat.mean() * config['loss']['loss_lig_dmat_weight'] + \
+        loss_lig_dmat[-1] * config['loss']['loss_lig_dmat_weight'] + \
         loss_chi['chi_loss'].mean() * config['loss']['loss_chi_value_weight'] + \
         loss_chi['norm_loss'].mean() * config['loss']['loss_chi_norm_weight'] + \
         lddt_loss_rec_rec * config['loss']['loss_rec_rec_lddt_weight'] + \
