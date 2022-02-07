@@ -221,14 +221,14 @@ class StructureModuleIteration(torch.nn.Module):
 
         # transition
         rec_1d_update = self.transition_r(rec_1d)
-        lig_1d_update = self.transition_r(lig_1d)
+        lig_1d_update = self.transition_l(lig_1d)
         rec_1d = self.drop(rec_1d + rec_1d_update)
         lig_1d = self.drop(lig_1d + lig_1d_update)
 
         # update backbone
         rec_T = quat_affine.QuatAffine.from_tensor(rec_T)
         lig_T = quat_affine.QuatAffine.from_tensor(lig_T)
-        #rec_T = rec_T.pre_compose(self.backbone_update(rec_1d.clone()))
+        rec_T = rec_T.pre_compose(self.backbone_update(rec_1d.clone()))
         lig_T = lig_T.pre_compose(self.lig_atoms_update(lig_1d.clone()))
 
         # sidechains
