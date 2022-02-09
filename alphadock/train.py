@@ -46,7 +46,8 @@ config_diff = {
         'device': 'cuda:0',
     },
     'loss': {
-        'loss_violation_weight': 0.0
+        'loss_violation_weight': 0.0,
+        'loss_lig_dmat_weight': 0.0
     }
 }
 
@@ -377,7 +378,7 @@ def train(epoch):
         max_frag_main=0,
         max_frag_extra=0,
         sample_to_size=3000,
-        seed=epoch * 101
+        seed=epoch * 100
     )
     #dset = dataset.DockingDatasetSimulated(size=4, num_frag_main=64, num_frag_extra=256, num_res=400, num_hh=6)
     #dset.data = dset.data[30 * 6:]
@@ -522,9 +523,9 @@ if __name__ == '__main__':
         #if start_epoch != 64:
         #    scheduler_state = pth['scheduler_state_dict']
 
-        #if start_epoch == 64:
-        #    for g in optimizer.param_groups:
-        #        g['lr'] = g['lr'] * SCHEDULER_FACTOR
+        if start_epoch == 81:
+            for g in optimizer.param_groups:
+                g['lr'] = g['lr'] * SCHEDULER_FACTOR
 
     if HOROVOD:
         global_step = hvd.broadcast_object(global_step, root_rank=0)
