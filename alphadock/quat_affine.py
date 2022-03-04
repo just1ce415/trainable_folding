@@ -118,7 +118,16 @@ def rot_to_quat(rot, unstack_inputs=False):
     k = (1./3.) * torch.stack([torch.stack(x, dim=-1) for x in k], dim=-2)
 
     # Get eigenvalues in non-decreasing order and associated.
-    _, qs = torch.symeig(k, eigenvectors=True)
+    #_, qs = torch.symeig(k, eigenvectors=True)
+
+    #print(_)
+
+    _, qs = torch.linalg.eigh(k, UPLO='U')
+
+    #print(_)
+
+    #print(tmp - qs)
+
     return qs[..., -1]
 
 

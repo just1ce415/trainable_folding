@@ -5,5 +5,6 @@ if [ $# -eq 0 ]; then
         files="{*sh,*py}"
 fi
 
-echo scp ripper:"/home/ignatovmg/projects/alphadock/$(realpath --relative-to=$ROOT $(pwd))/$files" .
-scp ripper:"/home/ignatovmg/projects/alphadock/$(realpath --relative-to=$ROOT $(pwd))/$files" .
+ROOT="$(cd "$(dirname ${BASH_SOURCE})" && pwd)/.."
+echo scp ripper:"/home/ignatovmg/projects/trainable_folding/$(realpath --relative-to=$ROOT $(pwd))/$files" .
+scp ripper:"/home/ignatovmg/projects/trainable_folding/$(realpath --relative-to=$ROOT $(pwd))/$files" .

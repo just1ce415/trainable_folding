@@ -11,27 +11,12 @@ DTYPE_FLOAT = np.float32
 DTYPE_INT = np.int64
 
 config = {
-    'rec_in_c': 39,
-    'lig_in_c': 47,
-    'extra_in_c': 238,
-
-    'lig_in2d_c': 6,
-    'rec_in2d_c': 40,
+    'rec_in_c': 21,
+    'msa_extra_in_c': 25,
+    'msa_main_in_c': 49,
     'rec_relpos_c': 65,
-
-    'frag_rec': 23,
-    'frag_lig': 48,
-    'frag_rr': 82,
-    'frag_ll': 140,
-    'frag_rl': 108,
-    'frag_lr': 108,
-
     'hh_rec': 24,
-    'hh_lig': 49,
     'hh_rr': 84,
-    'hh_ll': 142,
-    'hh_rl': 110,
-    'hh_lr': 110,
 
     'position_scale': 10,
     'num_torsions': 7,
@@ -41,39 +26,33 @@ config = {
     'rep_2d': {
         'num_c': 64
     },
-    'rec_dist_num_bins': 40,
     'num_single_c': 384,
 
     'recycling_on': False,
     'recycling_num_iter': 3,
 
     'loss': {
+        'loss_aa_rec_rec_weight': 0.5,       # L_FAPE
+
+        'loss_bb_rec_rec_weight': 0.5,       #
+        'loss_chi_value_weight': 0.5,        # L_aux
+        'loss_chi_norm_weight': 0.5 * 0.02,  #
+
+        'loss_rec_rec_lddt_weight': 0.01,    # L_conf
+
+        'loss_pred_dmat_rr_weight': 0.3,     # L_dist
+
+        'loss_violation_weight': 0.0,        # L_viol
+
+        'lddt_rec_bin_size': 2,
         'fape_loss_unit_distance': 10.0,
         'fape_clamp_distance': 10.0,
-        'loss_bb_rec_rec_weight': 0.5 * 0.25,
-        'loss_bb_rec_lig_weight': 0.5 * 0.25,
-        'loss_aa_rec_rec_weight': 0.5 * 0.25,
-        'loss_aa_rec_lig_weight': 0.5 * 0.25,
-        'loss_chi_value_weight': 0.5 * 0.5,
-        'loss_chi_norm_weight': 0.5 * 0.5,
-        'loss_rec_rec_lddt_weight': 0.01 * 0.5,
-        'loss_lig_rec_lddt_weight': 0.01 * 0.5,
-        'loss_affinity_weight': 0.01,
-        'loss_lig_dmat_weight': 0.5,
-        'loss_pred_dmat_rr_weight': 0.3 * 0.33,
-        'loss_pred_dmat_ll_weight': 0.3 * 0.33,
-        'loss_pred_dmat_rl_weight': 0.3 * 0.33,
-        'loss_violation_weight': 0.0,
-        'lddt_rec_bin_size': 2,
-        'lddt_rec_num_bins': 50,
-        'lddt_lig_bin_size': 2,
-        'lddt_lig_num_bins': 50,
         'violation_tolerance_factor': 12.0,
         'clash_overlap_tolerance': 1.5
     },
 
     'Evoformer': {
-        'num_iter': 4,
+        'num_iter': 48,
         'device': 'cuda:0',
         'EvoformerIteration': {
             'checkpoint': True,
@@ -103,12 +82,12 @@ config = {
             'TriangleAttentionStartingNode': {
                 'attention_num_c': 32,
                 'num_heads': 4,
-                'rand_remove': 0.25
+                'rand_remove': 0.0
             },
             'TriangleAttentionEndingNode': {
                 'attention_num_c': 32,
                 'num_heads': 4,
-                'rand_remove': 0.25
+                'rand_remove': 0.0
             },
             'PairTransition': {
                 'n': 4
@@ -118,15 +97,9 @@ config = {
     'InputEmbedder': {
         'device': 'cuda:0',
         'RecyclingEmbedder': {
-            'rec_num_bins': 64,
-            'rec_min_dist': 0,
-            'rec_max_dist': 20,
-            'lig_num_bins': 64,
-            'lig_min_dist': 0,
-            'lig_max_dist': 20,
-            'rec_lig_num_bins': 64,
-            'rec_lig_min_dist': 0,
-            'rec_lig_max_dist': 20
+            'rec_num_bins': 15,
+            'rec_min_dist': 3,       # originally 3.375
+            'rec_max_dist': 21.75    # originally 21.375
         },
         'TemplatePairStack': {
             'num_iter': 2,
@@ -173,9 +146,6 @@ config = {
                     'attention_num_c': 8,
                     'num_heads': 8
                 },
-                'LigTransition': {
-                    'n': 4
-                },
                 'RecTransition': {
                     'n': 4
                 },
@@ -191,12 +161,12 @@ config = {
                 'TriangleAttentionStartingNode': {
                     'attention_num_c': 32,
                     'num_heads': 4,
-                    'rand_remove': 0.25
+                    'rand_remove': 0.0
                 },
                 'TriangleAttentionEndingNode': {
                     'attention_num_c': 32,
                     'num_heads': 4,
-                    'rand_remove': 0.25
+                    'rand_remove': 0.0
                 },
                 'PairTransition': {
                     'n': 4
@@ -205,17 +175,17 @@ config = {
         }
     },
     'StructureModule': {
-        'num_iter': 4,
+        'num_iter': 8,
         'device': 'cuda:0',
         'StructureModuleIteration': {
             'checkpoint': False,
             'InvariantPointAttention': {
-                'num_head': 8,
+                'num_head': 12,
                 'num_scalar_qk': 16,
-                'num_point_qk': 4,
-                'num_2d_qk': 16,
                 'num_scalar_v': 16,
+                'num_point_qk': 4,
                 'num_point_v': 8,
+                'num_2d_qk': 16,
                 'num_2d_v': 16
             },
             'PredictSidechains': {
@@ -224,26 +194,12 @@ config = {
             'PredictRecLDDT': {
                 'num_c': 128,
                 'num_bins': 50
-            },
-            'PredictLigLDDT': {
-                'num_c': 128,
-                'num_bins': 50
             }
-        },
-        'PredictAffinity': {
-            'num_c': 128,
-            'num_bins': 6
         },
         'PredictDistogram': {
             'rec_num_bins': 64,
-            'rec_min_dist': 0,
-            'rec_max_dist': 20,
-            'lig_num_bins': 64,
-            'lig_min_dist': 0,
-            'lig_max_dist': 20,
-            'rec_lig_num_bins': 64,
-            'rec_lig_min_dist': 0,
-            'rec_lig_max_dist': 20,
+            'rec_min_dist': 2,
+            'rec_max_dist': 22
         }
     }
 }

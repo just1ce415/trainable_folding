@@ -881,6 +881,8 @@ def atom14_to_pdb_stream(stream, aatypes, atom14_coords, atom14_mask=None, chain
 
     serial = serial_start
     for resi, aatype in enumerate(aatypes):
+        if aatype >= len(residue_constants.restypes):
+            continue
         aa1 = residue_constants.restypes[aatype]
         resname = residue_constants.restype_1to3[aa1]
         for ix, name in enumerate(residue_constants.restype_name_to_atom14_names[resname]):

@@ -6,5 +6,4 @@ module reset
 module load open-ce/1.4.0-py38-0
 conda activate ${ROOT}/venv
 
-export PATH="${ROOT}/scripts:${PATH}"
-export ROOT
+export PATH="${ROOT}/venv/bin:${ROOT}/scripts:${PATH}"

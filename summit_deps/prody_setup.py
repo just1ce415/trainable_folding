@@ -4,16 +4,17 @@ import platform
 from os import sep as dirsep
 from os.path import isfile, join
 
-#from distutils.core import setup
-#from distutils.extension import Extension
-#from distutils.command.install import install
-
 from setuptools import setup
 from setuptools import Extension
 
 if sys.version_info[:2] < (2, 7):
     sys.stderr.write('Python 2.6 and older is not supported\n')
     sys.exit()
+
+if sys.version_info[:2] == (2, 7):
+    INSTALL_REQUIRES=['numpy>=1.10', 'biopython<=1.76', 'pyparsing', 'scipy']
+else:
+    INSTALL_REQUIRES=['numpy>=1.10', 'biopython', 'pyparsing', 'scipy']
 
 if sys.version_info[0] == 3:
     if sys.version_info[1] < 5:
@@ -59,6 +60,7 @@ PACKAGES = ['prody',
             'prody.sequence',
             'prody.trajectory',
             'prody.chromatin',
+            'prody.compounds',
             'prody.domain_decomposition',
             'prody.utilities',
             'prody.apps',
@@ -150,8 +152,8 @@ SCRIPTS = ['prody=prody.apps:prody_main', 'evol=prody.apps:evol_main']
 setup(
     name='ProDy',
     version=__version__,
-    author='She Zhang',
-    author_email='shz66@pitt.edu',
+    author='James Krieger, She Zhang, Hongchun Li, Cihan Kaya, Ahmet Bakan, and others',
+    author_email='kriegerj@pitt.edu',
     description='A Python Package for Protein Dynamics Analysis',
     long_description=long_description,
     url='http://www.csb.pitt.edu/ProDy',
@@ -182,6 +184,6 @@ setup(
     entry_points = {
         'console_scripts': SCRIPTS,
     },
-    install_requires=['numpy>=1.10', 'biopython', 'pyparsing'],
+    install_requires=INSTALL_REQUIRES,
     #provides=['ProDy ({0:s})'.format(__version__)]
 )

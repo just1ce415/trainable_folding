@@ -8,9 +8,7 @@ NUMPROC=$(nproc)
 
 # Specific commits to checkout
 SBLU_COMMIT=65c6348
-PRODY_VERSION=1.10.11
-#PYTORCH_LIGHTNING_VERSION=1.2.4
-#FAIRSCALE_VERSION="https://github.com/PyTorchLightning/fairscale/archive/pl_1.2.0.zip"
+PRODY_VERSION=2.0.1
 
 # Setup conda env
 if [ ! -d "${ENV_DIR}" ]; then
@@ -32,26 +30,18 @@ set -u
 #pip install pytorch-lightning==${PYTORCH_LIGHTNING_VERSION}
 
 # for model parallelism
-pip install deepspeed #==0.3.13
-pip install fairscale
-#pip install ${FAIRSCALE_VERSION}
-
-# Install se3 cnn kernels
-#pip install appdirs # for e3nn
-#pip install git+https://github.com/AMLab-Amsterdam/lie_learn.git@51b494fc42117575f982ce25977ba5df9682dd3a
-#pip install git+https://github.com/mariogeiger/se3cnn.git@546bc682887e1cb5e16b484c158c05f03377e4e9
-
-# Install mol_grid
-#pip install git+https://bitbucket.org/ignatovmg/mol_grid.git@0a9a71d5f5b81af4a06062f21ab7db26ccff1395
+pip install deepspeed fairscale
 
 # Install ProDy
 pip install pyparsing
 pip install prody==${PRODY_VERSION}
 
+# for cif parsing
+pip install gemmi
+
 # Install ray tune
 pip install ray tensorboard hyperopt
 pip install ray[tune]
-
 pip install networkx
 
 # Install sb-lab-utils

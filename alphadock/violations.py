@@ -10,13 +10,9 @@ from alphadock import utils
 def find_structural_violations(
         batch,
         atom14_pred_positions,  # (N, 14, 3)
-        lig_pred_positions,  # (N, 3)
-        lig_best_symm,  # ()
         config
 ):
-    assert len(lig_best_symm.shape) == 0
     assert len(atom14_pred_positions.shape) == 3
-    assert len(lig_pred_positions.shape) == 2
 
     """Computes several checks for structural violations."""
 
@@ -64,52 +60,15 @@ def find_structural_violations(
         atom14_dists_upper_bound=atom14_dists_upper_bound,
         tighten_bounds_for_loss=0.0)
 
-    lig_vdw_radius = torch.tensor([residue_constants.ELEMENTS_VDW_NUM[x] for x in batch['target']['lig_atom_types'][0]],
-                                  dtype=atom14_pred_positions.dtype,
-                                  device=atom14_pred_positions.device)
-    lig_rec_clash_loss = calc_lig_rec_clash_loss(
-        atom14_pred_positions=atom14_pred_positions,
-        atom14_atom_exists=batch['target']['rec_atom14_atom_exists'][0],
-        atom14_atom_radius=atom14_atom_radius,
-        lig_pred_positions=lig_pred_positions,
-        lig_atom_radius=lig_vdw_radius,
-        overlap_tolerance_soft=config['loss']['clash_overlap_tolerance'],
-        overlap_tolerance_hard=config['loss']['clash_overlap_tolerance']
-    )
-
-    lig_bounds = _make_lig_bounds(
-        batch['target']['lig_atom_types'][0],
-        batch['target']['lig_bonded_2d'][0],
-        batch['ground_truth']['gt_lig_coords'][0, lig_best_symm],
-        batch['ground_truth']['gt_lig_has_coords'][0, lig_best_symm],
-        lig_vdw_radius,
-        overlap_tol=config['loss']['clash_overlap_tolerance'],
-        bond_length_tolerance_factor=config['loss']['violation_tolerance_factor'],
-        std_rel=0.015
-    )
-
-    within_ligand_violations = calc_within_ligand_violations(
-        lig_pred_positions=lig_pred_positions,
-        lig_dists_lower_bound=lig_bounds['lower'],
-        lig_dists_upper_bound=lig_bounds['upper'],
-        tighten_bounds_for_loss=0.0
-    )
-
     # Combine them to a single per-residue violation mask (used later for LDDT).
     per_residue_violations_mask = torch.max(
         torch.stack([
             connection_violations['per_residue_violation_mask'],
             torch.max(between_residue_clashes['per_atom_clash_mask'], dim=-1).values,
-            torch.max(within_residue_violations['per_atom_violations'], dim=-1).values,
-            torch.max(lig_rec_clash_loss['rec_per_atom_clash_mask'], dim=-1).values
+            torch.max(within_residue_violations['per_atom_violations'], dim=-1).values
         ]),
         dim=0
     ).values
-
-    per_lig_atom_violations_mask = torch.maximum(
-        lig_rec_clash_loss['lig_per_atom_clash_mask'],
-        within_ligand_violations['per_atom_violations']
-    )
 
     violations_extreme_ca_ca = extreme_ca_ca_distance_violations(
         pred_atom_positions=atom14_pred_positions,
@@ -133,19 +92,7 @@ def find_structural_violations(
             'per_atom_loss_sum': within_residue_violations['per_atom_loss_sum'],  # (N, 14)
             'per_atom_violations': within_residue_violations['per_atom_violations'],  # (N, 14),
         },
-        'lig_rec': {
-            'clashes_mean_loss': lig_rec_clash_loss['mean_loss'],  # ()
-            'clashes_rec_per_atom_loss_sum': lig_rec_clash_loss['rec_per_atom_loss_sum'],  # shape (N, 14)
-            'clashes_lig_per_atom_loss_sum': lig_rec_clash_loss['lig_per_atom_loss_sum'],  # (N)
-            'clashes_rec_per_atom_clash_mask': lig_rec_clash_loss['rec_per_atom_clash_mask'],  # shape (N, 14)
-            'clashes_lig_per_atom_clash_mask': lig_rec_clash_loss['lig_per_atom_clash_mask']  # shape (N)
-        },
-        'lig': {
-            'per_atom_loss_sum': within_ligand_violations['per_atom_loss_sum'],  # (N)
-            'per_atom_violations': within_ligand_violations['per_atom_violations']   # (N)
-        },
         'total_per_residue_violations_mask': per_residue_violations_mask,  # (N)
-        'total_per_lig_atom_violations_mask': per_lig_atom_violations_mask,  # (N)
     }
 
 
