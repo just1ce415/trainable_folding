@@ -21,14 +21,14 @@ config = {
     'position_scale': 10,
     'num_torsions': 7,
     'rep_1d': {
-        'num_c': 64
+        'num_c': 128
     },
     'rep_2d': {
-        'num_c': 64
+        'num_c': 128
     },
     'num_single_c': 384,
 
-    'recycling_on': False,
+    'recycling_on': True,
     'recycling_num_iter': 3,
 
     'loss': {

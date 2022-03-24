@@ -53,9 +53,9 @@ config_diff = {
 
 config_summit = utils.merge_dicts(deepcopy(config.config), config_diff)
 log_dir = Path('.').mkdir_p()
-train_json = '15k/folding/debug_7k.json'
-valid_json = '15k/folding/debug_7k.json'
-pdb_log_interval = 200
+train_json = '15k/folding/debug_15k.json'
+valid_json = '15k/folding/debug_15k.json'
+pdb_log_interval = 500
 global_step = 0
 
 MAX_NAN_ITER_FRAC = 0.05
@@ -351,14 +351,14 @@ def train(epoch):
             # this is for CUDA out of memory error, if encountered we will just move to the next sample
             print(HOROVOD_RANK, ':', 'Exception in training', 'sample id:', inputs['target']['ix'])
             traceback.print_exc(); sys.stdout.flush(); sys.stderr.flush()
-            optimizer.zero_grad()
+            #optimizer.zero_grad()
             output = {}
 
         except utils.GeneratedNans:
             #
             print(HOROVOD_RANK, ':', 'Nans in training', 'sample id:', inputs['target']['ix'])
             traceback.print_exc(); sys.stdout.flush(); sys.stderr.flush()
-            optimizer.zero_grad()
+            #optimizer.zero_grad()
             generated_nan = 1
             output = {}
 

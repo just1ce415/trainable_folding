@@ -320,17 +320,24 @@ def calc_deletion_matrix(msa):
     return np.stack(out).astype(int)
 
 
-def msa_featurize(a3m_files, rng, num_clusters, num_extra, crop_range=None, max_msa_size=None):
+def msa_featurize(a3m_files, rng, num_clusters, num_extra, crop_range=None, max_msa_size=None, num_block_del=5, block_del_size=0.3):
     assert num_clusters > 0, num_clusters
     assert num_extra >= 0, num_extra
 
     msa = []
     for a3m_file in a3m_files:
         msa += parse_a3m(a3m_file)[1]
-    # TODO: add block deletion
 
     # remove duplicates but keep the original order
     msa = [seq for seq, idx in sorted(dict(reversed([(b, a) for a, b in enumerate(msa)])).items(), key=lambda x: x[1])]
+
+    # block deletion like in AF
+    if num_block_del > 0 and len(msa) > 1:
+        del_rows = set()
+        block_del_size = int(block_del_size * len(msa))
+        for block_start in rng.integers(1, len(msa), num_block_del):
+            del_rows |= set(range(block_start, min(block_start + block_del_size, len(msa)) ))
+        msa = [x for i, x in enumerate(msa) if i not in del_rows]
 
     # truncate msa to the fixed size, this reduces hamming distance computing time
     # which is a bottleneck here.

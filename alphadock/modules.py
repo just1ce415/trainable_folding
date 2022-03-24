@@ -455,8 +455,7 @@ class RecyclingEmbedder(torch.nn.Module):
         super().__init__()
         self.rec_norm = nn.LayerNorm(global_config['rep_1d']['num_c'])
         self.x2d_norm = nn.LayerNorm(global_config['rep_2d']['num_c'])
-        #self.rr_proj = nn.Linear(config['rec_num_bins'], global_config['rep_2d']['num_c'])  TODO: fix
-        self.rr_proj = nn.Linear(global_config['rep_2d']['num_c'], config['rec_num_bins'])
+        self.rr_proj = nn.Linear(config['rec_num_bins'], global_config['rep_2d']['num_c'])
         self.config = config
 
     def forward(self, inputs):
