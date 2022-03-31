@@ -389,7 +389,7 @@ def train(epoch):
 
         if USE_AMP and USE_AMP_SCALER:
             amp_scaler.update()
-        print(HOROVOD_RANK, ':', 'amp_scaler.update()'); sys.stdout.flush()
+        #print(HOROVOD_RANK, ':', 'amp_scaler.update()'); sys.stdout.flush()
 
         output['Generated_NaN'] = generated_nan
 

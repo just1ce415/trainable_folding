@@ -84,16 +84,15 @@ class DockingDataset(Dataset):
         out_dict['target']['ix'] = ix
 
         if self.max_msa_main > 0:
-            out_dict['msa'], first_seq = features_summit.msa_featurize(
+            out_dict['msa'] = features_summit.msa_featurize(
                 [self.dataset_dir / x for x in item['a3m_files']],
                 self.rng,
                 self.max_msa_main,
                 self.max_msa_extra,
-                crop_range=crop_range,
-                max_msa_size=self.max_msa_size
+                crop_range=crop_range
             )
 
-            assert first_seq == seq
+            #assert first_seq == seq
             assert out_dict['msa']['main'].shape[1] == out_dict['target']['rec_1d'].shape[0], \
                 (out_dict['msa']['main'].shape[1], out_dict['target']['rec_1d'].shape[0], ix, item)
 
@@ -297,15 +296,18 @@ if __name__ == '__main__':
     import tqdm
     ds = DockingDataset(
         config.DATA_DIR,
-        '15k/folding/debug_7k.json',
-        max_hh_templates=0,
-        max_msa_main=8,
-        max_msa_extra=8,
-        seed=123
+        '15k/folding/debug_15k.json',
+        shuffle=True,
+        seed=122 * 100
     )
-    #1801
-    #ds[5587]
-    #exit(0)
+    for i, x in enumerate(ds.data):
+        if x['pdb_id'] == '1jwy' and x['entity_id'] == '1':
+            print(i)
+            break
+
+    ds[6788]
+    exit(0)
+
     for item in tqdm.tqdm(ds):
         for k1, v1 in item.items():
             print(k1)

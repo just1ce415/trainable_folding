@@ -8,6 +8,7 @@ import time
 from tqdm import tqdm
 import traceback
 from gemmi import cif
+from path import Path
 
 from alphadock import utils
 from alphadock import residue_constants
@@ -211,7 +212,13 @@ def one_hot_aatype(aa, alphabet):
 
 
 def cif_featurize(cif_file, asym_id, crop_range=None):
-    res_dicts = cif_parse(cif_file, asym_id)
+    cache_path = cif_file + '_' + asym_id + '_cache.npy'
+    if Path(cache_path).exists():
+        res_dicts = np.load(cache_path, allow_pickle=True)
+    else:
+        res_dicts = cif_parse(cif_file, asym_id)
+        np.save(cache_path, res_dicts)
+
     aatype_num = np.array([AATYPE_WITH_X[x['aatype_can']] for x in res_dicts], dtype=DTYPE_INT)
     aatype_onehot = np.zeros((len(res_dicts), len(AATYPE_WITH_X)), dtype=DTYPE_FLOAT)
     aatype_onehot[range(len(res_dicts)), aatype_num] = 1
@@ -296,12 +303,11 @@ def msas_to_onehot(msa_npy):
     return msa_onehot.reshape((msa_npy.shape[0], msa_npy.shape[1], len(AATYPE_WITH_X_AND_GAP_AND_MASKED)))
 
 
-def calc_deletion_matrix_wrong(msa_npy):
-    gaps_npy = (msa_npy == '-').astype(int)
-    del_mat = [gaps_npy[:, 0]]
-    for i in range(1, gaps_npy.shape[1]):
-        del_mat.append((del_mat[-1] + gaps_npy[:, i]) * gaps_npy[:, i])
-    return np.stack(del_mat, axis=1)
+def msas_numeric_to_onehot(msa_npy):
+    msa_num = msa_npy.flatten()
+    msa_onehot = np.zeros((msa_num.size, len(AATYPE_WITH_X_AND_GAP_AND_MASKED)), dtype=DTYPE_FLOAT)
+    msa_onehot[range(msa_num.size), msa_num] = 1
+    return msa_onehot.reshape((msa_npy.shape[0], msa_npy.shape[1], len(AATYPE_WITH_X_AND_GAP_AND_MASKED)))
 
 
 def calc_deletion_matrix(msa):
@@ -317,42 +323,60 @@ def calc_deletion_matrix(msa):
                 row.append(count)
                 count = 0
         out.append(row)
-    return np.stack(out).astype(int)
+    return np.stack(out).astype(np.ushort)  # 16-bit [0, 65535]
 
 
-def msa_featurize(a3m_files, rng, num_clusters, num_extra, crop_range=None, max_msa_size=None, num_block_del=5, block_del_size=0.3):
+def msa_featurize(a3m_files, rng, num_clusters, num_extra, crop_range=None, num_block_del=5, block_del_size=0.3):
     assert num_clusters > 0, num_clusters
     assert num_extra >= 0, num_extra
 
-    msa = []
-    for a3m_file in a3m_files:
-        msa += parse_a3m(a3m_file)[1]
+    # if cached msa don't exist create them, otherwise load from disk
+    cache_prefix = a3m_files[0] + '_cache_'
+    if not Path(cache_prefix + 'msa.npy').exists():
+        msa = []
+        for a3m_file in a3m_files:
+            msa += parse_a3m(a3m_file)[1]
 
-    # remove duplicates but keep the original order
-    msa = [seq for seq, idx in sorted(dict(reversed([(b, a) for a, b in enumerate(msa)])).items(), key=lambda x: x[1])]
+        # remove duplicates but keep the original order
+        msa = [seq for seq, idx in sorted(dict(reversed([(b, a) for a, b in enumerate(msa)])).items(), key=lambda x: x[1])]
+
+        # calculate del matrix
+        all_msa_del_mat = calc_deletion_matrix(msa)
+
+        # remove insertions
+        msa = [''.join([aa for aa in seq if aa.isupper() or aa == '-']) for seq in msa]
+
+        # msa to numbers
+        assert all([x != '-' for x in msa[0]]), msa[0]
+        _fun = np.vectorize(lambda x: AATYPE_WITH_X_AND_GAP_AND_MASKED[x], otypes=[np.byte])
+        all_msa_npy = _fun(np.stack([list(x) for i, x in enumerate(msa)]))
+
+        # save converted msa to cache
+        np.save(cache_prefix + 'del.npy', all_msa_del_mat)
+        np.save(cache_prefix + 'msa.npy', all_msa_npy)
+    else:
+        # load from cache
+        all_msa_del_mat = np.load(cache_prefix + 'del.npy')
+        all_msa_npy = np.load(cache_prefix + 'msa.npy')
+
+    msa_size = all_msa_npy.shape[0]
 
     # block deletion like in AF
-    if num_block_del > 0 and len(msa) > 1:
+    if num_block_del > 0 and msa_size > 1:
         del_rows = set()
-        block_del_size = int(block_del_size * len(msa))
-        for block_start in rng.integers(1, len(msa), num_block_del):
-            del_rows |= set(range(block_start, min(block_start + block_del_size, len(msa)) ))
-        msa = [x for i, x in enumerate(msa) if i not in del_rows]
+        block_del_size = int(block_del_size * msa_size)
+        for block_start in rng.integers(1, msa_size, num_block_del):
+            del_rows |= set(range(block_start, min(block_start + block_del_size, msa_size)))
+        keep_mask = np.ones(msa_size, dtype=np.bool)
+        keep_mask[list(del_rows)] = False
+        all_msa_del_mat = all_msa_del_mat[keep_mask]
+        all_msa_npy = all_msa_npy[keep_mask]
 
-    # truncate msa to the fixed size, this reduces hamming distance computing time
-    # which is a bottleneck here.
-    if len(msa) > 1 and max_msa_size is not None:
-        msa = [msa[0]] + list(rng.choice(msa[1:], min(len(msa) - 1, max_msa_size), replace=False))
+    msa_size = all_msa_npy.shape[0]
 
-    # calc del mat
-    all_msa_del_mat = calc_deletion_matrix(msa)
-
-    # remove insertions
-    msa = [''.join([aa for aa in seq if aa.isupper() or aa == '-']) for seq in msa]
-
-    # to numpy
-    all_msa_npy = np.stack([list(x) for i, x in enumerate(msa)])
-    assert np.all(all_msa_npy[0] != '-')
+    if crop_range is not None:
+        all_msa_del_mat = all_msa_del_mat[:, crop_range[0]:crop_range[1]]
+        all_msa_npy = all_msa_npy[:, crop_range[0]:crop_range[1]]
 
     # replace pyrrolysine and selenocysteine
     # update: turns out U and O are already replaced by X in the msas
@@ -360,30 +384,22 @@ def msa_featurize(a3m_files, rng, num_clusters, num_extra, crop_range=None, max_
     #all_msa_npy = np.char.replace(all_msa_npy, 'O', 'X')
 
     # featurize
-    all_msa_onehot = msas_to_onehot(all_msa_npy)
+    all_msa_onehot = msas_numeric_to_onehot(all_msa_npy)
+    #print(all_msa_onehot.shape, all_msa_onehot.dtype)
 
     main_ids = np.array([0], dtype=int)
-    if num_clusters > 1 and len(msa) > 1:
-        main_ids = np.concatenate([main_ids, rng.choice(range(1, len(msa)), min(len(msa) - 1, num_clusters - 1), replace=False)])
+    if num_clusters > 1 and msa_size > 1:
+        main_ids = np.concatenate([main_ids, rng.choice(range(1, msa_size), min(msa_size - 1, num_clusters - 1), replace=False)])
     main_msa_npy = all_msa_npy[main_ids]
 
     # cluster
-    hamming_mask = (main_msa_npy[:, None, :] != '-') * (all_msa_npy[None, :, :] != '-')
-    # TODO: Bottleneck here, think how to speed up
+    hamming_mask = (main_msa_npy[:, None, :] != AATYPE_WITH_X_AND_GAP_AND_MASKED['-']) * (all_msa_npy[None, :, :] != AATYPE_WITH_X_AND_GAP_AND_MASKED['-'])
     hamming_dist = ((main_msa_npy[:, None, :] != all_msa_npy[None, :, :]) * hamming_mask).sum(-1)  # (num_clusters, num_msa)
     closest_main_id = hamming_dist.argmin(0)
     closest_main_id[main_ids] = main_ids   # <-- make sure the centers are assigned to themselves
     clusters = [(x, np.where(x == closest_main_id)[0]) for x in main_ids]
 
-    #idx1, idx2 = 2, 50
-    #print(msa[main_ids[idx1]])
-    #print(msa[idx2])
-    #print(hamming_mask[idx1, idx2])
-    #print(main_msa_npy[idx1, ~hamming_mask[idx1, idx2]])
-    #print(all_msa_npy[idx2, ~hamming_mask[idx1, idx2]])
-    #print(hamming_dist[idx1, idx2])
-
-    # main
+    # featurize main part
     main_msa_onehot = all_msa_onehot[main_ids]
     main_msa_has_del = all_msa_del_mat[main_ids] > 0
     main_msa_del_value = np.arctan(all_msa_del_mat[main_ids] / 3) * 2 / np.pi
@@ -400,8 +416,8 @@ def msa_featurize(a3m_files, rng, num_clusters, num_extra, crop_range=None, max_
         ], axis=-1).astype(DTYPE_FLOAT)
     }
 
-    if len(msa) - num_clusters > 0 and num_extra > 0:
-        extra_ids = rng.choice(list(set(range(len(msa))) - set(main_ids)), min(len(msa) - len(main_ids), num_extra), replace=False)
+    if msa_size - num_clusters > 0 and num_extra > 0:
+        extra_ids = rng.choice(list(set(range(msa_size)) - set(main_ids)), min(msa_size - len(main_ids), num_extra), replace=False)
         extra_msa_onehot = all_msa_onehot[extra_ids]
         extra_msa_has_del = all_msa_del_mat[extra_ids] > 0
         extra_msa_del_value = np.arctan(all_msa_del_mat[extra_ids] / 3) * 2 / np.pi
@@ -412,12 +428,7 @@ def msa_featurize(a3m_files, rng, num_clusters, num_extra, crop_range=None, max_
             extra_msa_del_value[..., None]
         ], axis=-1).astype(DTYPE_FLOAT)
 
-    if crop_range is not None:
-        out['main'] = out['main'][:, crop_range[0]:crop_range[1]]
-        if 'extra' in out:
-            out['extra'] = out['extra'][:, crop_range[0]:crop_range[1]]
-
-    return out, msa[0] #.replace('U', 'C').replace('O', 'X')
+    return out  #.replace('U', 'C').replace('O', 'X')
 
 
 def example():
