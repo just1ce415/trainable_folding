@@ -1,0 +1,15 @@
+{
+    "Generated_NaN": 0,
+    "Loss_Total": 3.914419651031494,
+    "LDDT_Rec_Final": 0.02942391112446785,
+    "LDDT_Rec_MeanTraj": 0.11649546027183533,
+    "Loss_LDDT_Rec": 3.927309274673462,
+    "Loss_Torsions": 2.765068531036377,
+    "Loss_Norm": 0.712268590927124,
+    "Loss_FAPE_BB_Rec_Rec_Final": 0.9912535548210144,
+    "Loss_FAPE_AA_Rec_Rec_Final": 0.9921814799308777,
+    "Loss_FAPE_BB_Rec_Rec_MeanTraj": 0.985456109046936,
+    "Loss_PredDmat_RecRec": 4.9889020919799805,
+    "Used_HH_templates": false,
+    "Used_frag_templates": false
+}

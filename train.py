@@ -11,14 +11,15 @@ import traceback
 import socket
 
 from alphadock import docker
-import config
-import dataset
-import all_atom
-import utils
+from alphadock import config
+from alphadock import dataset
+from alphadock import all_atom
+from alphadock import utils
 
 import torchvision
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.tensorboard import SummaryWriter
+from import_weight import *
 
 
 config_diff = {
@@ -53,8 +54,8 @@ config_diff = {
 
 config_summit = utils.merge_dicts(deepcopy(config.config), config_diff)
 log_dir = Path('.').mkdir_p()
-train_json = '15k/folding/debug_15k.json'
-valid_json = '15k/folding/debug_15k.json'
+train_json = 'debug.json'
+valid_json = 'debug.json'
 pdb_log_interval = 500
 global_step = 0
 
@@ -426,6 +427,7 @@ if __name__ == '__main__':
 
     kwargs = {'num_workers': 0, 'pin_memory': True}
     model = docker.DockerIteration(config_summit, config_summit)
+    import_jax_weights_(model)
 
     if HOROVOD_RANK == 0:
         print('Num params:', sum(p.numel() for p in model.parameters() if p.requires_grad))

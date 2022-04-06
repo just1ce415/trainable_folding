@@ -1,7 +1,7 @@
 from path import Path
 import numpy as np
 
-DATA_DIR = Path(__file__).abspath().dirname().dirname() / 'data_preparation' / 'data'
+DATA_DIR = Path(__file__).abspath().dirname().dirname() / 'data_preparation' / 'data' / 'small_debug_set'
 SRC_DIR = Path(__file__).abspath().dirname()
 
 TEST_DATA_DIR = Path(__file__).abspath().dirname() / 'test_data'

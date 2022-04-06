@@ -14,7 +14,7 @@ import time
 import datetime
 #import horovod.torch as hvd
 
-from config import DATA_DIR, DTYPE_FLOAT
+from alphadock.config import DATA_DIR, DTYPE_FLOAT
 from alphadock import utils
 from alphadock import features_summit
 from alphadock import residue_constants
