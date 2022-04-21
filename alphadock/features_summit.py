@@ -219,8 +219,8 @@ def cif_featurize(cif_file, asym_id, crop_range=None):
         res_dicts = cif_parse(cif_file, asym_id)
         np.save(cache_path, res_dicts)
 
-    aatype_num = np.array([AATYPE_WITH_X[x['aatype_can']] for x in res_dicts], dtype=DTYPE_INT)
-    aatype_onehot = np.zeros((len(res_dicts), len(AATYPE_WITH_X)), dtype=DTYPE_FLOAT)
+    aatype_num = np.array([AATYPE_WITH_X_AND_GAP[x['aatype_can']] for x in res_dicts], dtype=DTYPE_INT)
+    aatype_onehot = np.zeros((len(res_dicts), len(AATYPE_WITH_X_AND_GAP)), dtype=DTYPE_FLOAT)
     aatype_onehot[range(len(res_dicts)), aatype_num] = 1
 
     relpos_2d = np.arange(len(res_dicts))

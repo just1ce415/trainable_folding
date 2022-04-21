@@ -201,7 +201,9 @@ class StructureModule(torch.nn.Module):
         self.num_iter = config['num_iter']
         num_1dc = global_config['num_single_c']
 
-        self.layers = nn.ModuleList([StructureModuleIteration(config['StructureModuleIteration'], global_config) for _ in range(self.num_iter)])
+        self.StructureModuleIteration = StructureModuleIteration(config['StructureModuleIteration'], global_config)
+
+        self.layers = [self.StructureModuleIteration for _ in range(self.num_iter)]
         self.norm_rec_1d_init = nn.LayerNorm(num_1dc)
         self.norm_2d_init = nn.LayerNorm(global_config['rep_2d']['num_c'])
         self.rec_1d_proj = nn.Linear(num_1dc, num_1dc)

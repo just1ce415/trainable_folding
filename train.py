@@ -103,7 +103,8 @@ def pred_to_pdb(out_pdb, input_dict, out_dict):
 
 def report_step(input, output, epoch, local_step, dataset, global_stats, train=True):
     stage = 'Train' if train else 'Valid'
-    stats = {'Generated_NaN': output['Generated_NaN']}
+    #stats = {'Generated_NaN': output['Generated_NaN']}
+    stats = {}
 
     if 'loss' in output:
         loss = output['loss']['loss_total'].item()
@@ -428,6 +429,7 @@ if __name__ == '__main__':
     kwargs = {'num_workers': 0, 'pin_memory': True}
     model = docker.DockerIteration(config_summit, config_summit)
     import_jax_weights_(model)
+    print(model.state_dict()['InputEmbedder.rec_1d_project.weight'])
 
     if HOROVOD_RANK == 0:
         print('Num params:', sum(p.numel() for p in model.parameters() if p.requires_grad))
@@ -477,7 +479,7 @@ if __name__ == '__main__':
     if HOROVOD_RANK == 0:
         writer = SummaryWriter(log_dir)
 
-    for epoch in range(start_epoch, start_epoch + 100):
+    for epoch in range(start_epoch):
         #with torch.autograd.set_detect_anomaly(True):
-        train(epoch)
-        #validate(epoch)
+        #train(epoch)
+        validate(epoch)

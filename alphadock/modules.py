@@ -13,10 +13,11 @@ class RowAttentionWithPairBias(nn.Module):
 
         attn_num_c = config['attention_num_c']
         num_heads = config['num_heads']
-        in_num_c = global_config['rep_1d']['num_c']
+        in_num_c = config['extra_msa_channel']
         pair_rep_num_c = global_config['rep_2d']['num_c']
 
         self.norm = nn.LayerNorm(in_num_c)
+        self.norm_2d = nn.LayerNorm(pair_rep_num_c)
         self.qkv = nn.Linear(in_num_c, 3 * attn_num_c * num_heads, bias=False)
         self.x2d_project = nn.Linear(pair_rep_num_c, num_heads, bias=False)
         self.final = nn.Linear(attn_num_c * num_heads, in_num_c)
@@ -31,6 +32,7 @@ class RowAttentionWithPairBias(nn.Module):
         gate = torch.sigmoid(self.gate(x1d).view(*x1d.shape[:-1], self.attn_num_c, self.num_heads))
 
         factor = 1 / math.sqrt(self.attn_num_c)
+        x2d = self.norm_2d(x2d)
         bias = self.x2d_project(x2d).view(*x2d.shape[:-1], self.num_heads) * factor
         weights = torch.softmax(aff + bias, dim=-2)
 
@@ -75,17 +77,17 @@ class ExtraColumnGlobalAttention(nn.Module):
         self.attn_num_c = config['attention_num_c']
         self.num_heads = config['num_heads']
 
-        self.norm = nn.LayerNorm(global_config['rep_1d']['num_c'])
-        self.kqv = nn.Linear(global_config['rep_1d']['num_c'], self.attn_num_c * (self.num_heads + 2), bias=False)
-        self.gate = nn.Linear(global_config['rep_1d']['num_c'], self.attn_num_c * self.num_heads)
-        self.final = nn.Linear(self.attn_num_c * self.num_heads, global_config['rep_1d']['num_c'])
+        self.norm = nn.LayerNorm(global_config['extra_msa_channel'])
+        self.kqv = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c * (self.num_heads + 2), bias=False)
+        self.gate = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c * self.num_heads)
+        self.final = nn.Linear(self.attn_num_c * self.num_heads, global_config['extra_msa_channel'])
 
     def forward(self, x1d):
         x1d = self.norm(x1d)
 
         q, k, v = torch.split(self.kqv(x1d).view(*x1d.shape[:-1], self.attn_num_c, self.num_heads + 2), [self.num_heads, 1, 1], dim=-1)
         q = torch.mean(q, dim=1)
-        gate = self.gate(x1d).view(*x1d.shape[:-1], self.attn_num_c, self.num_heads)
+        gate =  torch.sigmoid(self.gate(x1d).view(*x1d.shape[:-1], self.attn_num_c, self.num_heads))
 
         w = torch.softmax(torch.einsum('bich,bsic->bsih', q, k.squeeze(-1)) / math.sqrt(self.attn_num_c), dim=1)
         out_1d = gate * torch.sum(w[..., None, :] * v, dim=1)[:, None]
@@ -109,7 +111,7 @@ class Transition(nn.Module):
 class OuterProductMean(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        in_c, out_c = global_config['rep_1d']['num_c'], global_config['rep_2d']['num_c']
+        in_c, out_c = config['extra_msa_channel'], global_config['rep_2d']['num_c']
         mid_c = config['mid_c']
         self.norm = nn.LayerNorm(in_c)
         self.proj = nn.Linear(in_c, mid_c * 2)
@@ -374,7 +376,7 @@ class FragExtraStackIteration(torch.nn.Module):
         super().__init__()
         self.RowAttentionWithPairBias = RowAttentionWithPairBias(config['RowAttentionWithPairBias'], global_config)
         self.ExtraColumnGlobalAttention = ExtraColumnGlobalAttention(config['ExtraColumnGlobalAttention'], global_config)
-        self.RecTransition = Transition(global_config['rep_1d']['num_c'], config['RecTransition']['n'])
+        self.RecTransition = Transition(config['extra_msa_channel'], config['RecTransition']['n'])
         self.OuterProductMean = OuterProductMean(config['OuterProductMean'], global_config)
         self.TriangleMultiplicationOutgoing = TriangleMultiplicationOutgoing(config['TriangleMultiplicationOutgoing'], global_config)
         self.TriangleMultiplicationIngoing = TriangleMultiplicationIngoing(config['TriangleMultiplicationOutgoing'], global_config)
@@ -408,7 +410,7 @@ class FragExtraStackIteration(torch.nn.Module):
 class FragExtraStack(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        self.project = nn.Linear(global_config['msa_extra_in_c'], global_config['rep_1d']['num_c'])
+        self.project = nn.Linear(global_config['msa_extra_in_c'], config['extra_msa_channel'])
         self.layers = nn.ModuleList([FragExtraStackIteration(config['FragExtraStackIteration'], global_config) for _ in range(config['num_iter'])])
         self.config = config
 
