@@ -20,6 +20,7 @@ import torchvision
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.tensorboard import SummaryWriter
 from import_weight import *
+import pickle
 
 
 config_diff = {
@@ -249,6 +250,8 @@ def validate(epoch):
     )
     #dset.data = dset.data[:7]
     #dset = dataset.DockingDatasetSimulated(size=4, num_frag_main=64, num_frag_extra=256, num_res=350, num_hh=4)
+    with open('/home/thu/Downloads/alphafold/output/features.pkl', 'rb') as f:
+        x = pickle.load(f)
 
     if HOROVOD:
         sampler = torch.utils.data.distributed.DistributedSampler(dset, num_replicas=hvd.size(), rank=hvd.rank(), shuffle=False)
@@ -262,6 +265,10 @@ def validate(epoch):
     num_recycles = config_summit['recycling_num_iter'] if config_summit['recycling_on'] else 1
 
     for inputs in (tqdm(loader, desc=f'Epoch {epoch} (valid)') if HOROVOD_RANK == 0 else loader):
+        inputs['msa']['main'][0] = torch.tensor(x['msa_feat'][0])
+        extra_msa_1h = torch.nn.functional.one_hot(torch.tensor(x['extra_msa'][0]).to(torch.int64), num_classes=23)
+        inputs['msa']['extra'][0] = torch.cat((extra_msa_1h, torch.unsqueeze(torch.tensor(x['extra_has_deletion'][0]),-1), torch.unsqueeze(torch.tensor(x['extra_deletion_value'][0]),-1)), -1)
+        inputs['target']['rec_1d'][0] = torch.tensor(x['target_feat'][0])
         try:
             with torch.no_grad():
                 with torch.cuda.amp.autocast(USE_AMP):
@@ -429,7 +436,7 @@ if __name__ == '__main__':
     kwargs = {'num_workers': 0, 'pin_memory': True}
     model = docker.DockerIteration(config_summit, config_summit)
     import_jax_weights_(model)
-    print(model.state_dict()['InputEmbedder.rec_1d_project.weight'])
+    #print(model.state_dict()['InputEmbedder.rec_1d_project.bias'])
 
     if HOROVOD_RANK == 0:
         print('Num params:', sum(p.numel() for p in model.parameters() if p.requires_grad))

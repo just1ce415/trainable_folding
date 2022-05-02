@@ -123,6 +123,9 @@ def import_jax_weights_(model, version="model_1"):
         "query_norm": LayerNormParams(matt.norm),
         "attention": 
         {
+            "query_w": LinearWeightMHA(matt.q.weight),
+            "key_w": LinearWeightMHA(matt.k.weight),
+            "value_w": LinearWeightMHA(matt.v.weight),
             "gating_w": LinearWeightMHA(matt.gate.weight),
             "gating_b": LinearBiasMHA(matt.gate.bias),
             "output_w": Param(
@@ -139,6 +142,23 @@ def import_jax_weights_(model, version="model_1"):
             "feat_2d_weights": LinearWeight(matt.x2d_project.weight),
         },
     )
+    GlobalColMSAAttParams = lambda matt: {
+        "query_norm": LayerNormParams(matt.norm),
+        "attention":
+        {
+            "query_w": LinearWeightMHA(matt.q.weight),
+            "key_w": LinearWeight(matt.k.weight),
+            "value_w": LinearWeight(matt.v.weight),
+            "gating_w": LinearWeightMHA(matt.gate.weight),
+            "gating_b": LinearBiasMHA(matt.gate.bias),
+            "output_w": Param(
+                matt.final.weight,
+                param_type=ParamType.LinearMHAOutputWeight,
+            ),
+            "output_b": LinearBias(matt.final.bias),
+        }
+    }
+
     MSATransitionParams = lambda m: {
         "input_layer_norm": LayerNormParams(m.norm),
         "transition1": LinearParams(m.l1),
@@ -146,8 +166,8 @@ def import_jax_weights_(model, version="model_1"):
     }
     OuterProductMeanParams = lambda o: {
         "layer_norm_input": LayerNormParams(o.norm),
-        #"left_projection": LinearParams(o.linear_1),
-        #"right_projection": LinearParams(o.linear_2),
+        "left_projection": LinearParams(o.proj_left),
+        "right_projection": LinearParams(o.proj_right),
         "output_w": LinearWeightOPM(o.final.weight),
         "output_b": LinearBias(o.final.bias),
     }
@@ -175,6 +195,9 @@ def import_jax_weights_(model, version="model_1"):
         "query_norm": LayerNormParams(tri_att.norm),
         "feat_2d_weights": LinearWeight(tri_att.bias.weight),
         "attention": {
+            "query_w": LinearWeightMHA(tri_att.q.weight),
+            "key_w": LinearWeightMHA(tri_att.k.weight),
+            "value_w": LinearWeightMHA(tri_att.v.weight),
             "gating_w": LinearWeightMHA(tri_att.gate.weight),
             "gating_b": LinearBiasMHA(tri_att.gate.bias),
             "output_w": Param(
@@ -186,16 +209,14 @@ def import_jax_weights_(model, version="model_1"):
     }
 
     IPAParams = lambda ipa: {
-        # "q_scalar": LinearParams(ipa.linear_q),
-        # "kv_scalar": LinearParams(ipa.linear_kv),
-        # "q_point_local": LinearParams(ipa.linear_q_points),
-        # "kv_point_local": LinearParams(ipa.linear_kv_points),
-        # "trainable_point_weights": Param(
-        #     param=ipa.head_weights, param_type=ParamType.Other
-        # ),
-        "attention_2d": {
-            "weights": LinearWeight(ipa.rr_kqv_2d.weight),
-        },
+        "q_scalar": LinearParams(ipa.q),
+        "kv_scalar": LinearParams(ipa.kv),
+        "q_point_local": LinearParams(ipa.q_points),
+        "kv_point_local": LinearParams(ipa.kv_points),
+        "trainable_point_weights": Param(
+            param=ipa.trainable_w, param_type=ParamType.Other
+        ),
+        "attention_2d": LinearParams(ipa.rr_kqv_2d),
         "output_projection": LinearParams(ipa.final_r),
     }
 
@@ -221,7 +242,7 @@ def import_jax_weights_(model, version="model_1"):
     def EvoformerBlockParams(b, is_extra_msa=False):
         if is_extra_msa:
            col_att_name = "msa_column_global_attention"
-           msa_col_att_params = MSAAttParams(b.ExtraColumnGlobalAttention)
+           msa_col_att_params = GlobalColMSAAttParams(b.ExtraColumnGlobalAttention)
         else:
            col_att_name = "msa_column_attention"
            msa_col_att_params = MSAAttParams(b.LigColumnAttention)
@@ -322,133 +343,6 @@ def import_jax_weights_(model, version="model_1"):
     }
     flat = _process_translations_dict(translations)
     assign(flat, data)
-    row_q_w = torch.unbind(torch.as_tensor(data['alphafold/alphafold_iteration/evoformer/extra_msa_stack/msa_row_attention_with_pair_bias/attention//query_w']))
-    row_k_w = torch.unbind(torch.as_tensor(data['alphafold/alphafold_iteration/evoformer/extra_msa_stack/msa_row_attention_with_pair_bias/attention//key_w']))
-    row_v_w = torch.unbind(torch.as_tensor(data['alphafold/alphafold_iteration/evoformer/extra_msa_stack/msa_row_attention_with_pair_bias/attention//value_w']))
-
-    col_q_w = torch.unbind(torch.as_tensor(
-        data['alphafold/alphafold_iteration/evoformer/extra_msa_stack/msa_column_global_attention/attention//query_w']))
-    col_k_w = torch.unbind(torch.as_tensor(
-        data['alphafold/alphafold_iteration/evoformer/extra_msa_stack/msa_column_global_attention/attention//key_w']))
-    col_v_w = torch.unbind(torch.as_tensor(
-        data['alphafold/alphafold_iteration/evoformer/extra_msa_stack/msa_column_global_attention/attention//value_w']))
-
-    outer_pm_left_w = torch.unbind(torch.as_tensor(
-        data['alphafold/alphafold_iteration/evoformer/extra_msa_stack/outer_product_mean/left_projection//weights']))
-    outer_pm_left_b = torch.unbind(torch.as_tensor(
-        data['alphafold/alphafold_iteration/evoformer/extra_msa_stack/outer_product_mean/left_projection//bias']))
-    outer_pm_right_w = torch.unbind(torch.as_tensor(
-        data['alphafold/alphafold_iteration/evoformer/extra_msa_stack/outer_product_mean/right_projection//weights']))
-    outer_pm_right_b = torch.unbind(torch.as_tensor(
-        data['alphafold/alphafold_iteration/evoformer/extra_msa_stack/outer_product_mean/right_projection//bias']))
-
-    triatt_start_q_w = torch.unbind(torch.as_tensor(data[
-                                                        'alphafold/alphafold_iteration/evoformer/extra_msa_stack/triangle_attention_starting_node/attention//query_w']))
-    triatt_start_k_w = torch.unbind(torch.as_tensor(data[
-                                                        'alphafold/alphafold_iteration/evoformer/extra_msa_stack/triangle_attention_starting_node/attention//key_w']))
-    triatt_start_v_w = torch.unbind(torch.as_tensor(data[
-                                                        'alphafold/alphafold_iteration/evoformer/extra_msa_stack/triangle_attention_starting_node/attention//value_w']))
-
-    triatt_end_q_w = torch.unbind(torch.as_tensor(data[
-                                                      'alphafold/alphafold_iteration/evoformer/extra_msa_stack/triangle_attention_ending_node/attention//query_w']))
-    triatt_end_k_w = torch.unbind(torch.as_tensor(data[
-                                                      'alphafold/alphafold_iteration/evoformer/extra_msa_stack/triangle_attention_ending_node/attention//key_w']))
-    triatt_end_v_w = torch.unbind(torch.as_tensor(data[
-                                                      'alphafold/alphafold_iteration/evoformer/extra_msa_stack/triangle_attention_ending_node/attention//value_w']))
-
-    for i in range (4):
-        with torch.no_grad():
-            row_qkv = torch.cat((torch.reshape(row_q_w[i], (row_q_w[i].shape[0], -1)),
-                                 torch.reshape(row_k_w[i], (row_k_w[i].shape[0], -1)),
-                                 torch.reshape(row_v_w[i], (row_v_w[i].shape[0], -1))), 1)
-            model.InputEmbedder.FragExtraStack.layers[i].RowAttentionWithPairBias.qkv.weight.copy_(row_qkv.transpose(-1,-2))
-            col_qkv = torch.cat((torch.reshape(col_q_w[i], (col_q_w[i].shape[0], -1)), col_k_w[i], col_v_w[i]), 1)
-            model.InputEmbedder.FragExtraStack.layers[i].ExtraColumnGlobalAttention.kqv.weight.copy_(col_qkv.transpose(-2,-1))
-            outer_pm_w = torch.cat((outer_pm_left_w[i], outer_pm_right_w[i]), -1)
-            outer_pm_b = torch.cat((outer_pm_left_b[i], outer_pm_right_b[i]), -1)
-            model.InputEmbedder.FragExtraStack.layers[i].OuterProductMean.proj.weight.copy_(outer_pm_w.transpose(-2,-1))
-            model.InputEmbedder.FragExtraStack.layers[i].OuterProductMean.proj.bias.copy_(outer_pm_b)
-            triatt_start_qkv = torch.cat((torch.reshape(triatt_start_q_w[i], (triatt_start_q_w[i].shape[0], -1)),
-                                          torch.reshape(triatt_start_k_w[i], (triatt_start_k_w[i].shape[0], -1)),
-                                          torch.reshape(triatt_start_v_w[i], (triatt_start_v_w[i].shape[0], -1))), 1)
-            model.InputEmbedder.FragExtraStack.layers[i].TriangleAttentionStartingNode.qkv.weight.copy_(triatt_start_qkv.transpose(-2,-1))
-            triatt_end_qkv = torch.cat((torch.reshape(triatt_end_q_w[i], (triatt_end_q_w[i].shape[0], -1)),
-                                        torch.reshape(triatt_end_k_w[i], (triatt_end_k_w[i].shape[0], -1)),
-                                        torch.reshape(triatt_end_v_w[i], (triatt_end_v_w[i].shape[0], -1))), 1)
-            model.InputEmbedder.FragExtraStack.layers[i].TriangleAttentionEndingNode.qkv.weight.copy_(triatt_end_qkv.transpose(-2, -1))
-
-######################Evoformer########################################
-    ev_row_q_w = torch.unbind(torch.as_tensor(data[
-                                               'alphafold/alphafold_iteration/evoformer/evoformer_iteration/msa_row_attention_with_pair_bias/attention//query_w']))
-    ev_row_k_w = torch.unbind(torch.as_tensor(data[
-                                               'alphafold/alphafold_iteration/evoformer/evoformer_iteration/msa_row_attention_with_pair_bias/attention//key_w']))
-    ev_row_v_w = torch.unbind(torch.as_tensor(data[
-                                               'alphafold/alphafold_iteration/evoformer/evoformer_iteration/msa_row_attention_with_pair_bias/attention//value_w']))
-
-    ev_col_q_w = torch.unbind(torch.as_tensor(
-        data['alphafold/alphafold_iteration/evoformer/evoformer_iteration/msa_column_attention/attention//query_w']))
-    ev_col_k_w = torch.unbind(torch.as_tensor(
-        data['alphafold/alphafold_iteration/evoformer/evoformer_iteration/msa_column_attention/attention//key_w']))
-    ev_col_v_w = torch.unbind(torch.as_tensor(
-        data['alphafold/alphafold_iteration/evoformer/evoformer_iteration/msa_column_attention/attention//value_w']))
-
-    ev_outer_pm_left_w = torch.unbind(torch.as_tensor(
-        data['alphafold/alphafold_iteration/evoformer/evoformer_iteration/outer_product_mean/left_projection//weights']))
-    ev_outer_pm_left_b = torch.unbind(torch.as_tensor(
-        data['alphafold/alphafold_iteration/evoformer/evoformer_iteration/outer_product_mean/left_projection//bias']))
-    ev_outer_pm_right_w = torch.unbind(torch.as_tensor(
-        data['alphafold/alphafold_iteration/evoformer/evoformer_iteration/outer_product_mean/right_projection//weights']))
-    ev_outer_pm_right_b = torch.unbind(torch.as_tensor(
-        data['alphafold/alphafold_iteration/evoformer/evoformer_iteration/outer_product_mean/right_projection//bias']))
-
-    ev_triatt_start_q_w = torch.unbind(torch.as_tensor(data[
-                                                        'alphafold/alphafold_iteration/evoformer/evoformer_iteration/triangle_attention_starting_node/attention//query_w']))
-    ev_triatt_start_k_w = torch.unbind(torch.as_tensor(data[
-                                                        'alphafold/alphafold_iteration/evoformer/evoformer_iteration/triangle_attention_starting_node/attention//key_w']))
-    ev_triatt_start_v_w = torch.unbind(torch.as_tensor(data[
-                                                        'alphafold/alphafold_iteration/evoformer/evoformer_iteration/triangle_attention_starting_node/attention//value_w']))
-
-    ev_triatt_end_q_w = torch.unbind(torch.as_tensor(data[
-                                                      'alphafold/alphafold_iteration/evoformer/evoformer_iteration/triangle_attention_ending_node/attention//query_w']))
-    ev_triatt_end_k_w = torch.unbind(torch.as_tensor(data[
-                                                      'alphafold/alphafold_iteration/evoformer/evoformer_iteration/triangle_attention_ending_node/attention//key_w']))
-    ev_triatt_end_v_w = torch.unbind(torch.as_tensor(data[
-                                                      'alphafold/alphafold_iteration/evoformer/evoformer_iteration/triangle_attention_ending_node/attention//value_w']))
-
-    for i in range(48):
-        with torch.no_grad():
-            ev_row_qkv = torch.cat((torch.reshape(ev_row_q_w[i], (ev_row_q_w[i].shape[0], -1)),
-                                 torch.reshape(ev_row_k_w[i], (ev_row_k_w[i].shape[0], -1)),
-                                 torch.reshape(ev_row_v_w[i], (ev_row_v_w[i].shape[0], -1))), 1)
-            model.Evoformer[i].RowAttentionWithPairBias.qkv.weight.copy_(
-                ev_row_qkv.transpose(-1, -2))
-            ev_col_qkv = torch.cat((torch.reshape(ev_col_q_w[i], (ev_col_q_w[i].shape[0], -1)),
-                                    torch.reshape(ev_col_k_w[i], (ev_col_k_w[i].shape[0], -1)),
-                                    torch.reshape(ev_col_v_w[i], (ev_col_v_w[i].shape[0], -1))), 1)
-            model.Evoformer[i].LigColumnAttention.qkv.weight.copy_(ev_col_qkv.transpose(-2, -1))
-            ev_outer_pm_w = torch.cat((ev_outer_pm_left_w[i], ev_outer_pm_right_w[i]), -1)
-            ev_outer_pm_b = torch.cat((ev_outer_pm_left_b[i], ev_outer_pm_right_b[i]), -1)
-            model.Evoformer[i].OuterProductMean.proj.weight.copy_(ev_outer_pm_w.transpose(-2, -1))
-            model.Evoformer[i].OuterProductMean.proj.bias.copy_(ev_outer_pm_b)
-            ev_triatt_start_qkv = torch.cat((torch.reshape(ev_triatt_start_q_w[i], (ev_triatt_start_q_w[i].shape[0], -1)),
-                                          torch.reshape(ev_triatt_start_k_w[i], (ev_triatt_start_k_w[i].shape[0], -1)),
-                                          torch.reshape(ev_triatt_start_v_w[i], (ev_triatt_start_v_w[i].shape[0], -1))), 1)
-            model.Evoformer[i].TriangleAttentionStartingNode.qkv.weight.copy_(ev_triatt_start_qkv.transpose(-2, -1))
-            ev_triatt_end_qkv = torch.cat((torch.reshape(ev_triatt_end_q_w[i], (ev_triatt_end_q_w[i].shape[0], -1)),
-                                        torch.reshape(ev_triatt_end_k_w[i], (ev_triatt_end_k_w[i].shape[0], -1)),
-                                        torch.reshape(ev_triatt_end_v_w[i], (ev_triatt_end_v_w[i].shape[0], -1))), 1)
-            model.Evoformer[i].TriangleAttentionEndingNode.qkv.weight.copy_(ev_triatt_end_qkv.transpose(-2, -1))
-######################################################################################
-    q_scalar = torch.as_tensor(data['alphafold/alphafold_iteration/structure_module/fold_iteration/invariant_point_attention/q_scalar//weights'])
-    kv_scalar = torch.as_tensor(data['alphafold/alphafold_iteration/structure_module/fold_iteration/invariant_point_attention/kv_scalar//weights'])
-    q_point_local = torch.as_tensor(data['alphafold/alphafold_iteration/structure_module/fold_iteration/invariant_point_attention/q_point_local//weights'])
-    kv_point_local = torch.as_tensor(data['alphafold/alphafold_iteration/structure_module/fold_iteration/invariant_point_attention/kv_point_local//weights'])
-    qkv_scalar = torch.cat((q_scalar, kv_scalar), -1)
-    qkv_point = torch.cat((q_point_local, kv_point_local), -1)
-    with torch.no_grad():
-        model.StructureModule.StructureModuleIteration.InvariantPointAttention.rec_kqv_1d.weight.copy_(qkv_scalar.transpose(-2,-1))
-        model.StructureModule.StructureModuleIteration.InvariantPointAttention.rec_kqv_point.weight.copy_(qkv_point.transpose(-2,-1))
-
 
 
 print(data)

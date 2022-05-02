@@ -221,10 +221,10 @@ def cif_featurize(cif_file, asym_id, crop_range=None):
 
     aatype_num = np.array([AATYPE_WITH_X_AND_GAP[x['aatype_can']] for x in res_dicts], dtype=DTYPE_INT)
     aatype_onehot = np.zeros((len(res_dicts), len(AATYPE_WITH_X_AND_GAP)), dtype=DTYPE_FLOAT)
-    aatype_onehot[range(len(res_dicts)), aatype_num] = 1
+    aatype_onehot[range(len(res_dicts)), aatype_num+1] = 1
 
     relpos_2d = np.arange(len(res_dicts))
-    relpos_2d = relpos_2d[None, :] - relpos_2d[:, None]
+    relpos_2d = relpos_2d[:, None] - relpos_2d[None, :]
     relpos_2d = dmat_to_distogram(relpos_2d, -RESIGRAM_MAX, RESIGRAM_MAX + 1, RESIGRAM_MAX * 2 + 1)
 
     target = {
@@ -415,7 +415,7 @@ def msa_featurize(a3m_files, rng, num_clusters, num_extra, crop_range=None, num_
             main_msa_clus_profile
         ], axis=-1).astype(DTYPE_FLOAT)
     }
-
+    
     if msa_size - num_clusters > 0 and num_extra > 0:
         extra_ids = rng.choice(list(set(range(msa_size)) - set(main_ids)), min(msa_size - len(main_ids), num_extra), replace=False)
         extra_msa_onehot = all_msa_onehot[extra_ids]

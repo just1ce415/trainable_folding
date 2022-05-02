@@ -12,74 +12,101 @@ class InvariantPointAttention(torch.nn.Module):
         super().__init__()
 
         self.num_head = config['num_head']
+        #self.num_scalar_qk = config['num_scalar_qk']
         self.num_scalar_qk = config['num_scalar_qk']
-        self.num_point_qk = config['num_point_qk']
-        self.num_2d_qk = config['num_2d_qk']
         self.num_scalar_v = config['num_scalar_v']
+        self.num_point_qk = config['num_point_qk']
         self.num_point_v = config['num_point_v']
+        self.num_2d_qk = config['num_2d_qk']
+        #self.num_scalar_v = config['num_scalar_v']
+        #self.num_point_v = config['num_point_v']
         self.num_2d_v = config['num_2d_v']
 
         self.num_output_c = global_config['num_single_c'] #config['num_channel']
         self.rep_1d_num_c = global_config['num_single_c']
         self.rep_2d_num_c = global_config['rep_2d']['num_c']
 
-        self.rec_kqv_1d = nn.Linear(self.rep_1d_num_c, (self.num_scalar_qk * 2 + self.num_scalar_v) * self.num_head, bias=False)
-        self.rec_kqv_point = nn.Linear(self.rep_1d_num_c, (self.num_point_qk * 2 + self.num_point_v) * self.num_head * 3, bias=False)
-        self.rr_kqv_2d = nn.Linear(self.rep_2d_num_c, self.num_head, bias=False)
+        self.q = nn.Linear(self.rep_1d_num_c, self.num_scalar_qk* self.num_head)
+        self.kv = nn.Linear(self.rep_1d_num_c, (self.num_scalar_qk + self.num_scalar_v) * self.num_head)
+        self.q_points = nn.Linear(self.rep_1d_num_c, self.num_point_qk * self.num_head * 3)
+        self.kv_points = nn.Linear(self.rep_1d_num_c, (self.num_point_qk + self.num_point_v) * self.num_head * 3)
+        #self.rec_kqv_1d = nn.Linear(self.rep_1d_num_c, (self.num_scalar_qk * 2 + self.num_scalar_v) * self.num_head, bias=False)
+        #self.rec_kqv_point = nn.Linear(self.rep_1d_num_c, (self.num_point_qk * 2 + self.num_point_v) * self.num_head * 3, bias=False)
+        self.rr_kqv_2d = nn.Linear(self.rep_2d_num_c, self.num_head)
         self.final_r = nn.Linear(self.num_head * (self.rep_2d_num_c + self.num_scalar_v + 4 * self.num_point_v), self.num_output_c)
+        self.trainable_w = nn.Parameter(torch.zeros((self.num_head)))
+        self.softplus = nn.Softplus()
 
     def forward(self, rec_1d, rep_2d, rec_T):
         batch = rec_1d.shape[0]
         num_res = rec_1d.shape[1]
         rec_T = quat_affine.QuatAffine.from_tensor(rec_T)
+        
+        q_scalar = self.q(rec_1d)
+        q_scalar = q_scalar.view(*q_scalar.shape[:-1], self.num_head, -1)
+        kv_scalar = self.kv(rec_1d)
+        kv_scalar = kv_scalar.view(*kv_scalar.shape[:-1], self.num_head, -1)
+        k_scalar, v_scalar = torch.tensor_split(kv_scalar, (self.num_scalar_qk,), dim=-1)
 
-        kqv = self.rec_kqv_1d(rec_1d).view([batch, num_res, self.num_head, self.num_scalar_qk * 2 + self.num_scalar_v])
-        rec_k_1d, rec_q_1d, rec_v_1d = torch.split(kqv, [self.num_scalar_qk, self.num_scalar_qk, self.num_scalar_v], dim=-1)
-        rr = self.rr_kqv_2d(rep_2d).view([batch, num_res, num_res, self.num_head])
+        q_point = self.q_points(rec_1d)
+        q_point = torch.split(q_point, q_point.shape[-1]//3, dim=-1)
+        q_point_global = rec_T.apply_to_point(q_point)
+        q_point_final = [x.view(*x.shape[:-1], self.num_head, -1) for x in q_point_global]
+        kv_point = self.kv_points(rec_1d)
+        kv_point = torch.split(kv_point, kv_point.shape[-1]//3, dim=-1)
+        kv_point_global = rec_T.apply_to_point(kv_point)
+        kv_point_final = [x.view(*x.shape[:-1], self.num_head, -1) for x in kv_point_global]
+        k_point, v_point = list(zip(*[torch.tensor_split(x, (self.num_point_qk,), dim=-1) for x in kv_point_final]))
+        
+        scalar_variance = max(self.num_scalar_qk, 1) * 1
+        point_variance = max(self.num_point_qk, 1) *9.0/2
+        num_logit_terms = 3
 
-        kqv_local = self.rec_kqv_point(rec_1d)  # [b, r, c]
-        kqv_global = torch.stack(rec_T.apply_to_point(torch.chunk(kqv_local, 3, dim=-1)))  # [3, b, r, x]
-        kqv_global = kqv_global.movedim(0, 2)   # [b, r, 3, x]
-        kqv_global = kqv_global.view(*kqv_global.shape[:-1], self.num_head, self.num_point_qk*2+self.num_point_v)  # [b, r, 3, h, x]
-        rec_k_point, rec_q_point, rec_v_point = torch.split(kqv_global, [self.num_point_qk, self.num_point_qk, self.num_point_v], dim=-1)
+        scalar_weights = math.sqrt(1.0/(num_logit_terms * scalar_variance))
+        point_weights = math.sqrt(1.0/(num_logit_terms * point_variance))
+        trainable_point_weights = self.softplus(self.trainable_w)
+        point_w = point_weights * torch.unsqueeze(trainable_point_weights, dim=-1)
 
-        q_point = rec_q_point  # [b, r, 3, h, p]
-        k_point = rec_k_point
-        d2mat = torch.sum(torch.square(q_point[:, :, None] - k_point[:, None, :]), dim=3)  # -> [b, r, r, h, p]
+        q_point_final = [x.transpose(-2,-3) for x in q_point_final]
+        k_point_final = [x.transpose(-2,-3) for x in k_point]
+        v_point_final = [x.transpose(-2,-3) for x in v_point]
+        dist2 = [torch.square(qx[...,None,:] - kx[...,None, :, :]) for qx, kx in zip(q_point_final, k_point_final)]
+        dist_final = dist2[0] + dist2[1] + dist2[2]
+        attn_qk_point = -0.5*torch.sum(point_w[:, None, None, :] * dist_final, dim=-1)
 
-        # add sq distances
-        #aff = -self.d2_weights * Wc * d2mat.sum(axis=-2)
-        Wc = math.sqrt(2. / (9. * self.num_point_qk))
-        aff = -Wc * d2mat.sum(axis=-1)   # TODO: add learnable weights
+        q = scalar_weights * q_scalar
+        q = q.transpose(-2,-3)
+        k = k_scalar.transpose(-2,-3)
+        v = v_scalar.transpose(-2,-3)
+        attn_qk_scalar = torch.matmul(q, k.transpose(-2,-1))
+        attn_logits = attn_qk_scalar + attn_qk_point
+        attn_2d = self.rr_kqv_2d(rep_2d)
+        attn_2d =torch.permute(attn_2d, (0,3,1,2))
+        attn_2d = math.sqrt(1.0/num_logit_terms) * attn_2d
+        attn_logits = attn_logits + attn_2d
+        attn = torch.softmax(attn_logits, dim=-1)
+        result_scalar = torch.matmul(attn, v)
+        result_point_global = [torch.sum(attn[..., None] * vx[...,None,:,:], dim=-2) for vx in v_point_final]
 
-        # add pair bias
-        aff += rr
+        result_scalar = result_scalar.transpose(-2, -3)
+        result_point_global = [x.transpose(-2, -3) for x in result_point_global]
+        
+        out_feat = []
+        result_scalar_final = torch.reshape(result_scalar, (*result_scalar.shape[:-2], self.num_head*self.num_scalar_v))
+        out_feat.append(result_scalar_final)
 
-        # add 1d affinity
-        aff += torch.einsum('bihc,bjhc->bijh', rec_q_1d, rec_k_1d) / math.sqrt(self.num_scalar_qk)
+        result_point_global_final = [torch.reshape(x, (*x.shape[:-2], self.num_head * self.num_point_v)) for x in result_point_global]
+        result_point_local = rec_T.invert_point(result_point_global_final)
+        out_feat.extend(result_point_local)
+        out_feat.append(torch.sqrt(1e-8 + torch.square(result_point_local[0])+ torch.square(result_point_local[1]) + torch.square(result_point_local[2])))
+        result_attention_over_2d = torch.einsum('...hij, ...ijc->...ihc', attn, rep_2d)
+        num_out = self.num_head * result_attention_over_2d.shape[-1]
+        out_feat.append(torch.reshape(result_attention_over_2d, (*result_attention_over_2d.shape[:-2], num_out)))
 
-        Wl = math.sqrt(1. / 3.)
-        weights = torch.softmax(Wl * aff, dim=2)  # bijh
+        final_act = torch.cat(out_feat, dim=-1)
+        out = self.final_r(final_act)
 
-        out = []
-        out.append((weights[..., None] * rep_2d[..., None, :]).sum(2).flatten(start_dim=-2))  # [b, r, c*h]
-
-        out.append((weights.unsqueeze(-1) * rec_v_1d.unsqueeze(2)).sum(2).flatten(start_dim=-2))  # [b, r, c*h]
-
-        out_global = torch.einsum('bijh,bjdhp->bidph', weights, rec_v_point)
-        #out_global = out_global.movedim(1, 0)
-
-        rec_out_local = torch.cat(rec_T.invert_point(torch.chunk(out_global, 3, dim=2)), dim=2) # [b, i, 3, p, h]
-        out_local = rec_out_local.permute([0, 1, 3, 4, 2])  # [b, i, p, h, 3]
-
-        # add local coords
-        out.append(out_local.flatten(start_dim=2))  # [b, r, p*h*3]
-
-        # add norm
-        out.append(torch.sqrt(torch.square(out_local).sum(-1)).flatten(start_dim=2))  # [b, a+r, p*h]
-
-        out_cat = torch.cat(out, dim=-1)
-        return self.final_r(out_cat)
+        return out
 
 
 class PredictSidechains(torch.nn.Module):
@@ -165,11 +192,11 @@ class StructureModuleIteration(torch.nn.Module):
 
         # IPA
         rec_1d_update = self.InvariantPointAttention(rec_1d.clone(), rep_2d, rec_T)
-        rec_1d = self.rec_norm(self.drop(rec_1d + rec_1d_update))
+        rec_1d = self.rec_norm(rec_1d + rec_1d_update)
 
         # transition
         rec_1d_update = self.transition_r(rec_1d)
-        rec_1d = self.rec_norm2(self.drop(rec_1d + rec_1d_update))
+        rec_1d = self.rec_norm2(rec_1d + rec_1d_update)
 
         # update backbone
         rec_T = quat_affine.QuatAffine.from_tensor(rec_T)
