@@ -118,6 +118,7 @@ class PredictSidechains(torch.nn.Module):
 
         self.s_cur = nn.Linear(num_in_c, num_c)
         self.s_ini = nn.Linear(num_in_c, num_c)
+        self.relu = nn.ReLU()
 
         self.res1 = nn.Sequential(
             nn.ReLU(),
@@ -139,7 +140,7 @@ class PredictSidechains(torch.nn.Module):
         )
 
     def forward(self, s_cur, s_ini):
-        a = self.s_cur(s_cur.clone()) + self.s_ini(s_ini)
+        a = self.s_cur(self.relu(s_cur.clone())) + self.s_ini(self.relu(s_ini))
         a += self.res1(a.clone())
         a += self.res2(a.clone())
         return self.final(a).reshape(*a.shape[:-1], self.num_torsions, 2)
