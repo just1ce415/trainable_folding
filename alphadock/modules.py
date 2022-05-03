@@ -537,18 +537,20 @@ class InputEmbedder(torch.nn.Module):
     def forward(self, inputs, recycling=None):
         # create pair representation
         pair = self.InitPairRepresentation({k: v.to(self.config['device']) for k, v in inputs['target'].items()})
+        num_batch, seq_len, rec_2d_c = pair.shape[0], pair.shape[1], pair.shape[-1]
 
         # make lig 1d rep
         rec_1d = self.rec_1d_project(inputs['target']['rec_1d'].to(self.config['device'])).unsqueeze(1)
+        rec_1d_c = rec_1d.shape[-1]
         if 'msa' in inputs:
             rec_1d = self.main_msa_project(inputs['msa']['main'].to(self.config['device'])) + rec_1d.clone()
 
         # add recycling
         if (self.global_config['recycling_num_iter'] > 0 and recycling == None):
-            tmp_inp = {'rec_1d_prev': torch.zeros(1,125,256),
-                    'rep_2d_prev': torch.zeros(1,125,125,128),
-                    'rec_cbeta_prev': torch.zeros(1,125,3),
-                    'rec_mask_prev': torch.zeros(1,125)
+            tmp_inp = {'rec_1d_prev': torch.zeros(num_batch,seq_len,rec_1d_c),
+                    'rep_2d_prev': torch.zeros(num_batch,seq_len,seq_len,rec_2d_c),
+                    'rec_cbeta_prev': torch.zeros(num_batch, seq_len ,3),
+                    'rec_mask_prev': torch.zeros(num_batch,seq_len)
                     }
             recyc_out = self.RecyclingEmbedder({k: v.to(self.config['device']) for k, v in tmp_inp.items()})
             pair += recyc_out['pair_update']
