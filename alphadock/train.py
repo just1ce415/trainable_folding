@@ -60,7 +60,7 @@ global_step = 0
 
 MAX_NAN_ITER_FRAC = 0.05
 LEARNING_RATE = 0.001 / 128  # same as AF, lr=0.001 for 128 batch size
-SCHEDULER_PATIENCE = 20
+SCHEDULER_PATIENCE = 50
 SCHEDULER_FACTOR = 1. / 3
 SCHEDULER_MIN_LR = 1e-6 / 128  # same as AF
 CLIP_GRADIENT = True
@@ -449,12 +449,18 @@ if __name__ == '__main__':
         start_epoch = pth['epoch'] + 1
         model.load_state_dict(pth['model_state_dict'])
         optimizer.load_state_dict(pth['optimizer_state_dict'])
-        scheduler_state = pth['scheduler_state_dict']
+
+        if start_epoch != 392:
+            scheduler_state = pth['scheduler_state_dict']
+
+        if start_epoch == 392:
+            for g in optimizer.param_groups:
+                g['lr'] = g['lr'] / SCHEDULER_FACTOR
 
         if 'hvd_size' in pth:
             _hvd_size = 1 if not HOROVOD else hvd.size()
-            for g in optimizer.param_groups:
-                g['lr'] = g['lr'] * _hvd_size / pth['hvd_size']
+            #for g in optimizer.param_groups:
+            #    g['lr'] = g['lr'] * _hvd_size / pth['hvd_size']
 
         #if start_epoch != 5:
         #    scheduler_state = pth['scheduler_state_dict']
