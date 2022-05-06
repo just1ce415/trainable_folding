@@ -1,7 +1,7 @@
 from path import Path
 import numpy as np
 
-DATA_DIR = Path(__file__).abspath().dirname().dirname() / 'data_preparation' / 'data'
+DATA_DIR = Path(__file__).abspath().dirname().dirname() / 'data_preparation' / 'data' / 'small_debug_set'
 SRC_DIR = Path(__file__).abspath().dirname()
 
 TEST_DATA_DIR = Path(__file__).abspath().dirname() / 'test_data'
@@ -11,7 +11,7 @@ DTYPE_FLOAT = np.float32
 DTYPE_INT = np.int64
 
 config = {
-    'rec_in_c': 21,
+    'rec_in_c': 22,
     'msa_extra_in_c': 25,
     'msa_main_in_c': 49,
     'rec_relpos_c': 65,
@@ -21,12 +21,13 @@ config = {
     'position_scale': 10,
     'num_torsions': 7,
     'rep_1d': {
-        'num_c': 128
+        'num_c': 256
     },
     'rep_2d': {
         'num_c': 128
     },
     'num_single_c': 384,
+    'extra_msa_channel': 64,
 
     'recycling_on': True,
     'recycling_num_iter': 3,
@@ -58,7 +59,8 @@ config = {
             'checkpoint': True,
             'RowAttentionWithPairBias': {
                 'attention_num_c': 32,
-                'num_heads': 8
+                'num_heads': 8,
+                'extra_msa_channel': 256,
             },
             'LigColumnAttention': {
                 'attention_num_c': 32,
@@ -71,7 +73,8 @@ config = {
                 'n': 4
             },
             'OuterProductMean': {
-                'mid_c': 32
+                'mid_c': 32,
+                'extra_msa_channel': 256
             },
             'TriangleMultiplicationIngoing': {
                 'mid_c': 128,
@@ -136,11 +139,14 @@ config = {
         'FragExtraStack': {
             'num_iter': 4,
             'device': 'cuda:0',
+            'extra_msa_channel': 64,
             'FragExtraStackIteration': {
                 'checkpoint': True,
+                'extra_msa_channel': 64,
                 'RowAttentionWithPairBias': {
                     'attention_num_c': 8,
-                    'num_heads': 4
+                    'num_heads': 8,
+                    'extra_msa_channel': 64,
                 },
                 'ExtraColumnGlobalAttention': {
                     'attention_num_c': 8,
@@ -150,7 +156,8 @@ config = {
                     'n': 4
                 },
                 'OuterProductMean': {
-                    'mid_c': 32
+                    'mid_c': 32,
+                    'extra_msa_channel': 64
                 },
                 'TriangleMultiplicationIngoing': {
                     'mid_c': 128,

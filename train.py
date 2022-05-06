@@ -11,14 +11,16 @@ import traceback
 import socket
 
 from alphadock import docker
-import config
-import dataset
-import all_atom
-import utils
+from alphadock import config
+from alphadock import dataset
+from alphadock import all_atom
+from alphadock import utils
 
 import torchvision
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.tensorboard import SummaryWriter
+from import_weight import *
+import pickle
 
 
 config_diff = {
@@ -53,14 +55,14 @@ config_diff = {
 
 config_summit = utils.merge_dicts(deepcopy(config.config), config_diff)
 log_dir = Path('.').mkdir_p()
-train_json = '15k/folding/debug_15k.json'
-valid_json = '15k/folding/debug_15k.json'
+train_json = 'debug.json'
+valid_json = 'debug.json'
 pdb_log_interval = 500
 global_step = 0
 
 MAX_NAN_ITER_FRAC = 0.05
 LEARNING_RATE = 0.001 / 128  # same as AF, lr=0.001 for 128 batch size
-SCHEDULER_PATIENCE = 50
+SCHEDULER_PATIENCE = 20
 SCHEDULER_FACTOR = 1. / 3
 SCHEDULER_MIN_LR = 1e-6 / 128  # same as AF
 CLIP_GRADIENT = True
@@ -102,7 +104,8 @@ def pred_to_pdb(out_pdb, input_dict, out_dict):
 
 def report_step(input, output, epoch, local_step, dataset, global_stats, train=True):
     stage = 'Train' if train else 'Valid'
-    stats = {'Generated_NaN': output['Generated_NaN']}
+    #stats = {'Generated_NaN': output['Generated_NaN']}
+    stats = {}
 
     if 'loss' in output:
         loss = output['loss']['loss_total'].item()
@@ -247,6 +250,8 @@ def validate(epoch):
     )
     #dset.data = dset.data[:7]
     #dset = dataset.DockingDatasetSimulated(size=4, num_frag_main=64, num_frag_extra=256, num_res=350, num_hh=4)
+    with open('/home/thu/Downloads/alphafold/output/features.pkl', 'rb') as f:
+        x = pickle.load(f)
 
     if HOROVOD:
         sampler = torch.utils.data.distributed.DistributedSampler(dset, num_replicas=hvd.size(), rank=hvd.rank(), shuffle=False)
@@ -260,6 +265,10 @@ def validate(epoch):
     num_recycles = config_summit['recycling_num_iter'] if config_summit['recycling_on'] else 1
 
     for inputs in (tqdm(loader, desc=f'Epoch {epoch} (valid)') if HOROVOD_RANK == 0 else loader):
+        inputs['msa']['main'][0] = torch.tensor(x['msa_feat'][0])
+        extra_msa_1h = torch.nn.functional.one_hot(torch.tensor(x['extra_msa'][0]).to(torch.int64), num_classes=23)
+        inputs['msa']['extra'][0] = torch.cat((extra_msa_1h, torch.unsqueeze(torch.tensor(x['extra_has_deletion'][0]),-1), torch.unsqueeze(torch.tensor(x['extra_deletion_value'][0]),-1)), -1)
+        inputs['target']['rec_1d'][0] = torch.tensor(x['target_feat'][0])
         try:
             with torch.no_grad():
                 with torch.cuda.amp.autocast(USE_AMP):
@@ -426,6 +435,8 @@ if __name__ == '__main__':
 
     kwargs = {'num_workers': 0, 'pin_memory': True}
     model = docker.DockerIteration(config_summit, config_summit)
+    import_jax_weights_(model)
+    #print(model.state_dict()['InputEmbedder.rec_1d_project.bias'])
 
     if HOROVOD_RANK == 0:
         print('Num params:', sum(p.numel() for p in model.parameters() if p.requires_grad))
@@ -449,18 +460,12 @@ if __name__ == '__main__':
         start_epoch = pth['epoch'] + 1
         model.load_state_dict(pth['model_state_dict'])
         optimizer.load_state_dict(pth['optimizer_state_dict'])
-
-        if start_epoch != 392:
-            scheduler_state = pth['scheduler_state_dict']
-
-        if start_epoch == 392:
-            for g in optimizer.param_groups:
-                g['lr'] = g['lr'] / SCHEDULER_FACTOR
+        scheduler_state = pth['scheduler_state_dict']
 
         if 'hvd_size' in pth:
             _hvd_size = 1 if not HOROVOD else hvd.size()
-            #for g in optimizer.param_groups:
-            #    g['lr'] = g['lr'] * _hvd_size / pth['hvd_size']
+            for g in optimizer.param_groups:
+                g['lr'] = g['lr'] * _hvd_size / pth['hvd_size']
 
         #if start_epoch != 5:
         #    scheduler_state = pth['scheduler_state_dict']
@@ -481,7 +486,7 @@ if __name__ == '__main__':
     if HOROVOD_RANK == 0:
         writer = SummaryWriter(log_dir)
 
-    for epoch in range(start_epoch, start_epoch + 100):
+    for epoch in range(start_epoch):
         #with torch.autograd.set_detect_anomaly(True):
-        train(epoch)
-        #validate(epoch)
+        #train(epoch)
+        validate(epoch)

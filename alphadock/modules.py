@@ -13,11 +13,15 @@ class RowAttentionWithPairBias(nn.Module):
 
         attn_num_c = config['attention_num_c']
         num_heads = config['num_heads']
-        in_num_c = global_config['rep_1d']['num_c']
+        in_num_c = config['extra_msa_channel']
         pair_rep_num_c = global_config['rep_2d']['num_c']
 
         self.norm = nn.LayerNorm(in_num_c)
-        self.qkv = nn.Linear(in_num_c, 3 * attn_num_c * num_heads, bias=False)
+        self.norm_2d = nn.LayerNorm(pair_rep_num_c)
+        # self.qkv = nn.Linear(in_num_c, 3 * attn_num_c * num_heads, bias=False)
+        self.q = nn.Linear(in_num_c, attn_num_c*num_heads, bias=False)
+        self.k = nn.Linear(in_num_c, attn_num_c*num_heads, bias=False)
+        self.v = nn.Linear(in_num_c, attn_num_c*num_heads, bias=False)
         self.x2d_project = nn.Linear(pair_rep_num_c, num_heads, bias=False)
         self.final = nn.Linear(attn_num_c * num_heads, in_num_c)
         self.gate = nn.Linear(in_num_c, attn_num_c * num_heads)
@@ -26,15 +30,20 @@ class RowAttentionWithPairBias(nn.Module):
 
     def forward(self, x1d, x2d):
         x1d = self.norm(x1d)
-        q, k, v = torch.chunk(self.qkv(x1d).view(*x1d.shape[:-1], self.attn_num_c, 3 * self.num_heads), 3, dim=-1)
-        aff = torch.einsum('bmich,bmjch->bmijh', q, k)
-        gate = torch.sigmoid(self.gate(x1d).view(*x1d.shape[:-1], self.attn_num_c, self.num_heads))
-
+        x2d = self.norm_2d(x2d)
+        bias = self.x2d_project(x2d)
+        # bias = self.x2d_project(x2d).view(*x2d.shape[:-1], self.num_heads)
+        bias = bias.permute(0, 3, 1, 2)
+        # q, k, v = torch.chunk(self.qkv(x1d).view(*x1d.shape[:-1], self.attn_num_c, 3 * self.num_heads), 3, dim=-1)
+        q = self.q(x1d).view(*x1d.shape[:-1], self.num_heads, self.attn_num_c)
+        k = self.k(x1d).view(*x1d.shape[:-1], self.num_heads, self.attn_num_c)
+        v = self.v(x1d).view(*x1d.shape[:-1], self.num_heads, self.attn_num_c)
         factor = 1 / math.sqrt(self.attn_num_c)
-        bias = self.x2d_project(x2d).view(*x2d.shape[:-1], self.num_heads) * factor
-        weights = torch.softmax(aff + bias, dim=-2)
-
-        out_1d = torch.einsum('bmrch,bmirh->bmich', v, weights) * gate
+        aff = torch.einsum('bmihc,bmjhc->bmhij', q*factor, k)
+        weights = torch.softmax(aff + bias, dim=-1)
+        gate = torch.sigmoid(self.gate(x1d).view(*x1d.shape[:-1], self.num_heads, self.attn_num_c))
+        
+        out_1d = torch.einsum('bmhqk,bmkhc->bmqhc', weights, v) * gate
         out_1d = self.final(out_1d.flatten(start_dim=-2))
         return out_1d
 
@@ -48,7 +57,10 @@ class LigColumnAttention(nn.Module):
         in_num_c = global_config['rep_1d']['num_c']
 
         self.norm = nn.LayerNorm(in_num_c)
-        self.qkv = nn.Linear(in_num_c, attn_num_c * num_heads * 3, bias=False)
+        self.q = nn.Linear(in_num_c, attn_num_c*num_heads, bias=False)
+        self.k = nn.Linear(in_num_c, attn_num_c*num_heads, bias=False)
+        self.v = nn.Linear(in_num_c, attn_num_c*num_heads, bias=False)
+        #self.qkv = nn.Linear(in_num_c, attn_num_c * num_heads * 3, bias=False)
         self.final = nn.Linear(attn_num_c * num_heads, in_num_c)
         self.gate = nn.Linear(in_num_c, attn_num_c * num_heads)
 
@@ -56,16 +68,19 @@ class LigColumnAttention(nn.Module):
         self.num_heads = num_heads
 
     def forward(self, x1d):
+        x1d = x1d.transpose(-2,-3)
         x1d = self.norm(x1d)
-        gate = torch.sigmoid(self.gate(x1d).view(*x1d.shape[:-1], self.attn_num_c, self.num_heads))
-        q, k, v = torch.chunk(self.qkv(x1d).view(*x1d.shape[:-1], self.attn_num_c, self.num_heads * 3), 3, dim=-1)
+        gate = torch.sigmoid(self.gate(x1d).view(*x1d.shape[:-1], self.num_heads, self.attn_num_c))
+        q = self.q(x1d).view(*x1d.shape[:-1], self.num_heads, self.attn_num_c)
+        k = self.k(x1d).view(*x1d.shape[:-1], self.num_heads, self.attn_num_c)
+        v = self.v(x1d).view(*x1d.shape[:-1], self.num_heads, self.attn_num_c)
+        factor = 1 / math.sqrt(self.attn_num_c)
+        aff = torch.einsum('bmihc,bmjhc->bmhij', q*factor, k)
+        weights = torch.softmax(aff, dim=-1)
+        out_1d = torch.einsum('bmhqk,bmkhc->bmqhc', weights, v) * gate
+        out_1d = self.final(out_1d.flatten(start_dim=-2))
+        out_1d = out_1d.transpose(-2,-3)
 
-        aff = torch.einsum('bmich,bnich->bmnih', q, k) / math.sqrt(self.attn_num_c)
-        weights = torch.softmax(aff, dim=2)
-
-        #lig_profile = torch.sum(lig_v[:, None] * weights[..., None, :], dim=2)
-        out_1d = torch.einsum('bmnih,bnich->bmich', weights, v) * gate
-        out_1d = self.final(out_1d.reshape(*out_1d.shape[:-2], -1))
         return out_1d
 
 
@@ -75,21 +90,30 @@ class ExtraColumnGlobalAttention(nn.Module):
         self.attn_num_c = config['attention_num_c']
         self.num_heads = config['num_heads']
 
-        self.norm = nn.LayerNorm(global_config['rep_1d']['num_c'])
-        self.kqv = nn.Linear(global_config['rep_1d']['num_c'], self.attn_num_c * (self.num_heads + 2), bias=False)
-        self.gate = nn.Linear(global_config['rep_1d']['num_c'], self.attn_num_c * self.num_heads)
-        self.final = nn.Linear(self.attn_num_c * self.num_heads, global_config['rep_1d']['num_c'])
+        self.norm = nn.LayerNorm(global_config['extra_msa_channel'])
+        self.q = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c*self.num_heads, bias=False)
+        self.k = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c, bias=False)
+        self.v = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c, bias=False)
+        #self.kqv = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c * (self.num_heads + 2), bias=False)
+        self.gate = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c * self.num_heads)
+        self.final = nn.Linear(self.attn_num_c * self.num_heads, global_config['extra_msa_channel'])
 
     def forward(self, x1d):
+        x1d = x1d.transpose(-2,-3)
         x1d = self.norm(x1d)
-
-        q, k, v = torch.split(self.kqv(x1d).view(*x1d.shape[:-1], self.attn_num_c, self.num_heads + 2), [self.num_heads, 1, 1], dim=-1)
-        q = torch.mean(q, dim=1)
-        gate = self.gate(x1d).view(*x1d.shape[:-1], self.attn_num_c, self.num_heads)
-
-        w = torch.softmax(torch.einsum('bich,bsic->bsih', q, k.squeeze(-1)) / math.sqrt(self.attn_num_c), dim=1)
-        out_1d = gate * torch.sum(w[..., None, :] * v, dim=1)[:, None]
-        return self.final(out_1d.view(*out_1d.shape[:-2], self.attn_num_c * self.num_heads))
+        q_avg = torch.sum(x1d, dim=-2)/x1d.shape[-2]
+        q = self.q(q_avg).view(*q_avg.shape[:-1], self.num_heads, self.attn_num_c)
+        q = q*(self.attn_num_c ** (-0.5))
+        k = self.k(x1d)
+        v = self.v(x1d)
+        #q, k, v = torch.split(self.kqv(x1d).view(*x1d.shape[:-1], self.attn_num_c, self.num_heads + 2), [self.num_heads, 1, 1], dim=-1)
+        #q = torch.mean(q, dim=1)
+        gate =  torch.sigmoid(self.gate(x1d).view(*x1d.shape[:-1], self.num_heads, self.attn_num_c))
+        w = torch.softmax(torch.einsum('bihc,bikc->bihk', q, k), dim=-1)
+        out_1d = torch.einsum('bmhk,bmkc->bmhc', w, v)
+        out_1d = out_1d.unsqueeze(-3) * gate
+        out = self.final(out_1d.view(*out_1d.shape[:-2], self.attn_num_c * self.num_heads))
+        return out.transpose(-2,-3)
 
 
 class Transition(nn.Module):
@@ -109,19 +133,24 @@ class Transition(nn.Module):
 class OuterProductMean(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        in_c, out_c = global_config['rep_1d']['num_c'], global_config['rep_2d']['num_c']
+        in_c, out_c = config['extra_msa_channel'], global_config['rep_2d']['num_c']
         mid_c = config['mid_c']
         self.norm = nn.LayerNorm(in_c)
-        self.proj = nn.Linear(in_c, mid_c * 2)
+        #self.proj = nn.Linear(in_c, mid_c * 2)
+        self.proj_left = nn.Linear(in_c, mid_c)
+        self.proj_right = nn.Linear(in_c, mid_c)
         self.final = nn.Linear(mid_c * mid_c, out_c)
         self.mid_c = mid_c
         self.out_c = out_c
 
     def forward(self, x1d):
         x1d = self.norm(x1d)
-        i, j = [x[..., -1] for x in torch.chunk(self.proj(x1d).view(*x1d.shape[:-1], self.mid_c, 2), 2, dim=-1)]
-        x2d = torch.einsum('bmix,bmjy->bijxy', i, j) / x1d.shape[1]
-        out = self.final(x2d.flatten(start_dim=-2))
+        i = self.proj_left(x1d)
+        j = self.proj_right(x1d)
+        #i, j = [x[..., -1] for x in torch.chunk(self.proj(x1d).view(*x1d.shape[:-1], self.mid_c, 2), 2, dim=-1)]
+        x2d = torch.einsum('bmix,bmjy->bjixy', i, j) #/ x1d.shape[1]
+        out = self.final(x2d.flatten(start_dim=-2)).transpose(-2, -3)
+        out = out/(x1d.shape[1]+1e-3)
         return out
 
 
@@ -168,7 +197,7 @@ class TriangleMultiplicationIngoing(nn.Module):
         x2d = self.norm1(x2d)
         i = self.l1i(x2d) * torch.sigmoid(self.l1i_sigm(x2d))
         j = self.l1j(x2d) * torch.sigmoid(self.l1j_sigm(x2d))
-        out = torch.einsum('bkic,bkjc->bijc', i, j)
+        out = torch.einsum('bkjc,bkic->bijc', i, j)
         out = self.norm2(out)
         out = self.l2_proj(out)
         out = out * torch.sigmoid(self.l3_sigm(x2d))
@@ -178,18 +207,21 @@ class TriangleMultiplicationIngoing(nn.Module):
 class TriangleAttentionStartingNode(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        attention_num_c = config['attention_num_c']
+        attn_num_c = config['attention_num_c']
         num_heads = config['num_heads']
         num_in_c = global_config['rep_2d']['num_c']
         self.rand_remove = config['rand_remove']
-        self.attention_num_c = attention_num_c
+        self.attn_num_c = attn_num_c
         self.num_heads = num_heads
 
         self.norm = nn.LayerNorm(num_in_c)
-        self.qkv = nn.Linear(num_in_c, attention_num_c * num_heads * 3, bias=False)
+        self.q = nn.Linear(num_in_c, attn_num_c*num_heads, bias=False)
+        self.k = nn.Linear(num_in_c, attn_num_c*num_heads, bias=False)
+        self.v = nn.Linear(num_in_c, attn_num_c*num_heads, bias=False)
+        #self.qkv = nn.Linear(num_in_c, attention_num_c * num_heads * 3, bias=False)
         self.bias = nn.Linear(num_in_c, num_heads, bias=False)
-        self.gate = nn.Linear(num_in_c, attention_num_c * num_heads)
-        self.out = nn.Linear(attention_num_c * num_heads, num_in_c)
+        self.gate = nn.Linear(num_in_c, attn_num_c * num_heads)
+        self.out = nn.Linear(attn_num_c * num_heads, num_in_c)
 
     def forward(self, x2d):
         x2d = self.norm(x2d)
@@ -201,15 +233,17 @@ class TriangleAttentionStartingNode(nn.Module):
             res_ids_cart = torch.cartesian_prod(selection, selection)
             x2d = x2d[:, res_ids_cart[:, 0], res_ids_cart[:, 1]].reshape(x2d.shape[0], len(selection), len(selection), x2d.shape[-1])
 
-        q, k, v = torch.chunk(self.qkv(x2d).view(*x2d.shape[:-1], self.attention_num_c, self.num_heads * 3), 3, dim=-1)
+        q = self.q(x2d).view(*x2d.shape[:-1], self.num_heads, self.attn_num_c)
+        k = self.k(x2d).view(*x2d.shape[:-1], self.num_heads, self.attn_num_c)
+        v = self.v(x2d).view(*x2d.shape[:-1], self.num_heads, self.attn_num_c)
+        factor = 1 / math.sqrt(self.attn_num_c)
+        aff = torch.einsum('bmihc,bmjhc->bmhij', q*factor, k)
         b = self.bias(x2d)
-        g = torch.sigmoid(self.gate(x2d).view(*x2d.shape[:-1], self.attention_num_c, self.num_heads))
+        b = b.permute(0, 3, 1, 2)
+        weights = torch.softmax(aff + b, dim=-1)
+        g = torch.sigmoid(self.gate(x2d).view(*x2d.shape[:-1], self.num_heads, self.attn_num_c))
+        out = torch.einsum('bmhqk,bmkhc->bmqhc', weights, v)*g
 
-        b = b.unsqueeze_(1).transpose_(2, 3)
-        w = torch.einsum('bijch,bikch->bijkh', q, k) / math.sqrt(self.attention_num_c) + b
-
-        w = torch.softmax(w, dim=-2)
-        out = torch.einsum('bijkh,bikch->bijch', w, v) * g
         out = self.out(out.flatten(start_dim=-2))
 
         if self.rand_remove > 0.0 and self.training:
@@ -232,12 +266,16 @@ class TriangleAttentionEndingNode(nn.Module):
         self.num_heads = num_heads
 
         self.norm = nn.LayerNorm(num_in_c)
+        self.q = nn.Linear(num_in_c, attention_num_c*num_heads, bias=False)
+        self.k = nn.Linear(num_in_c, attention_num_c*num_heads, bias=False)
+        self.v = nn.Linear(num_in_c, attention_num_c*num_heads, bias=False)
         self.qkv = nn.Linear(num_in_c, attention_num_c * num_heads * 3, bias=False)
         self.bias = nn.Linear(num_in_c, num_heads, bias=False)
         self.gate = nn.Linear(num_in_c, attention_num_c * num_heads)
         self.out = nn.Linear(attention_num_c * num_heads, num_in_c)
 
     def forward(self, x2d):
+        x2d = x2d.transpose(-2,-3)
         x2d = self.norm(x2d)
 
         if self.rand_remove > 0.0 and self.training:
@@ -247,15 +285,20 @@ class TriangleAttentionEndingNode(nn.Module):
             res_ids_cart = torch.cartesian_prod(selection, selection)
             x2d = x2d[:, res_ids_cart[:, 0], res_ids_cart[:, 1]].reshape(x2d.shape[0], len(selection), len(selection), x2d.shape[-1])
 
-        q, k, v = torch.chunk(self.qkv(x2d).view(*x2d.shape[:-1], self.attention_num_c, self.num_heads * 3), 3, dim=-1)
+        q = self.q(x2d).view(*x2d.shape[:-1], self.num_heads, self.attention_num_c)
+        k = self.k(x2d).view(*x2d.shape[:-1], self.num_heads, self.attention_num_c)
+        v = self.v(x2d).view(*x2d.shape[:-1], self.num_heads, self.attention_num_c)
+        factor = 1 / math.sqrt(self.attention_num_c)
+        aff = torch.einsum('bmihc,bmjhc->bmhij', q*factor, k)
         b = self.bias(x2d)
-        g = torch.sigmoid(self.gate(x2d).view(*x2d.shape[:-1], self.attention_num_c, self.num_heads))
+        b = b.permute(0, 3, 1, 2)
+        weights = torch.softmax(aff + b, dim=-1)
+        g = torch.sigmoid(self.gate(x2d).view(*x2d.shape[:-1], self.num_heads, self.attention_num_c))
+        out = torch.einsum('bmhqk,bmkhc->bmqhc', weights, v)*g
 
-        b = b.unsqueeze_(2)
-        w = torch.einsum('bijch,bkjch->bijkh', q, k) / math.sqrt(self.attention_num_c) + b
-        w = torch.softmax(w, dim=-2)
-        out = torch.einsum('bijkh,bkjch->bijch', w, v) * g
         out = self.out(out.flatten(start_dim=-2))
+        out = out.transpose(-2,-3)
+
 
         if self.rand_remove > 0.0 and self.training:
             out_full = torch.zeros(shape_full, device=out.device, dtype=out.dtype)
@@ -354,14 +397,14 @@ class EvoformerIteration(nn.Module):
 
     def forward(self, r1d, pair):
         a = self.RowAttentionWithPairBias(r1d.clone(), pair.clone())
-        #r1d += self.dropout1d_15(a)
+        # r1d += self.dropout1d_15(a)
         r1d += a #self.dropout2d_15(b)
         r1d += self.LigColumnAttention(r1d.clone())
         r1d += self.RecTransition(r1d.clone())
         pair += self.OuterProductMean(r1d.clone())
 
         pair += self.TriangleMultiplicationOutgoing(pair.clone())
-        #pair += self.dropout2d_25(self.TriangleMultiplicationIngoing(pair.clone()))
+        # pair += self.dropout2d_25(self.TriangleMultiplicationIngoing(pair.clone()))
         pair += self.TriangleMultiplicationIngoing(pair.clone())
         pair += self.TriangleAttentionStartingNode(pair.clone())
         pair += self.TriangleAttentionEndingNode(pair.clone())
@@ -374,7 +417,7 @@ class FragExtraStackIteration(torch.nn.Module):
         super().__init__()
         self.RowAttentionWithPairBias = RowAttentionWithPairBias(config['RowAttentionWithPairBias'], global_config)
         self.ExtraColumnGlobalAttention = ExtraColumnGlobalAttention(config['ExtraColumnGlobalAttention'], global_config)
-        self.RecTransition = Transition(global_config['rep_1d']['num_c'], config['RecTransition']['n'])
+        self.RecTransition = Transition(config['extra_msa_channel'], config['RecTransition']['n'])
         self.OuterProductMean = OuterProductMean(config['OuterProductMean'], global_config)
         self.TriangleMultiplicationOutgoing = TriangleMultiplicationOutgoing(config['TriangleMultiplicationOutgoing'], global_config)
         self.TriangleMultiplicationIngoing = TriangleMultiplicationIngoing(config['TriangleMultiplicationOutgoing'], global_config)
@@ -390,14 +433,14 @@ class FragExtraStackIteration(torch.nn.Module):
         pair = pair.clone()
         extra = extra.clone()
         a = self.RowAttentionWithPairBias(extra.clone(), pair.clone())
-        #extra += self.dropout1d_15(a)
+        # extra += self.dropout1d_15(a)
         extra += a #self.dropout2d_15(b)
         extra += self.ExtraColumnGlobalAttention(extra.clone())
         extra += self.RecTransition(extra.clone())
         pair += self.OuterProductMean(extra.clone())
-        #pair += self.dropout2d_25(self.TriangleMultiplicationOutgoing(pair.clone()))
+        # pair += self.dropout2d_25(self.TriangleMultiplicationOutgoing(pair.clone()))
         pair += self.TriangleMultiplicationOutgoing(pair.clone())
-        #pair += self.dropout2d_25(self.TriangleMultiplicationIngoing(pair.clone()))
+        # pair += self.dropout2d_25(self.TriangleMultiplicationIngoing(pair.clone()))
         pair += self.TriangleMultiplicationIngoing(pair.clone())
         pair += self.TriangleAttentionStartingNode(pair.clone())
         pair += self.TriangleAttentionEndingNode(pair.clone())
@@ -408,7 +451,7 @@ class FragExtraStackIteration(torch.nn.Module):
 class FragExtraStack(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        self.project = nn.Linear(global_config['msa_extra_in_c'], global_config['rep_1d']['num_c'])
+        self.project = nn.Linear(global_config['msa_extra_in_c'], config['extra_msa_channel'])
         self.layers = nn.ModuleList([FragExtraStackIteration(config['FragExtraStackIteration'], global_config) for _ in range(config['num_iter'])])
         self.config = config
 
@@ -489,17 +532,29 @@ class InputEmbedder(torch.nn.Module):
         self.RecyclingEmbedder = RecyclingEmbedder(config['RecyclingEmbedder'], global_config).to(config['device'])
 
         self.config = config
+        self.global_config = global_config
 
     def forward(self, inputs, recycling=None):
         # create pair representation
         pair = self.InitPairRepresentation({k: v.to(self.config['device']) for k, v in inputs['target'].items()})
+        num_batch, seq_len, rec_2d_c = pair.shape[0], pair.shape[1], pair.shape[-1]
 
         # make lig 1d rep
         rec_1d = self.rec_1d_project(inputs['target']['rec_1d'].to(self.config['device'])).unsqueeze(1)
+        rec_1d_c = rec_1d.shape[-1]
         if 'msa' in inputs:
             rec_1d = self.main_msa_project(inputs['msa']['main'].to(self.config['device'])) + rec_1d.clone()
 
         # add recycling
+        if (self.global_config['recycling_num_iter'] > 0 and recycling == None):
+            tmp_inp = {'rec_1d_prev': torch.zeros(num_batch,seq_len,rec_1d_c),
+                    'rep_2d_prev': torch.zeros(num_batch,seq_len,seq_len,rec_2d_c),
+                    'rec_cbeta_prev': torch.zeros(num_batch, seq_len ,3),
+                    'rec_mask_prev': torch.zeros(num_batch,seq_len)
+                    }
+            recyc_out = self.RecyclingEmbedder({k: v.to(self.config['device']) for k, v in tmp_inp.items()})
+            pair += recyc_out['pair_update']
+            rec_1d[:, 0] += recyc_out['rec_1d_update']
         if recycling is not None:
             recyc_out = self.RecyclingEmbedder({k: v.to(self.config['device']) for k, v in recycling.items()})
             pair += recyc_out['pair_update']
