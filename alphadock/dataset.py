@@ -76,8 +76,12 @@ class DockingDataset(Dataset):
         crop_start = self.rng.integers(0, max(1, len(seq) - self.crop_size))
         crop_range = [crop_start, crop_start + self.crop_size]
 
-        # process target group
-        out_dict = features_summit.cif_featurize(self.dataset_dir / item['cif_file'], self.rng.choice(entity_info['asym_ids']), crop_range=crop_range)
+        # process target
+        out_dict = {}
+        out_dict['target'] = features_summit.target_sequence_featurize(seq, crop_range=crop_range)
+        out_dict['ground_truth'] = features_summit.cif_featurize(self.dataset_dir / item['cif_file'], self.rng.choice(entity_info['asym_ids']), crop_range=crop_range)
+        assert len(out_dict['target']['rec_1d']) == len(out_dict['ground_truth']['gt_aatype']), (len(out_dict['target']['rec_1d']), len(out_dict['ground_truth']['gt_aatype']))
+
         out_dict['ground_truth']['clamp_fape'] = torch.tensor(0)
         if self.rng.random() < self.clamp_fape_prob:
             out_dict['ground_truth']['clamp_fape'] = torch.tensor(1)
