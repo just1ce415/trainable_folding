@@ -269,7 +269,6 @@ class TriangleAttentionEndingNode(nn.Module):
         self.q = nn.Linear(num_in_c, attention_num_c*num_heads, bias=False)
         self.k = nn.Linear(num_in_c, attention_num_c*num_heads, bias=False)
         self.v = nn.Linear(num_in_c, attention_num_c*num_heads, bias=False)
-        self.qkv = nn.Linear(num_in_c, attention_num_c * num_heads * 3, bias=False)
         self.bias = nn.Linear(num_in_c, num_heads, bias=False)
         self.gate = nn.Linear(num_in_c, attention_num_c * num_heads)
         self.out = nn.Linear(attention_num_c * num_heads, num_in_c)
