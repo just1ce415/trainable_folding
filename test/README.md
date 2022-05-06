@@ -7,6 +7,7 @@ It will produce a .pth file
 How to use:
 - python af2\_params\_to\_pth 'path\_to\_alphafold\_parameter\_file'.
 - python predict.py 'pth\_file'.
+
 Other files:
 - features.pkl: input features processed from 1a0b.cif
 - expected\_prediction.pdb: expected structure prediction. The test.pdb should be similar with this file.
