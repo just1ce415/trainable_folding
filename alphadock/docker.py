@@ -32,7 +32,7 @@ class DockerIteration(nn.Module):
         self.InputEmbedder = modules.InputEmbedder(config['InputEmbedder'], global_config)
         self.Evoformer = nn.ModuleList([modules.EvoformerIteration(config['Evoformer']['EvoformerIteration'], global_config)
                                         for x in range(config['Evoformer']['num_iter'])]).to(config['Evoformer']['device'])
-        self.EvoformerExtractSingleRec = nn.Linear(global_config['rep_1d']['num_c'], global_config['num_single_c']).to(config['Evoformer']['device'])
+        self.EvoformerExtractSingleRec = nn.Linear(global_config['model']['rep1d_feat'], global_config['model']['single_rep_feat']).to(config['Evoformer']['device'])
         self.StructureModule = structure.StructureModule(config['StructureModule'], global_config).to(config['StructureModule']['device'])
 
         self.config = config
@@ -74,13 +74,11 @@ class DockerIteration(nn.Module):
         input = {k: {k1: v1.to(self.config['StructureModule']['device']) for k1, v1 in v.items()} for k, v in input.items()}
         struct_out = self.StructureModule({
             'r1d': rec_single.to(self.config['StructureModule']['device']),
-            'pair': pair.to(self.config['StructureModule']['device']),
-            'rec_bb_affine': input['ground_truth']['gt_bb_affine'],
-            'rec_bb_affine_mask': input['ground_truth']['gt_bb_affine_mask']
+            'pair': pair.to(self.config['StructureModule']['device'])
         })
 
         # rescale to angstroms
-        struct_out['rec_T'][..., -3:] = struct_out['rec_T'][..., -3:] * self.global_config['position_scale']
+        struct_out['rec_T'][..., -3:] = struct_out['rec_T'][..., -3:] * self.global_config['model']['position_scale']
 
         assert struct_out['rec_T'].shape[0] == 1
         final_all_atom = all_atom.backbone_affine_and_torsions_to_all_atom(
@@ -91,7 +89,8 @@ class DockerIteration(nn.Module):
         #print({k: v.shape for k, v in struct_out.items()})
 
         out_dict = {}
-        out_dict['loss'] = loss.total_loss(input, struct_out, final_all_atom, self.global_config)
+        if self.global_config['loss']['compute_loss']:
+            out_dict['loss'] = loss.total_loss(input, struct_out, final_all_atom, self.global_config)
         out_dict['final_all_atom'] = final_all_atom
         out_dict['struct_out'] = struct_out
 

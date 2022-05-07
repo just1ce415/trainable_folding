@@ -352,8 +352,8 @@ def import_jax_weights_(model, version="model_1"):
 if __name__ == '__main__':
     param_path = sys.argv[1]
     data = np.load(param_path)
-    model = docker.DockerIteration(config.config, config.config)
+    model = docker.DockerIteration(config.config['model'], config.config)
     import_jax_weights_(model)
     
     param_out_path = os.path.basename(param_path)[:-4] + ".pth"
-    torch.save(model.state_dict(), param_out_path)
+    torch.save({'model_state_dict': model.state_dict()}, param_out_path)

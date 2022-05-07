@@ -39,8 +39,6 @@ REC_DISTOGRAM = {
     'num_bins': 39
 }
 
-RESIGRAM_MAX = 32
-
 AF_CONFIDENCE_BINS = {
     'min': 40,
     'max': 100,
@@ -218,7 +216,7 @@ def one_hot_aatype(aa, alphabet):
     return out
 
 
-def target_sequence_featurize(sequence, map_unknown_to_x=True, crop_range=None, af_compatible=True):
+def target_sequence_featurize(sequence, map_unknown_to_x=True, crop_range=None, af_compatible=True, relpos_max=32):
     if map_unknown_to_x:
         aatype_int = np.array([AATYPE_WITH_X.get(x.upper(), AATYPE_WITH_X['X']) for x in sequence], dtype=DTYPE_INT)
     else:
@@ -233,7 +231,7 @@ def target_sequence_featurize(sequence, map_unknown_to_x=True, crop_range=None, 
 
     relpos_2d = np.arange(len(aatype_int))
     relpos_2d = relpos_2d[:, None] - relpos_2d[None, :]
-    relpos_2d = dmat_to_distogram(relpos_2d, -RESIGRAM_MAX, RESIGRAM_MAX + 1, RESIGRAM_MAX * 2 + 1)
+    relpos_2d = dmat_to_distogram(relpos_2d, -relpos_max, relpos_max + 1, relpos_max * 2 + 1)
 
     target = {
         'rec_1d': aatype_onehot.astype(DTYPE_FLOAT),

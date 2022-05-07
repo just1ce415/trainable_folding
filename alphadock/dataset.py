@@ -23,35 +23,17 @@ from alphadock import residue_constants
 class DockingDataset(Dataset):
     def __init__(
             self,
-            dataset_dir,
-            json_file,
-            max_hh_templates=0,
-            max_msa_main=128,
-            max_msa_extra=1024,
-            max_msa_size=4096,
-            crop_size=256,
-            use_hh_prob=0.5,
-            sample_to_size=None,
-            clamp_fape_prob=0.9,
+            data,
+            config_data,
+            dataset_dir='.',
             seed=123456,
             shuffle=False
-
     ):
         self.dataset_dir = Path(dataset_dir).abspath()
-        self.json_file = self.dataset_dir / json_file
+        self.config = config_data
+        self.data = data
 
-        dataset = utils.read_json(self.json_file)
-        self.data = dataset #['cases']
-        #self.template_pool = ['_'.join(x) for x in dataset['template_pool']]
-
-        self.max_hh_templates = max_hh_templates
-        self.max_msa_main = max_msa_main
-        self.max_msa_extra = max_msa_extra
-        self.max_msa_size = max_msa_size
-        self.use_hh_prob = use_hh_prob
-        self.clamp_fape_prob = clamp_fape_prob
         self.rng = np.random.default_rng(seed)
-        self.crop_size = crop_size
 
         if shuffle:
             self.rng.shuffle(self.data)
@@ -65,49 +47,69 @@ class DockingDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
+    def make_features(self, sequence, a3m_files, cif_file=None, asym_ids=None):
+        if self.config['crop_size'] is not None:
+            crop_start = self.rng.integers(0, max(1, len(sequence) - self.config['crop_size']))
+            crop_range = [crop_start, crop_start + self.config['crop_size']]
+        else:
+            crop_range = None
+
+        out_dict = {}
+        out_dict['target'] = features_summit.target_sequence_featurize(
+            sequence,
+            crop_range=crop_range,
+            af_compatible=self.config['target_af_compatible'],
+            relpos_max=self.config['relpos_max']
+        )
+
+        if cif_file is not None:
+            out_dict['ground_truth'] = features_summit.cif_featurize(
+                cif_file,
+                self.rng.choice(asym_ids),
+                crop_range=crop_range
+            )
+            assert len(out_dict['target']['rec_1d']) == len(out_dict['ground_truth']['gt_aatype']), (len(out_dict['target']['rec_1d']), len(out_dict['ground_truth']['gt_aatype']))
+
+            out_dict['ground_truth']['clamp_fape'] = torch.tensor(0)
+            if self.rng.random() < self.config['clamp_fape_prob']:
+                out_dict['ground_truth']['clamp_fape'] = torch.tensor(1)
+
+        out_dict['msa'] = features_summit.msa_featurize(
+            a3m_files,
+            self.rng,
+            self.config['msa_max_clusters'],
+            self.config['msa_max_extra'],
+            use_cache=self.config['msa_use_cache'],
+            crop_range=crop_range,
+            num_block_del=self.config['msa_block_del_num'],
+            block_del_size=self.config['msa_block_del_size'],
+            random_replace_fraction=self.config['msa_random_replace_fraction'],
+            uniform_prob=self.config['msa_uniform_prob'],
+            profile_prob=self.config['msa_profile_prob'],
+            same_prob=self.config['msa_same_prob']
+        )
+
+        #assert first_seq == seq
+        assert out_dict['msa']['main'].shape[1] == out_dict['target']['rec_1d'].shape[0], \
+            (out_dict['msa']['main'].shape[1], out_dict['target']['rec_1d'].shape[0], item)
+
+        return out_dict
+
     def _get_item(self, ix):
         item = self.data[ix]
 
-        print('sample', ix, ':', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), item['pdb_id'], item['entity_id']); sys.stdout.flush()
-        buf = time.time()
+        #print('sample', ix, ':', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), item['pdb_id'], item['entity_id']); sys.stdout.flush()
+        t0 = time.time()
 
-        entity_info = item['entity_info']
-        seq = entity_info['pdbx_seq_one_letter_code_can']
-        crop_start = self.rng.integers(0, max(1, len(seq) - self.crop_size))
-        crop_range = [crop_start, crop_start + self.crop_size]
-
-        # process target
-        out_dict = {}
-        out_dict['target'] = features_summit.target_sequence_featurize(seq, crop_range=crop_range)
-        out_dict['ground_truth'] = features_summit.cif_featurize(self.dataset_dir / item['cif_file'], self.rng.choice(entity_info['asym_ids']), crop_range=crop_range)
-        assert len(out_dict['target']['rec_1d']) == len(out_dict['ground_truth']['gt_aatype']), (len(out_dict['target']['rec_1d']), len(out_dict['ground_truth']['gt_aatype']))
-
-        out_dict['ground_truth']['clamp_fape'] = torch.tensor(0)
-        if self.rng.random() < self.clamp_fape_prob:
-            out_dict['ground_truth']['clamp_fape'] = torch.tensor(1)
+        out_dict = self.make_features(
+            item['entity_info']['pdbx_seq_one_letter_code_can'],
+            [self.dataset_dir / x for x in item['a3m_files']],
+            self.dataset_dir / item['cif_file'] if item['cif_file'] is not None else None,
+            item['entity_info']['asym_ids'] if item['cif_file'] is not None else None
+        )
         out_dict['target']['ix'] = ix
 
-        if self.max_msa_main > 0:
-            out_dict['msa'] = features_summit.msa_featurize(
-                [self.dataset_dir / x for x in item['a3m_files']],
-                self.rng,
-                self.max_msa_main,
-                self.max_msa_extra,
-                crop_range=crop_range
-            )
-
-            #assert first_seq == seq
-            assert out_dict['msa']['main'].shape[1] == out_dict['target']['rec_1d'].shape[0], \
-                (out_dict['msa']['main'].shape[1], out_dict['target']['rec_1d'].shape[0], ix, item)
-
-        print('time retrieving', ix, ':', time.time() - buf, '(s)'); sys.stdout.flush()
-
-        # process hhpred
-        #if self.rng.random() < self.use_hh_prob and self.max_hh_templates > 0:
-        #    hhpred = self._get_hh_list(case_dict, group_dict, group_dir, fragment_matches)
-        #    if len(hhpred) > 0:
-         #       out_dict['hhpred'] = hhpred
-
+        print('time retrieving', ix, ':', time.time() - t0, '(s)'); sys.stdout.flush()
         return out_dict
 
     def __getitem__(self, ix):
