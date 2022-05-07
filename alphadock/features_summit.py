@@ -23,6 +23,13 @@ AATYPE_WITH_X = residue_constants.restype_order_with_x
 AATYPE_WITH_X_AND_GAP = AATYPE_WITH_X.copy()
 AATYPE_WITH_X_AND_GAP['-'] = len(AATYPE_WITH_X)
 
+HHBLITS_WITH_X_AND_GAP = AATYPE_WITH_X_AND_GAP.copy()
+HHBLITS_WITH_X_AND_GAP['B'] = HHBLITS_WITH_X_AND_GAP['D']
+HHBLITS_WITH_X_AND_GAP['J'] = HHBLITS_WITH_X_AND_GAP['X']
+HHBLITS_WITH_X_AND_GAP['O'] = HHBLITS_WITH_X_AND_GAP['X']
+HHBLITS_WITH_X_AND_GAP['U'] = HHBLITS_WITH_X_AND_GAP['C']
+HHBLITS_WITH_X_AND_GAP['Z'] = HHBLITS_WITH_X_AND_GAP['E']
+
 AATYPE_WITH_X_AND_GAP_AND_MASKED = AATYPE_WITH_X_AND_GAP.copy()
 AATYPE_WITH_X_AND_GAP_AND_MASKED['?'] = len(AATYPE_WITH_X_AND_GAP)
 
@@ -211,6 +218,38 @@ def one_hot_aatype(aa, alphabet):
     return out
 
 
+def target_sequence_featurize(sequence, map_unknown_to_x=True, crop_range=None, af_compatible=True):
+    if map_unknown_to_x:
+        aatype_int = np.array([AATYPE_WITH_X.get(x.upper(), AATYPE_WITH_X['X']) for x in sequence], dtype=DTYPE_INT)
+    else:
+        aatype_int = np.array([AATYPE_WITH_X[x.upper()] for x in sequence], dtype=DTYPE_INT)
+
+    aatype_onehot = np.zeros((len(aatype_int), len(AATYPE_WITH_X)), dtype=DTYPE_FLOAT)
+    aatype_onehot[range(len(aatype_int)), aatype_int] = 1
+
+    # for compatibility with AF parameters, they have domain break flag first
+    if af_compatible:
+        aatype_onehot = np.pad(aatype_onehot, [(0, 0), (1, 0)])
+
+    relpos_2d = np.arange(len(aatype_int))
+    relpos_2d = relpos_2d[:, None] - relpos_2d[None, :]
+    relpos_2d = dmat_to_distogram(relpos_2d, -RESIGRAM_MAX, RESIGRAM_MAX + 1, RESIGRAM_MAX * 2 + 1)
+
+    target = {
+        'rec_1d': aatype_onehot.astype(DTYPE_FLOAT),
+        'rec_relpos': relpos_2d.astype(DTYPE_FLOAT),
+        'rec_aatype': aatype_int.astype(DTYPE_INT),
+        'rec_index': np.arange(len(aatype_int), dtype=DTYPE_INT),
+        'rec_atom14_atom_exists': residue_constants.restype_atom14_mask[aatype_int]
+    }
+
+    if crop_range is not None:
+        target = {k: v[crop_range[0]:crop_range[1]] for k, v in target.items()}
+        target['rec_relpos'] = target['rec_relpos'][:, crop_range[0]:crop_range[1]]
+
+    return target
+
+
 def cif_featurize(cif_file, asym_id, crop_range=None):
     cache_path = cif_file + '_' + asym_id + '_cache.npy'
     if Path(cache_path).exists():
@@ -219,43 +258,28 @@ def cif_featurize(cif_file, asym_id, crop_range=None):
         res_dicts = cif_parse(cif_file, asym_id)
         np.save(cache_path, res_dicts)
 
-    aatype_num = np.array([AATYPE_WITH_X[x['aatype_can']] for x in res_dicts], dtype=DTYPE_INT)
-    aatype_onehot = np.zeros((len(res_dicts), len(AATYPE_WITH_X)), dtype=DTYPE_FLOAT)
-    aatype_onehot[range(len(res_dicts)), aatype_num] = 1
-
-    relpos_2d = np.arange(len(res_dicts))
-    relpos_2d = relpos_2d[None, :] - relpos_2d[:, None]
-    relpos_2d = dmat_to_distogram(relpos_2d, -RESIGRAM_MAX, RESIGRAM_MAX + 1, RESIGRAM_MAX * 2 + 1)
-
-    target = {
-        'rec_1d': aatype_onehot.astype(DTYPE_FLOAT),
-        'rec_relpos': relpos_2d.astype(DTYPE_FLOAT),
-        'rec_aatype': aatype_num.astype(DTYPE_INT),
-        'rec_index': np.arange(len(res_dicts), dtype=DTYPE_INT),
-        'rec_atom14_atom_exists': residue_constants.restype_atom14_mask[aatype_num]
-    }
-    #np.set_printoptions(threshold=np.inf)
+    aatype_int = np.array([AATYPE_WITH_X.get(x['aatype_can'].upper(), AATYPE_WITH_X['X']) for x in res_dicts], dtype=DTYPE_INT)
 
     #atom14_gt_positions_rigids = r3.Vecs(*[x.squeeze(-1) for x in np.split(rec_dict['rec_atom14_coords'], 3, axis=-1)])
     atom14_gt_positions = np.stack(x['atom14_coords'] for x in res_dicts)  # (N, 14, 3)
     atom14_gt_exists = np.stack(x['atom14_mask'] for x in res_dicts)  # (N, 14)
-    renaming_mats = all_atom.RENAMING_MATRICES[aatype_num]  # (N, 14, 14)
+    renaming_mats = all_atom.RENAMING_MATRICES[aatype_int]  # (N, 14, 14)
     atom14_alt_gt_positions = np.sum(atom14_gt_positions[:, :, None, :] * renaming_mats[:, :, :, None], axis=1)
     atom14_alt_gt_exists = np.sum(atom14_gt_exists[:, :, None] * renaming_mats, axis=1)
     atom14_atom_is_ambiguous = (renaming_mats * np.eye(14)[None]).sum(1) == 0
 
-    atom37_gt_positions = all_atom.atom14_to_atom37(torch.from_numpy(atom14_gt_positions).float(), torch.from_numpy(aatype_num))
-    atom37_gt_exists = all_atom.atom14_to_atom37(torch.from_numpy(atom14_gt_exists).float(), torch.from_numpy(aatype_num))
-    gt_torsions = all_atom.atom37_to_torsion_angles(torch.from_numpy(aatype_num[None]), atom37_gt_positions[None].float(), atom37_gt_exists[None].float())
+    atom37_gt_positions = all_atom.atom14_to_atom37(torch.from_numpy(atom14_gt_positions).float(), torch.from_numpy(aatype_int))
+    atom37_gt_exists = all_atom.atom14_to_atom37(torch.from_numpy(atom14_gt_exists).float(), torch.from_numpy(aatype_int))
+    gt_torsions = all_atom.atom37_to_torsion_angles(torch.from_numpy(aatype_int[None]), atom37_gt_positions[None].float(), atom37_gt_exists[None].float())
 
-    rec_all_frames = all_atom.atom37_to_frames(torch.from_numpy(aatype_num), atom37_gt_positions.float(), atom37_gt_exists.float())
+    rec_all_frames = all_atom.atom37_to_frames(torch.from_numpy(aatype_int), atom37_gt_positions.float(), atom37_gt_exists.float())
     rec_bb_affine = r3.rigids_to_quataffine(r3.rigids_from_tensor_flat12(rec_all_frames['rigidgroups_gt_frames'][..., 0, :]))
     rec_bb_affine.quaternion = quat_affine.rot_to_quat(rec_bb_affine.rotation)
     rec_bb_affine = rec_bb_affine.to_tensor().numpy()
     rec_bb_affine_mask = rec_all_frames['rigidgroups_gt_exists'][..., 0].numpy()
 
     ground_truth = {
-        'gt_aatype': aatype_num.astype(DTYPE_INT),  # same as for target
+        'gt_aatype': aatype_int.astype(DTYPE_INT),  # same as for target
         'gt_atom14_coords': atom14_gt_positions.astype(DTYPE_FLOAT),  # (N_res, 14, 3)
         'gt_atom14_has_coords': atom14_gt_exists.astype(DTYPE_FLOAT),  # (N_res, 14)
         'gt_atom14_coords_alt': atom14_alt_gt_positions.astype(DTYPE_FLOAT),  # (N_res, 14, 3)
@@ -275,16 +299,14 @@ def cif_featurize(cif_file, asym_id, crop_range=None):
         'gt_bb_affine': rec_bb_affine.astype(DTYPE_FLOAT),
         'gt_bb_affine_mask': rec_bb_affine_mask.astype(DTYPE_FLOAT),
 
-        'gt_residue_index': np.arange(len(aatype_num), dtype=DTYPE_INT),  # (N_res)
+        'gt_residue_index': np.arange(len(aatype_int), dtype=DTYPE_INT),  # (N_res)
         'gt_has_frame': np.array([x['has_frame'] for x in res_dicts]).astype(DTYPE_FLOAT),  # (N_res)
     }
 
     if crop_range is not None:
-        target = {k: v[crop_range[0]:crop_range[1]] for k, v in target.items()}
         ground_truth = {k: v[crop_range[0]:crop_range[1]] for k, v in ground_truth.items()}
-        target['rec_relpos'] = target['rec_relpos'][:, crop_range[0]:crop_range[1]]
 
-    return {'target': target, 'ground_truth': ground_truth}
+    return ground_truth
 
 
 def parse_a3m(a3m_file):
@@ -303,11 +325,11 @@ def msas_to_onehot(msa_npy):
     return msa_onehot.reshape((msa_npy.shape[0], msa_npy.shape[1], len(AATYPE_WITH_X_AND_GAP_AND_MASKED)))
 
 
-def msas_numeric_to_onehot(msa_npy):
+def msas_numeric_to_onehot(msa_npy, size):
     msa_num = msa_npy.flatten()
-    msa_onehot = np.zeros((msa_num.size, len(AATYPE_WITH_X_AND_GAP_AND_MASKED)), dtype=DTYPE_FLOAT)
+    msa_onehot = np.zeros((msa_num.size, size), dtype=DTYPE_FLOAT)
     msa_onehot[range(msa_num.size), msa_num] = 1
-    return msa_onehot.reshape((msa_npy.shape[0], msa_npy.shape[1], len(AATYPE_WITH_X_AND_GAP_AND_MASKED)))
+    return msa_onehot.reshape((msa_npy.shape[0], msa_npy.shape[1], size))
 
 
 def calc_deletion_matrix(msa):
@@ -326,13 +348,38 @@ def calc_deletion_matrix(msa):
     return np.stack(out).astype(np.ushort)  # 16-bit [0, 65535]
 
 
-def msa_featurize(a3m_files, rng, num_clusters, num_extra, crop_range=None, num_block_del=5, block_del_size=0.3):
+def msa_generate_random(probs, seed):
+    # unofficial way of seeding pytorch locally
+    # https://discuss.pytorch.org/t/is-there-a-randomstate-equivalent-in-pytorch-for-local-random-generator-seeding/37131/2
+    #
+    # we can use pure numpy to do this starting 1.22 using np.random.multinomial,
+    # but current numpy version is older
+    rng = torch.Generator()
+    probs_flat = probs.reshape([-1, probs.shape[-1]])
+    result = torch.multinomial(torch.from_numpy(probs_flat), 1, generator=rng).squeeze(-1).numpy()
+    return result.reshape(probs.shape[:-1])
+
+
+def msa_featurize(
+        a3m_files,
+        rng,
+        num_clusters,
+        num_extra,
+        use_cache=True,
+        crop_range=None,
+        num_block_del=5,
+        block_del_size=0.3,
+        random_replace_fraction=0.15,
+        uniform_prob=0.1,
+        profile_prob=0.1,
+        same_prob=0.1
+):
     assert num_clusters > 0, num_clusters
     assert num_extra >= 0, num_extra
 
     # if cached msa don't exist create them, otherwise load from disk
     cache_prefix = a3m_files[0] + '_cache_'
-    if not Path(cache_prefix + 'msa.npy').exists():
+    if not Path(cache_prefix + 'msa.npy').exists() or not use_cache:
         msa = []
         for a3m_file in a3m_files:
             msa += parse_a3m(a3m_file)[1]
@@ -348,12 +395,13 @@ def msa_featurize(a3m_files, rng, num_clusters, num_extra, crop_range=None, num_
 
         # msa to numbers
         assert all([x != '-' for x in msa[0]]), msa[0]
-        _fun = np.vectorize(lambda x: AATYPE_WITH_X_AND_GAP_AND_MASKED[x], otypes=[np.byte])
+        _fun = np.vectorize(lambda x: HHBLITS_WITH_X_AND_GAP.get(x, HHBLITS_WITH_X_AND_GAP['X']), otypes=[np.byte])
         all_msa_npy = _fun(np.stack([list(x) for i, x in enumerate(msa)]))
 
         # save converted msa to cache
-        np.save(cache_prefix + 'del.npy', all_msa_del_mat)
-        np.save(cache_prefix + 'msa.npy', all_msa_npy)
+        if use_cache:
+            np.save(cache_prefix + 'del.npy', all_msa_del_mat)
+            np.save(cache_prefix + 'msa.npy', all_msa_npy)
     else:
         # load from cache
         all_msa_del_mat = np.load(cache_prefix + 'del.npy')
@@ -362,7 +410,7 @@ def msa_featurize(a3m_files, rng, num_clusters, num_extra, crop_range=None, num_
     msa_size = all_msa_npy.shape[0]
 
     # block deletion like in AF
-    if num_block_del > 0 and msa_size > 1:
+    if num_block_del > 0 and block_del_size > 0 and msa_size > 1:
         del_rows = set()
         block_del_size = int(block_del_size * msa_size)
         for block_start in rng.integers(1, msa_size, num_block_del):
@@ -374,26 +422,35 @@ def msa_featurize(a3m_files, rng, num_clusters, num_extra, crop_range=None, num_
 
     msa_size = all_msa_npy.shape[0]
 
-    if crop_range is not None:
-        all_msa_del_mat = all_msa_del_mat[:, crop_range[0]:crop_range[1]]
-        all_msa_npy = all_msa_npy[:, crop_range[0]:crop_range[1]]
-
     # replace pyrrolysine and selenocysteine
     # update: turns out U and O are already replaced by X in the msas
     #all_msa_npy = np.char.replace(all_msa_npy, 'U', 'C')
     #all_msa_npy = np.char.replace(all_msa_npy, 'O', 'X')
 
     # featurize
-    all_msa_onehot = msas_numeric_to_onehot(all_msa_npy)
+    all_msa_onehot = msas_numeric_to_onehot(all_msa_npy, size=len(AATYPE_WITH_X_AND_GAP) + 1)
     #print(all_msa_onehot.shape, all_msa_onehot.dtype)
 
-    main_ids = np.array([0], dtype=int)
-    if num_clusters > 1 and msa_size > 1:
-        main_ids = np.concatenate([main_ids, rng.choice(range(1, msa_size), min(msa_size - 1, num_clusters - 1), replace=False)])
+    # select cluster centers
+    _buf = np.arange(1, msa_size, dtype=int)
+    rng.shuffle(_buf)
+    msa_shuffled_ids = np.concatenate([np.array([0], dtype=int), _buf])
+    main_ids = msa_shuffled_ids[:num_clusters]
     main_msa_npy = all_msa_npy[main_ids]
 
+    # random replacement
+    if random_replace_fraction > 0.0:
+        probs = uniform_prob * np.array([0.05] * 20 + [0.0, 0.0, 0.0])[None, None] + \
+                profile_prob * all_msa_onehot.mean(0)[None] + \
+                same_prob * all_msa_onehot[main_ids]
+        probs[..., -1] = 1. - uniform_prob - profile_prob - same_prob
+        msa_replacements = msa_generate_random(probs, rng.integers(10e6).item())
+        main_msa_npy = np.where(rng.random(msa_replacements.shape) < random_replace_fraction, msa_replacements, main_msa_npy)
+        all_msa_onehot[main_ids] = msas_numeric_to_onehot(main_msa_npy, size=len(AATYPE_WITH_X_AND_GAP) + 1)
+
     # cluster
-    hamming_mask = (main_msa_npy[:, None, :] != AATYPE_WITH_X_AND_GAP_AND_MASKED['-']) * (all_msa_npy[None, :, :] != AATYPE_WITH_X_AND_GAP_AND_MASKED['-'])
+    hamming_mask = (main_msa_npy[:, None, :] != AATYPE_WITH_X_AND_GAP['-']) * (all_msa_npy[None, :, :] != AATYPE_WITH_X_AND_GAP['-'])
+    hamming_mask *= (main_msa_npy[:, None, :] != len(AATYPE_WITH_X_AND_GAP)) * (all_msa_npy[None, :, :] != len(AATYPE_WITH_X_AND_GAP))
     hamming_dist = ((main_msa_npy[:, None, :] != all_msa_npy[None, :, :]) * hamming_mask).sum(-1)  # (num_clusters, num_msa)
     closest_main_id = hamming_dist.argmin(0)
     closest_main_id[main_ids] = main_ids   # <-- make sure the centers are assigned to themselves
@@ -416,8 +473,9 @@ def msa_featurize(a3m_files, rng, num_clusters, num_extra, crop_range=None, num_
         ], axis=-1).astype(DTYPE_FLOAT)
     }
 
-    if msa_size - num_clusters > 0 and num_extra > 0:
-        extra_ids = rng.choice(list(set(range(msa_size)) - set(main_ids)), min(msa_size - len(main_ids), num_extra), replace=False)
+    # featurize extra msa
+    extra_ids = msa_shuffled_ids[num_clusters:num_clusters + num_extra]
+    if len(extra_ids) > 0:
         extra_msa_onehot = all_msa_onehot[extra_ids]
         extra_msa_has_del = all_msa_del_mat[extra_ids] > 0
         extra_msa_del_value = np.arctan(all_msa_del_mat[extra_ids] / 3) * 2 / np.pi
@@ -427,6 +485,11 @@ def msa_featurize(a3m_files, rng, num_clusters, num_extra, crop_range=None, num_
             extra_msa_has_del[..., None],
             extra_msa_del_value[..., None]
         ], axis=-1).astype(DTYPE_FLOAT)
+
+    if crop_range is not None:
+        out['main'] = out['main'][:, crop_range[0]:crop_range[1]]
+        if 'extra' in out:
+            out['extra'] = out['extra'][:, crop_range[0]:crop_range[1]]
 
     return out  #.replace('U', 'C').replace('O', 'X')
 
@@ -442,14 +505,14 @@ def example():
 
 if __name__ == '__main__':
     #example()
-    out = msa_featurize('/data/trainable_folding/data_preparation/data/15k/folding/MMSEQ_submission_second_try/6eno_1.fa_results/uniref.a3m', np.random.default_rng(123), 32, 32)
+    out = msa_featurize(['/data/trainable_folding/data_preparation/data/15k/folding/MMSEQ_submission_second_try/6eno_1.fa_results/uniref.a3m'], np.random.default_rng(123), 32, 32)
     for k1, v1 in out.items():
         print(k1, ':', v1.shape)
 
     from path import Path
-    a3ms = Path('/data/trainable_folding/data_preparation/data/15k/folding/MMSEQ_submission_second_try').glob('*/uniref.a3m')
+    a3ms = sorted(Path('/data/trainable_folding/data_preparation/data/15k/folding/MMSEQ_submission_second_try').glob('*/uniref.a3m'))
     for a in a3ms:
-        out = msa_featurize(a, np.random.default_rng(123), 128, 4096)
+        out = msa_featurize([a, a.dirname() / 'bfd.mgnify30.metaeuk30.smag30.a3m'], np.random.default_rng(123), 128, 4096)
         print(a)
         for k1, v1 in out.items():
             print(k1, ':', v1.shape)

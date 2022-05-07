@@ -11,10 +11,10 @@ import traceback
 import socket
 
 from alphadock import docker
-from alphadock import config
-from alphadock import dataset
-from alphadock import all_atom
-from alphadock import utils
+import config
+import dataset
+import all_atom
+import utils
 
 import torchvision
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -288,7 +288,7 @@ def train(epoch):
         max_hh_templates=0,
         sample_to_size=3000,
         seed=epoch * 100 + ADD_TO_SEED,
-        shuffle=True
+  #      shuffle=True
     )
     #dset = dataset.DockingDatasetSimulated(size=4, num_frag_main=64, num_frag_extra=256, num_res=400, num_hh=6)
     #dset.data = dset.data[30 * 6:]
