@@ -152,14 +152,14 @@ def dmat_to_dgram(dmat, dmin, dmax, num_bins):
     return bin_ids, dgram
 
 
-def merge_dicts(a, b, compare_types=True, _path=None, ):
+def merge_dicts(a, b, compare_types=False, _path=None, ):
     "merges b into a"
     if _path is None: _path = []
     for key in b:
         if key in a:
             if isinstance(a[key], dict) and isinstance(b[key], dict):
                 merge_dicts(a[key], b[key], compare_types, _path + [str(key)])
-            elif isinstance(a[key], type(b[key])):
+            elif not compare_types or isinstance(a[key], type(b[key])):
                 a[key] = b[key]
             else:
                 raise Exception('Conflict at "%s"' % '.'.join(_path + [str(key)]))

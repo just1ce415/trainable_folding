@@ -111,6 +111,7 @@ def cif_parse(cif_file, asym_id):
             ]
     pdbx_poly_seq_scheme = loop_to_list(block, '_pdbx_poly_seq_scheme')
     pdbx_poly_seq_scheme = [x for x in pdbx_poly_seq_scheme if x['_pdbx_poly_seq_scheme.asym_id'] == asym_id]
+    assert len(pdbx_poly_seq_scheme) > 0, f'File {cif_file} does not have chain with asym_id "{asym_id}"'
 
     # alt locations have the same residue number,
     # keep only the first one to match the pdbx_seq_one_letter_code_can string
@@ -353,6 +354,7 @@ def msa_generate_random(probs, seed):
     # we can use pure numpy to do this starting 1.22 using np.random.multinomial,
     # but current numpy version is older
     rng = torch.Generator()
+    rng = rng.manual_seed(seed)
     probs_flat = probs.reshape([-1, probs.shape[-1]])
     result = torch.multinomial(torch.from_numpy(probs_flat), 1, generator=rng).squeeze(-1).numpy()
     return result.reshape(probs.shape[:-1])
@@ -437,14 +439,15 @@ def msa_featurize(
     main_msa_npy = all_msa_npy[main_ids]
 
     # random replacement
-    if random_replace_fraction > 0.0:
-        probs = uniform_prob * np.array([0.05] * 20 + [0.0, 0.0, 0.0])[None, None] + \
-                profile_prob * all_msa_onehot.mean(0)[None] + \
-                same_prob * all_msa_onehot[main_ids]
-        probs[..., -1] = 1. - uniform_prob - profile_prob - same_prob
-        msa_replacements = msa_generate_random(probs, rng.integers(10e6).item())
-        main_msa_npy = np.where(rng.random(msa_replacements.shape) < random_replace_fraction, msa_replacements, main_msa_npy)
-        all_msa_onehot[main_ids] = msas_numeric_to_onehot(main_msa_npy, size=len(AATYPE_WITH_X_AND_GAP) + 1)
+    # keep even if random_replace_fraction is 0.0 to prevent rng disruption
+    #if random_replace_fraction > 0.0:
+    probs = uniform_prob * np.array([0.05] * 20 + [0.0, 0.0, 0.0])[None, None] + \
+            profile_prob * all_msa_onehot.mean(0)[None] + \
+            same_prob * all_msa_onehot[main_ids]
+    probs[..., -1] = 1. - uniform_prob - profile_prob - same_prob
+    msa_replacements = msa_generate_random(probs, rng.integers(10e6).item())
+    main_msa_npy = np.where(rng.random(msa_replacements.shape) < random_replace_fraction, msa_replacements, main_msa_npy)
+    all_msa_onehot[main_ids] = msas_numeric_to_onehot(main_msa_npy, size=len(AATYPE_WITH_X_AND_GAP) + 1)
 
     # cluster
     hamming_mask = (main_msa_npy[:, None, :] != AATYPE_WITH_X_AND_GAP['-']) * (all_msa_npy[None, :, :] != AATYPE_WITH_X_AND_GAP['-'])

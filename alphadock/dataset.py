@@ -62,16 +62,18 @@ class DockingDataset(Dataset):
             relpos_max=self.config['relpos_max']
         )
 
+        clamp_fape = self.rng.random() < self.config['clamp_fape_prob']
         if cif_file is not None:
             out_dict['ground_truth'] = features_summit.cif_featurize(
                 cif_file,
-                self.rng.choice(asym_ids),
+                asym_ids[0], # choose first asym id
                 crop_range=crop_range
             )
-            assert len(out_dict['target']['rec_1d']) == len(out_dict['ground_truth']['gt_aatype']), (len(out_dict['target']['rec_1d']), len(out_dict['ground_truth']['gt_aatype']))
+            assert len(out_dict['target']['rec_1d']) == len(out_dict['ground_truth']['gt_aatype']), \
+                (len(out_dict['target']['rec_1d']), len(out_dict['ground_truth']['gt_aatype']))
 
             out_dict['ground_truth']['clamp_fape'] = torch.tensor(0)
-            if self.rng.random() < self.config['clamp_fape_prob']:
+            if clamp_fape:
                 out_dict['ground_truth']['clamp_fape'] = torch.tensor(1)
 
         out_dict['msa'] = features_summit.msa_featurize(

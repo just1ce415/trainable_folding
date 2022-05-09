@@ -24,11 +24,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 HOROVOD = False
 HOROVOD_RANK = 0
-if HOROVOD:
-    import horovod.torch as hvd
-    if __name__ == '__main__':
-        hvd.init()
-        HOROVOD_RANK = hvd.rank()
+hvd = None
 
 
 def pred_to_pdb(out_pdb, input_dict, out_dict):
@@ -39,6 +35,7 @@ def pred_to_pdb(out_pdb, input_dict, out_dict):
             f,
             input_dict['target']['rec_aatype'][0].cpu(),
             out_dict['final_all_atom']['atom_pos_tensor'].detach().cpu(),
+            bfactors=out_dict['struct_out']['rec_lddt'][0, -1].detach().cpu().argmax(dim=-1) + 50,
             chain='A',
             serial_start=1,
             resnum_start=1
@@ -49,6 +46,7 @@ def pred_to_pdb(out_pdb, input_dict, out_dict):
                 f,
                 input_dict['ground_truth']['gt_aatype'][0].cpu(),
                 input_dict['ground_truth']['gt_atom14_coords'][0].detach().cpu(),
+                atom14_mask=input_dict['ground_truth']['gt_atom14_has_coords'][0].detach().cpu(),
                 chain='A',
                 serial_start=1,
                 resnum_start=1
@@ -142,17 +140,42 @@ def main(
         seed=123456,
         config_update_json=None,
         batch_json=None,
-        datadir='.',
-        a3m_files=None,
+        data_dir='.',
+        a3m_file=None,  # list of files
+        extra_msa_size=4096,
         cif_file=None,
         cif_asym_id=None,
-        out_dir='predicted'
+        out_dir='.',
+        horovod=False
 ):
+    global HOROVOD
+    global HOROVOD_RANK
+    global hvd
+
+    if horovod:
+        HOROVOD = True
+        import horovod.torch as hvd
+        if __name__ == '__main__':
+            hvd.init()
+            HOROVOD_RANK = hvd.rank()
+
     torch.set_num_threads(1)
     torch.manual_seed(seed)
     logging.getLogger('.prody').setLevel('CRITICAL')
 
     config_dict = deepcopy(config.config)
+    config_dict = utils.merge_dicts(config_dict, {
+        'data': {
+            'crop_size': None,
+            'msa_max_extra': extra_msa_size,
+            'msa_use_cache': False,
+            'msa_block_del_num': 0,
+        },
+        'loss': {
+            'compute_loss': False
+        }
+    })
+
     if config_update_json:
         config_dict = utils.merge_dicts(config_dict, utils.read_json(config_update_json))
 
@@ -175,30 +198,31 @@ def main(
         hvd.broadcast_parameters(model.state_dict(), root_rank=0)
 
     if batch_json is None:
-        assert a3m_files
-        target_seq = parse_first_sequence_a3m(a3m_files[0])
+        assert a3m_file
+        target_seq = parse_first_sequence_a3m(a3m_file[0])
         batch_data = [{
             'entity_info': {
                 'pdbx_seq_one_letter_code_can': target_seq,
                 'asym_ids': [cif_asym_id]
             },
             'cif_file': cif_file,
-            'a3m_files': a3m_files
+            'a3m_files': a3m_file
         }]
+        data_dir = '.'
     else:
         batch_data = utils.read_json(batch_json)
 
     dset = dataset.DockingDataset(
         batch_data,
         config_dict['data'],
-        dataset_dir=datadir,
+        dataset_dir=data_dir,
         seed=seed,
         shuffle=False
     )
 
     kwargs = {'num_workers': 0, 'pin_memory': True, 'batch_size': 1, 'shuffle': False}
     if HOROVOD:
-        sampler = torch.utils.data.distributed.DistributedSampler(dset, num_replicas=hvd.size(), rank=hvd.rank(), shuffle=False)
+        sampler = torch.utils.data.distributed.DistributedSampler(dset, num_replicas=hvd.size(), rank=HOROVOD_RANK, shuffle=False)
         loader = torch.utils.data.DataLoader(dset, sampler=sampler, **kwargs)
         sampler.set_epoch(0)
     else:
@@ -221,18 +245,80 @@ def main(
             vals = [x for x in global_stats[key] if not math.isnan(x)]
             global_stats[key] = sum(vals) / len(vals) if len(vals) > 0 else math.nan
 
-        if len(global_stats) > 0:
+        if len(dset) > 1 and len(global_stats) > 0:
             utils.write_json(global_stats, Path(out_dir) / 'average.json')
 
 
-#@click.command()
-#@click.argument('model_pth')
-#@click.option('config_update_json')
-#def cli(**kwargs):
-#    main(**kwargs)
+@click.command()
+@click.argument('model_pth')
+@click.option('--seed', default=123456, show_default=True, type=click.INT,
+              help='Seed for RNG. Ensures reproducibility')
+@click.option('--config_update_json',
+              type=click.Path(exists=True, dir_okay=False),
+              help='JSON containing configuration update. Will be merged with default alphafold.config.CONFIG')
+@click.option('--batch_json',
+              type=click.Path(exists=True, dir_okay=False),
+              help='JSON containing a list of proteins to fold')
+@click.option('--data_dir', default='./', show_default=True,
+              type=click.Path(exists=True, file_okay=False, writable=True),
+              help='Directory containing files specified in batch_json, paths in batch_json will be prepended')
+@click.option('--a3m_file', multiple=True, help='Protein MSA file. Multiple MSAs will be concatenated')
+@click.option('--extra_msa_size', default=4096, show_default=True, type=click.INT, help='Extra MSA size')
+@click.option('--cif_file',
+              type=click.Path(exists=True, dir_okay=False),
+              help='Protein reference structure CIF. Loss scores will be computed if provided')
+@click.option('--cif_asym_id', help='Reference chain asym_id in the CIF file')
+@click.option('--out_dir', default='./', show_default=True,
+              type=click.Path(exists=True, file_okay=False, writable=True),
+              help='Directory where to put predicted models')
+@click.option('--horovod', is_flag=True, help='Use Horovod for multi-GPU batch calculation')
+def cli(**kwargs):
+    """Predict structures for a single protein or a batch using MSAs in a3m format.
+
+    MODEL_PTH - pth file with model parameters
+
+    Inference can be run in two modes: single protein or batch. For a single
+    prediction provide --a3m_file and optionally --cif_file and --cif_asym_id
+    as a reference to compute loss against it.
+
+    Example:
+
+    \b
+    > python inference.py model.pth --horovod --a3m_file msa1.a3m --a3m_file msa2.a3m --a3m_file msa3.a3m
+
+    To run multiple proteins instead of --a3m_file provide --batch_json containing a
+    list of proteins in the following format:
+
+    \b
+    [...,
+        {
+            'entity_info': {
+                'pdbx_seq_one_letter_code_can': ACDADFF..TYHHEE,
+                'asym_ids': [A] / None
+            },
+            'cif_file': xxxx.cif / None,
+            'a3m_files': [msa1.a3m, msa2.a3m, ...]
+        },
+    ...]
+
+    You can use Horovod to run a protein batch using multiple GPUs across multiple machines:
+
+    \b
+    > horovodrun -np 4 python inference.py model.pth --horovod --batch_json proteins.json
+
+    """
+
+    if not kwargs['a3m_file'] and not kwargs['batch_json']:
+        raise ValueError('Either --a3m_file or --batch_json must be provided')
+
+    if kwargs['cif_file'] and not kwargs['cif_asym_id']:
+        raise ValueError('--cif_asym_id must be provided with --cif_file')
+
+    main(**kwargs)
 
 
 #if __name__ == '__main__':
 #    cli()
 #main('lkjlj', batch_json=config.DATA_DIR / '15k/folding/debug_15k.json', datadir=config.DATA_DIR)
-main('../test/params_model_3.pth', a3m_files=['/data/trainable_folding/data_preparation/data/15k/folding/MMSEQ_submission_second_try/1ezi_1.fa_results/bfd.mgnify30.metaeuk30.smag30.a3m'])
+#main('../test/params_model_3.pth', a3m_files=['/data/trainable_folding/data_preparation/data/15k/folding/MMSEQ_submission_second_try/1ezi_1.fa_results/bfd.mgnify30.metaeuk30.smag30.a3m'])
+cli()
