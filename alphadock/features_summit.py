@@ -30,21 +30,6 @@ HHBLITS_WITH_X_AND_GAP['O'] = HHBLITS_WITH_X_AND_GAP['X']
 HHBLITS_WITH_X_AND_GAP['U'] = HHBLITS_WITH_X_AND_GAP['C']
 HHBLITS_WITH_X_AND_GAP['Z'] = HHBLITS_WITH_X_AND_GAP['E']
 
-AATYPE_WITH_X_AND_GAP_AND_MASKED = AATYPE_WITH_X_AND_GAP.copy()
-AATYPE_WITH_X_AND_GAP_AND_MASKED['?'] = len(AATYPE_WITH_X_AND_GAP)
-
-REC_DISTOGRAM = {
-    'min': 3.25,
-    'max': 51,
-    'num_bins': 39
-}
-
-AF_CONFIDENCE_BINS = {
-    'min': 40,
-    'max': 100,
-    'num_bins': 6
-}
-
 
 def residue_to_atom14(residue):
     resname_converted = residue.getResnames()[0].upper() if residue is not None else 'UNK'
@@ -314,14 +299,6 @@ def parse_a3m(a3m_file):
         ref_seq = f.readline().strip()
         msa = [x.strip() for x in f.readlines()[1::2]]
     return ref_name, [ref_seq] + msa
-
-
-def msas_to_onehot(msa_npy):
-    aa_to_num = np.vectorize(lambda x: AATYPE_WITH_X_AND_GAP_AND_MASKED[x], otypes=[np.int32])
-    msa_num = aa_to_num(msa_npy.flatten())
-    msa_onehot = np.zeros((msa_num.size, len(AATYPE_WITH_X_AND_GAP_AND_MASKED)), dtype=DTYPE_FLOAT)
-    msa_onehot[range(msa_num.size), msa_num] = 1
-    return msa_onehot.reshape((msa_npy.shape[0], msa_npy.shape[1], len(AATYPE_WITH_X_AND_GAP_AND_MASKED)))
 
 
 def msas_numeric_to_onehot(msa_npy, size):

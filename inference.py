@@ -264,10 +264,10 @@ def main(
               help='Directory containing files specified in batch_json, paths in batch_json will be prepended')
 @click.option('--a3m_file', multiple=True, help='Protein MSA file. Multiple MSAs will be concatenated')
 @click.option('--extra_msa_size', default=4096, show_default=True, type=click.INT, help='Extra MSA size')
-@click.option('--cif_file',
-              type=click.Path(exists=True, dir_okay=False),
-              help='Protein reference structure CIF. Loss scores will be computed if provided')
-@click.option('--cif_asym_id', help='Reference chain asym_id in the CIF file')
+#@click.option('--cif_file',
+#              type=click.Path(exists=True, dir_okay=False),
+#              help='Protein reference structure CIF. Loss scores will be computed if provided')
+#@click.option('--cif_asym_id', help='Reference chain asym_id in the CIF file')
 @click.option('--out_dir', default='./', show_default=True,
               type=click.Path(exists=True, file_okay=False, writable=True),
               help='Directory where to put predicted models')
@@ -277,9 +277,8 @@ def cli(**kwargs):
 
     MODEL_PTH - pth file with model parameters
 
-    Inference can be run in two modes: single protein or batch. For a single
-    prediction provide --a3m_file and optionally --cif_file and --cif_asym_id
-    as a reference to compute loss against it.
+    Inference can be run in two modes: single protein or batch. To predict a single
+    protein provide one or several MSAs for it using --a3m_file.
 
     Example:
 
@@ -311,14 +310,10 @@ def cli(**kwargs):
     if not kwargs['a3m_file'] and not kwargs['batch_json']:
         raise ValueError('Either --a3m_file or --batch_json must be provided')
 
-    if kwargs['cif_file'] and not kwargs['cif_asym_id']:
-        raise ValueError('--cif_asym_id must be provided with --cif_file')
+    #if kwargs['cif_file'] and not kwargs['cif_asym_id']:
+    #    raise ValueError('--cif_asym_id must be provided with --cif_file')
 
     main(**kwargs)
 
 
-#if __name__ == '__main__':
-#    cli()
-#main('lkjlj', batch_json=config.DATA_DIR / '15k/folding/debug_15k.json', datadir=config.DATA_DIR)
-#main('../test/params_model_3.pth', a3m_files=['/data/trainable_folding/data_preparation/data/15k/folding/MMSEQ_submission_second_try/1ezi_1.fa_results/bfd.mgnify30.metaeuk30.smag30.a3m'])
 cli()

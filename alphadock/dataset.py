@@ -27,7 +27,8 @@ class DockingDataset(Dataset):
             config_data,
             dataset_dir='.',
             seed=123456,
-            shuffle=False
+            shuffle=False,
+            sample_to_size=None
     ):
         self.dataset_dir = Path(dataset_dir).abspath()
         self.config = config_data

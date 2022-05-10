@@ -12,9 +12,13 @@ from copy import deepcopy
 import torch
 import torch.nn.functional as F
 
-import Bio
-from Bio.SubsMat import MatrixInfo as matlist
-from Bio.pairwise2 import format_alignment
+from Bio import BiopythonDeprecationWarning
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', BiopythonDeprecationWarning)
+    import Bio
+    from Bio.SubsMat import MatrixInfo as matlist
+    from Bio.pairwise2 import format_alignment
 
 
 class GeneratedNans(Exception):

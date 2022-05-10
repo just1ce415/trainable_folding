@@ -116,8 +116,8 @@ config = {
             'device': 'cuda:0',
             'RecyclingEmbedder': {
                 'rec_num_bins': 15,
-                'rec_min_dist': 3.375,       # originally 3.375
-                'rec_max_dist': 21.375   # originally 21.375
+                'rec_min_dist': 3.375,
+                'rec_max_dist': 21.375
             },
             'TemplatePairStack': {
                 'num_iter': 2,

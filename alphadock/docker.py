@@ -38,25 +38,23 @@ class DockerIteration(nn.Module):
         self.config = config
         self.global_config = global_config
 
+        def nan_hook(self, input, output):
+            if any([torch.any(torch.isnan(x)) for x in output]):
+                print(f'Module {self.man_name} generated nans')
+                print('Inputs contains nan: ', [torch.any(torch.isnan(x)) for x in input])
+                print('Output contains nan: ', [torch.any(torch.isnan(x)) for x in output])
+                print('Inputs were: ', input)
+                print('Outputs were: ', output)
+                sys.stdout.flush()
+                raise utils.GeneratedNans(f'Module {self.man_name} generated nans')
+
         for name, module in self.Evoformer.named_modules():
-        #for name, module in (list(self.Evoformer.named_modules()) + list(self.InputEmbedder.named_modules())):
             module.man_name = name
-            def nan_hook(self, input, output):
-                if any([torch.any(torch.isnan(x)) for x in output]):
-                    print(f'Module {self.man_name} generated nans')
-                    print('Inputs contains nan: ', [torch.any(torch.isnan(x)) for x in input])
-                    print('Output contains nan: ', [torch.any(torch.isnan(x)) for x in output])
-                    print('Inputs were: ', input)
-                    print('Outputs were: ', output)
-                    sys.stdout.flush()
-                    raise utils.GeneratedNans(f'Module {self.man_name} generated nans')
             module.register_forward_hook(nan_hook)
 
     def forward(self, input, recycling=None):
         x = self.InputEmbedder(input, recycling=recycling)
-        #return {'loss_total': x['r1d'].sum()}
 
-        #x = {k: v.to('cuda:1') for k, v in x.items()}
         x['r1d'], x['pair'] = x['r1d'].to(self.config['Evoformer']['device']), x['pair'].to(self.config['Evoformer']['device'])
 
         def checkpoint_fun(function):
@@ -80,19 +78,21 @@ class DockerIteration(nn.Module):
         # rescale to angstroms
         struct_out['rec_T'][..., -3:] = struct_out['rec_T'][..., -3:] * self.global_config['model']['position_scale']
 
+        # compute all atom representation
         assert struct_out['rec_T'].shape[0] == 1
         final_all_atom = all_atom.backbone_affine_and_torsions_to_all_atom(
             struct_out['rec_T'][0][-1].clone(),
             struct_out['rec_torsions'][0][-1],
             input['target']['rec_aatype'][0]
         )
-        #print({k: v.shape for k, v in struct_out.items()})
 
         out_dict = {}
+        out_dict['struct_out'] = struct_out
+        out_dict['final_all_atom'] = final_all_atom
+
+        # compute loss
         if self.global_config['loss']['compute_loss']:
             out_dict['loss'] = loss.total_loss(input, struct_out, final_all_atom, self.global_config)
-        out_dict['final_all_atom'] = final_all_atom
-        out_dict['struct_out'] = struct_out
 
         # make recycling input
         cbeta_coords, cbeta_mask = all_atom.atom14_to_cbeta_coords(
@@ -100,10 +100,6 @@ class DockerIteration(nn.Module):
             input['target']['rec_atom14_atom_exists'][0],
             input['target']['rec_aatype'][0]
         )
-        #for i in range(len(input['target']['rec_aatype'][0])):
-        #    print(input['target']['rec_aatype'][0][i])
-        #    print(final_all_atom['atom_pos_tensor'][i])
-        #    print(cbeta_mask[i])
         out_dict['recycling_input'] = {
             'rec_1d_prev': x['r1d'][:, 0],
             'rep_2d_prev': pair,
