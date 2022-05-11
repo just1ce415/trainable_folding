@@ -148,16 +148,13 @@ def main(
         out_dir='.',
         horovod=False
 ):
-    global HOROVOD
-    global HOROVOD_RANK
-    global hvd
+    global HOROVOD, HOROVOD_RANK, hvd
 
     if horovod:
         HOROVOD = True
         import horovod.torch as hvd
-        if __name__ == '__main__':
-            hvd.init()
-            HOROVOD_RANK = hvd.rank()
+        hvd.init()
+        HOROVOD_RANK = hvd.rank()
 
     torch.set_num_threads(1)
     torch.manual_seed(seed)
@@ -168,7 +165,7 @@ def main(
         'data': {
             'crop_size': None,
             'msa_max_extra': extra_msa_size,
-            'msa_use_cache': False,
+            'use_cache': False,
             'msa_block_del_num': 0,
         },
         'loss': {

@@ -14,9 +14,9 @@ config = {
     'data': {
         'crop_size': 256,
         'target_af_compatible': True,
+        'use_cache': True,
         'msa_max_clusters': 128,
         'msa_max_extra': 1024,
-        'msa_use_cache': True,
         'msa_block_del_num': 5,
         'msa_block_del_size': 0.3,
         'msa_random_replace_fraction': 0.15,

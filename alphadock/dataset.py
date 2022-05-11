@@ -68,7 +68,8 @@ class DockingDataset(Dataset):
             out_dict['ground_truth'] = features_summit.cif_featurize(
                 cif_file,
                 asym_ids[0], # choose first asym id
-                crop_range=crop_range
+                crop_range=crop_range,
+                use_cache=self.config['use_cache']
             )
             assert len(out_dict['target']['rec_1d']) == len(out_dict['ground_truth']['gt_aatype']), \
                 (len(out_dict['target']['rec_1d']), len(out_dict['ground_truth']['gt_aatype']))
@@ -82,7 +83,7 @@ class DockingDataset(Dataset):
             self.rng,
             self.config['msa_max_clusters'],
             self.config['msa_max_extra'],
-            use_cache=self.config['msa_use_cache'],
+            use_cache=self.config['use_cache'],
             crop_range=crop_range,
             num_block_del=self.config['msa_block_del_num'],
             block_del_size=self.config['msa_block_del_size'],
@@ -100,9 +101,7 @@ class DockingDataset(Dataset):
 
     def _get_item(self, ix):
         item = self.data[ix]
-
         #print('sample', ix, ':', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), item['pdb_id'], item['entity_id']); sys.stdout.flush()
-        t0 = time.time()
 
         out_dict = self.make_features(
             item['entity_info']['pdbx_seq_one_letter_code_can'],
@@ -111,8 +110,6 @@ class DockingDataset(Dataset):
             item['entity_info']['asym_ids'] if item['cif_file'] is not None else None
         )
         out_dict['target']['ix'] = ix
-
-        print('time retrieving', ix, ':', time.time() - t0, '(s)'); sys.stdout.flush()
         return out_dict
 
     def __getitem__(self, ix):

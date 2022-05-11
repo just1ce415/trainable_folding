@@ -10,6 +10,7 @@ from tqdm import tqdm
 import traceback
 import socket
 import click
+import time
 
 from alphadock import docker
 from alphadock import config
@@ -31,10 +32,6 @@ TB_WRITE_STEP = False
 SAVE_MODEL_EVERY_NEPOCHS = 1
 
 MAX_NAN_ITER_FRAC = 0.05
-LEARNING_RATE = 0.001 / 128  # same as AF, lr=0.001 for 128 batch size
-SCHEDULER_PATIENCE = 50
-SCHEDULER_FACTOR = 1. / 3
-SCHEDULER_MIN_LR = 1e-6 / 128  # same as AF
 CLIP_GRADIENT = True
 CLIP_GRADIENT_VALUE = 0.1
 USE_AMP = False
@@ -192,6 +189,14 @@ def check_grads(inputs):
         assert len(grads_are_none) == 0, f'Process {HOROVOD_RANK}: gradients are None'
 
 
+def print_input_shapes(inputs):
+    for k1, v1 in inputs.items():
+        print(HOROVOD_RANK, ':', k1)
+        for k2, v2 in v1.items():
+            print(HOROVOD_RANK, ':', '    ', k2, v1[k2].shape, v1[k2].dtype)
+    sys.stdout.flush()
+
+
 def validate(epoch, set_json, data_dir, seed):
     model.eval()
 
@@ -265,15 +270,14 @@ def train(epoch, set_json, data_dir, seed):
     recycling_rng = torch.Generator()
     recycling_rng = recycling_rng.manual_seed(seed + epoch * 100)
 
+    t0 = time.time()
     for inputs in (tqdm(loader, desc=f'Epoch {epoch} (train)') if HOROVOD_RANK == 0 else loader):
+        print(HOROVOD_RANK, ': time retrieving', inputs['target']['ix'].item(), ':', time.time() - t0, '(s)'); sys.stdout.flush()
         optimizer.zero_grad()
         generated_nan = 0
 
         if True and HOROVOD_RANK == 0:
-            for k1, v1 in inputs.items():
-                print(k1)
-                for k2, v2 in v1.items():
-                    print('    ', k2, v1[k2].shape, v1[k2].dtype)
+            print_input_shapes(inputs)
 
         # sync recycling iteration for which the grad will be computed
         recycle_iter_grad_on = torch.randint(0, num_recycles, [1], generator=recycling_rng)[0].item() if HOROVOD_RANK == 0 and recycling_on else 0
@@ -304,14 +308,13 @@ def train(epoch, set_json, data_dir, seed):
 
         except RuntimeError:
             # this is for CUDA out of memory error, if encountered we will just move to the next sample
-            print(HOROVOD_RANK, ':', 'Exception in training', 'sample id:', inputs['target']['ix'])
             traceback.print_exc(); sys.stdout.flush(); sys.stderr.flush()
+            print_input_shapes(inputs)
             output = {}
 
         except utils.GeneratedNans:
-            #
-            print(HOROVOD_RANK, ':', 'Nans in training', 'sample id:', inputs['target']['ix'])
             traceback.print_exc(); sys.stdout.flush(); sys.stderr.flush()
+            print_input_shapes(inputs)
             generated_nan = 1
             output = {}
 
@@ -352,6 +355,7 @@ def train(epoch, set_json, data_dir, seed):
                 assert nan_frac < MAX_NAN_ITER_FRAC, (nan_frac, MAX_NAN_ITER_FRAC)
 
         torch.cuda.empty_cache()
+        t0 = time.time()
 
     report_epoch_end(epoch, global_stats, stage='Train', save_model=True)
 
@@ -376,38 +380,48 @@ def main(
         tb_write_step=False,
         save_model_every_nepoch=1,
         log_pdb_every_nsteps=500,
-        #lr=0.001 / 128,
-        #lr_reset=False,
-        #lr_scale=True,
-        #scheduler_patience=50,
-        #scheduler_factor=1 / 3,
-        #scheduler_min_lr=1e-6 / 128,
-        #scheduler_reset=False
+        lr=0.001 / 128,
+        lr_reset=False,
+        lr_scale=True,
+        scheduler_patience=50,
+        scheduler_factor=1 / 3,
+        scheduler_min_lr=1e-6 / 128,
+        scheduler_reset=False,
+        clip_gradient=True,
+        clip_gradient_value=0.1,
+        amp=False,
+        amp_scale=False,
+        gradient_compression=False
 ):
-    global HOROVOD, HOROVOD_RANK, hvd
+    global HOROVOD, HOROVOD_RANK, hvd, \
+        OUT_DIR, TB_WRITE_STEP, LOG_PDB_EVERY_NSTEPS, \
+        SAVE_MODEL_EVERY_NEPOCHS, GLOBAL_STEP, \
+        CONFIG_DICT, CLIP_GRADIENT, CLIP_GRADIENT_VALUE, \
+        USE_AMP, USE_AMP_SCALER, model, optimizer, \
+        scheduler, amp_scaler, tb_writer
 
     if horovod:
         HOROVOD = True
         import horovod.torch as hvd
-        if __name__ == '__main__':
-            hvd.init()
-            HOROVOD_RANK = hvd.rank()
+        hvd.init()
+        HOROVOD_RANK = hvd.rank()
 
     torch.set_num_threads(1)
     torch.manual_seed(seed)
     logging.getLogger('.prody').setLevel('CRITICAL')
 
-    global OUT_DIR, TB_WRITE_STEP, LOG_PDB_EVERY_NSTEPS, SAVE_MODEL_EVERY_NEPOCHS, GLOBAL_STEP
     OUT_DIR = Path(out_dir).mkdir_p()
     TB_WRITE_STEP = tb_write_step
     LOG_PDB_EVERY_NSTEPS = log_pdb_every_nsteps
     SAVE_MODEL_EVERY_NEPOCHS = save_model_every_nepoch
+    CLIP_GRADIENT = clip_gradient
+    CLIP_GRADIENT_VALUE = clip_gradient_value
+    USE_AMP = amp
+    USE_AMP_SCALER = amp_scale
 
-    global CONFIG_DICT
     if config_update_json:
         CONFIG_DICT = utils.merge_dicts(CONFIG_DICT, utils.read_json(config_update_json))
 
-    global model
     model = docker.DockerIteration(CONFIG_DICT['model'], CONFIG_DICT)
 
     if HOROVOD_RANK == 0:
@@ -417,10 +431,9 @@ def main(
             print('cuda:' + str(x), ':', torch.cuda.memory_stats(x)['allocated_bytes.all.peak'] / 1024**2)
         sys.stdout.flush()
 
-    global optimizer, scheduler
-    lr_scaler = 1 if not HOROVOD else hvd.size()
-    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE * lr_scaler) #, momentum=args.momentum)
-    scheduler = ReduceLROnPlateau(optimizer, factor=SCHEDULER_FACTOR, patience=SCHEDULER_PATIENCE, min_lr=SCHEDULER_MIN_LR)
+    lr_scaler = 1 if not HOROVOD or not lr_scale else hvd.size()
+    optimizer = optim.Adam(model.parameters(), lr=lr * lr_scaler) #, momentum=args.momentum)
+    scheduler = ReduceLROnPlateau(optimizer, factor=scheduler_factor, patience=scheduler_patience, min_lr=scheduler_min_lr * lr_scaler)
 
     start_epoch = 1
     scheduler_state = scheduler.state_dict()
@@ -442,13 +455,17 @@ def main(
         if 'optimizer_state_dict' in dict_pth:
             optimizer.load_state_dict(dict_pth['optimizer_state_dict'])
 
-        if 'scheduler_state_dict' in dict_pth:
+        if 'scheduler_state_dict' in dict_pth and not scheduler_reset:
             scheduler_state = dict_pth['scheduler_state_dict']
 
-        if 'hvd_size' in dict_pth:
+        if 'hvd_size' in dict_pth and lr_scale:
             _hvd_size = 1 if not HOROVOD else hvd.size()
             for g in optimizer.param_groups:
                 g['lr'] = g['lr'] * _hvd_size / dict_pth['hvd_size']
+
+    if lr_reset:
+        for g in optimizer.param_groups:
+            g['lr'] = lr * lr_scaler
 
     if HOROVOD:
         GLOBAL_STEP = hvd.broadcast_object(GLOBAL_STEP, root_rank=0)
@@ -456,16 +473,15 @@ def main(
         hvd.broadcast_parameters(model.state_dict(), root_rank=0)
         hvd.broadcast_optimizer_state(optimizer, root_rank=0)
         scheduler_state = hvd.broadcast_object(scheduler_state, root_rank=0)
-        optimizer = hvd.DistributedOptimizer(optimizer, named_parameters=model.named_parameters(), op=hvd.Average)
+        optimizer = hvd.DistributedOptimizer(optimizer, named_parameters=model.named_parameters(), op=hvd.Average,
+                                             compression=hvd.Compression.fp16 if gradient_compression else hvd.Compression.none)
 
     scheduler.load_state_dict(scheduler_state)
 
     if USE_AMP and USE_AMP_SCALER:
-        global amp_scaler
         amp_scaler = torch.cuda.amp.GradScaler()
 
     if HOROVOD_RANK == 0:
-        global tb_writer
         tb_writer = SummaryWriter(OUT_DIR)
 
     epoch = start_epoch
@@ -482,26 +498,52 @@ def main(
 
 @click.command()
 @click.argument('train_json')
-@click.option('--valid_json', type=click.Path(exists=True, dir_okay=False), help='Path to validation set')
+@click.option('--valid_json', type=click.Path(exists=True, dir_okay=False),
+              help='Path to validation set')
 @click.option('--data_dir', default='./', show_default=True,
               type=click.Path(exists=True, file_okay=False, writable=True),
               help='Directory containing files specified in train_json, paths in train_json will be prepended')
-@click.option('--model_pth',
-              type=click.Path(exists=True, dir_okay=False),
+@click.option('--model_pth', type=click.Path(exists=True, dir_okay=False),
               help='Resume training from the saved state')
 @click.option('--seed', default=123456, show_default=True, type=click.INT,
               help='Seed for RNG. Ensures reproducibility')
-@click.option('--config_update_json',
-              type=click.Path(exists=True, dir_okay=False),
+@click.option('--config_update_json', type=click.Path(exists=True, dir_okay=False),
               help='JSON containing configuration update. Will be merged with default alphafold.config.CONFIG')
 @click.option('--out_dir', default='./', show_default=True,
               type=click.Path(exists=True, file_okay=False, writable=True),
               help='Output directory, must exist')
-@click.option('--horovod', is_flag=True, help='Use Horovod for multi-GPU batch training')
-@click.option('--tb_write_step', is_flag=True, help='Write every step to tensorboard writer')
-@click.option('--max_epoch', default=None, type=click.INT, help='Stop training when MAX_EPOCH is reached')
-@click.option('--save_model_every_nepoch', default=1, show_default=True, type=click.INT, help='Save model to pth file every Nth epoch')
-@click.option('--log_pdb_every_nsteps', default=500, show_default=True, type=click.INT, help='Write predictions to OUT_DIR/pdb every N steps')
+@click.option('--horovod', is_flag=True,
+              help='Use Horovod for multi-GPU batch training')
+@click.option('--tb_write_step', is_flag=True,
+              help='Write every step to tensorboard writer (not recommended as TB files can get very large)')
+@click.option('--max_epoch', default=None, type=click.INT,
+              help='Stop training when MAX_EPOCH is reached')
+@click.option('--save_model_every_nepoch', default=1, show_default=True, type=click.INT,
+              help='Save model to pth file every Nth epoch')
+@click.option('--log_pdb_every_nsteps', default=500, show_default=True, type=click.INT,
+              help='Write predictions to OUT_DIR/pdb every N steps')
+@click.option('--lr', default=0.001 / 128, show_default=True, type=click.FLOAT,
+              help='Learning rate. Effective only when starting training from scratch unless --lr_reset is used')
+@click.option('--lr_reset', is_flag=True,
+              help='Reset learning rate to user specified in --lr')
+@click.option('--lr_scale/--no_lr_scale', default=True, show_default=True,
+              help='Multiply learning rate by Horovod batch size')
+@click.option('--scheduler_patience', default=50, show_default=True, type=click.INT,
+              help='LR scheduler patience')
+@click.option('--scheduler_factor', default=1 / 3, show_default=True, type=click.FLOAT,
+              help='LR scheduler factor')
+@click.option('--scheduler_min_lr', default=1e-6 / 128, show_default=True, type=click.FLOAT,
+              help='LR scheduler minimum lr')
+@click.option('--clip_gradient/--no_clip_gradient', default=True, show_default=True,
+              help='Clip gradient')
+@click.option('--clip_gradient_value', default=0.1, show_default=True, type=click.FLOAT,
+              help='Clip gradient value')
+@click.option('--amp/--no_amp', default=False, show_default=True,
+              help='Use Automatic Mixed Precision')
+@click.option('--amp_scale/--no_amp_scale', default=False, show_default=True,
+              help='Use Gradient Scaler with AMP')
+@click.option('--gradient_compression/--no_gradient_compression', default=False, show_default=True,
+              help='Use Horovod gradient compression (compression=hvd.Compression.fp16)')
 def cli(**kwargs):
     """Run model training
 
@@ -513,7 +555,6 @@ def cli(**kwargs):
     > horovodrun -np 4 python train.py --horovod train.json
 
     """
-
     main(**kwargs)
 
 

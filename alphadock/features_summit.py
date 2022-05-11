@@ -234,13 +234,14 @@ def target_sequence_featurize(sequence, map_unknown_to_x=True, crop_range=None, 
     return target
 
 
-def cif_featurize(cif_file, asym_id, crop_range=None):
+def cif_featurize(cif_file, asym_id, crop_range=None, use_cache=True):
     cache_path = cif_file + '_' + asym_id + '_cache.npy'
-    if Path(cache_path).exists():
+    if use_cache and Path(cache_path).exists():
         res_dicts = np.load(cache_path, allow_pickle=True)
     else:
         res_dicts = cif_parse(cif_file, asym_id)
-        np.save(cache_path, res_dicts)
+        if use_cache:
+            np.save(cache_path, res_dicts)
 
     aatype_int = np.array([AATYPE_WITH_X.get(x['aatype_can'].upper(), AATYPE_WITH_X['X']) for x in res_dicts], dtype=DTYPE_INT)
 
