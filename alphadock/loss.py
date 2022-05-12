@@ -11,7 +11,7 @@ from alphadock import violations
 from alphadock import residue_constants
 
 
-def total_loss(batch, struct_out, final_all_atom, config):
+def total_loss(batch, struct_out, final_all_atom, config, msa_bert=None):
     # process predictions
     rec_traj = struct_out['rec_T'][0]  # (N_traj, N_res, 7)
     num_traj = rec_traj.shape[0]
@@ -125,9 +125,7 @@ def total_loss(batch, struct_out, final_all_atom, config):
             'lddt_values': lddt_vals, # rec_rec_lddt_true: (Traj, N), lig_rec_lddt_true: (Traj, N), lig_best_mask_per_traj: (Traj, N), lig_best_mask_id_per_traj: (Traj)
             'lddt_loss_rec_rec': lddt_loss_rec_rec,  # Scalar
 
-            'loss_pred_dmat': {
-                'rr': loss_rr_dmat_pred,
-            }
+            'loss_pred_dmat': loss_rr_dmat_pred
         }
     else:
         loss_total = torch.tensor(0.0, dtype=rec_final_atom14_pred_coords_tensor.dtype, device=rec_final_atom14_pred_coords_tensor.device)
@@ -143,6 +141,14 @@ def total_loss(batch, struct_out, final_all_atom, config):
         out_dict['loss_total'] += config['loss']['loss_violation_weight'] * violation_loss
         out_dict['violations'] = {'loss': violation_loss}
         out_dict['violations'].update(violations_dict)
+
+    if msa_bert is not None and 'main_mask' in batch['msa']:
+        msa_bert = msa_bert.reshape(-1, msa_bert.shape[-1])
+        msa_true = batch['msa']['main_true'].flatten()
+        msa_mask = batch['msa']['main_mask'].flatten()
+        loss_msa_bert = F.cross_entropy(msa_bert[msa_mask > 0], msa_true[msa_mask > 0])
+        loss_total += loss_msa_bert * config['loss']['loss_msa_bert_weight']
+        out_dict['loss_msa_bert'] = loss_msa_bert
 
     return out_dict
 

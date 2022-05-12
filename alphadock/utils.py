@@ -148,7 +148,7 @@ def dmat_to_dgram(dmat, dmin, dmax, num_bins):
     shape = dmat.shape
     dmat = dmat.flatten()
     bin_size = (dmax - dmin) / num_bins
-    bin_ids = torch.minimum((F.relu(dmat - dmin) // bin_size).to(int), torch.tensor(num_bins - 1, dtype=int, device=dmat.device))
+    bin_ids = torch.minimum(torch.div(F.relu(dmat - dmin), bin_size, rounding_mode='floor').to(int), torch.tensor(num_bins - 1, dtype=int, device=dmat.device))
 
     dgram = torch.zeros((len(dmat), num_bins), dtype=dmat.dtype, device=dmat.device)
     dgram[range(dgram.shape[0]), bin_ids] = 1.0
@@ -156,17 +156,20 @@ def dmat_to_dgram(dmat, dmin, dmax, num_bins):
     return bin_ids, dgram
 
 
-def merge_dicts(a, b, compare_types=False, _path=None, ):
+def merge_dicts(a, b, strict=True, compare_types=False, _path=None):
     "merges b into a"
     if _path is None: _path = []
     for key in b:
+        key_full_path = '.'.join(_path + [str(key)])
         if key in a:
             if isinstance(a[key], dict) and isinstance(b[key], dict):
-                merge_dicts(a[key], b[key], compare_types, _path + [str(key)])
+                merge_dicts(a[key], b[key], strict=strict, compare_types=compare_types, _path=_path + [str(key)])
             elif not compare_types or isinstance(a[key], type(b[key])):
                 a[key] = b[key]
             else:
-                raise Exception('Conflict at "%s"' % '.'.join(_path + [str(key)]))
+                raise RuntimeError('Conflict at "%s"' % key_full_path)
+        elif strict:
+            raise RuntimeError(f'Key "{key_full_path}" is not present in target')
         else:
             a[key] = b[key]
     return a

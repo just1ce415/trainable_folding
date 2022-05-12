@@ -280,10 +280,7 @@ class StructureModule(torch.nn.Module):
                 struct_traj[-1]['rec_T'],
                 struct_traj[-1]['rec_torsions']
             ]
-            if self.config['StructureModuleIteration']['checkpoint']:
-                update = checkpoint(l, *args)
-            else:
-                update = l(*args)
+            update = l(*args)
             struct_traj.append(
                 {
                     'rec_1d_init': rec_1d_init,

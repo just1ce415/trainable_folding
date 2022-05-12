@@ -246,8 +246,8 @@ def cif_featurize(cif_file, asym_id, crop_range=None, use_cache=True):
     aatype_int = np.array([AATYPE_WITH_X.get(x['aatype_can'].upper(), AATYPE_WITH_X['X']) for x in res_dicts], dtype=DTYPE_INT)
 
     #atom14_gt_positions_rigids = r3.Vecs(*[x.squeeze(-1) for x in np.split(rec_dict['rec_atom14_coords'], 3, axis=-1)])
-    atom14_gt_positions = np.stack(x['atom14_coords'] for x in res_dicts)  # (N, 14, 3)
-    atom14_gt_exists = np.stack(x['atom14_mask'] for x in res_dicts)  # (N, 14)
+    atom14_gt_positions = np.stack([x['atom14_coords'] for x in res_dicts])  # (N, 14, 3)
+    atom14_gt_exists = np.stack([x['atom14_mask'] for x in res_dicts])  # (N, 14)
     renaming_mats = all_atom.RENAMING_MATRICES[aatype_int]  # (N, 14, 14)
     atom14_alt_gt_positions = np.sum(atom14_gt_positions[:, :, None, :] * renaming_mats[:, :, :, None], axis=1)
     atom14_alt_gt_exists = np.sum(atom14_gt_exists[:, :, None] * renaming_mats, axis=1)
@@ -350,7 +350,8 @@ def msa_featurize(
         random_replace_fraction=0.15,
         uniform_prob=0.1,
         profile_prob=0.1,
-        same_prob=0.1
+        same_prob=0.1,
+        keep_true_msa=True
 ):
     assert num_clusters > 0, num_clusters
     assert num_extra >= 0, num_extra
@@ -424,7 +425,9 @@ def msa_featurize(
             same_prob * all_msa_onehot[main_ids]
     probs[..., -1] = 1. - uniform_prob - profile_prob - same_prob
     msa_replacements = msa_generate_random(probs, rng.integers(10e6).item())
-    main_msa_npy = np.where(rng.random(msa_replacements.shape) < random_replace_fraction, msa_replacements, main_msa_npy)
+    main_msa_mask = rng.random(msa_replacements.shape) < random_replace_fraction
+    main_msa_true = main_msa_npy.copy()
+    main_msa_npy = np.where(main_msa_mask, msa_replacements, main_msa_npy)
     all_msa_onehot[main_ids] = msas_numeric_to_onehot(main_msa_npy, size=len(AATYPE_WITH_X_AND_GAP) + 1)
 
     # cluster
@@ -452,6 +455,10 @@ def msa_featurize(
         ], axis=-1).astype(DTYPE_FLOAT)
     }
 
+    if keep_true_msa:
+        out['main_mask'] = main_msa_mask.astype(DTYPE_INT)
+        out['main_true'] = main_msa_true.astype(DTYPE_INT)
+
     # featurize extra msa
     extra_ids = msa_shuffled_ids[num_clusters:num_clusters + num_extra]
     if len(extra_ids) > 0:
@@ -469,6 +476,9 @@ def msa_featurize(
         out['main'] = out['main'][:, crop_range[0]:crop_range[1]]
         if 'extra' in out:
             out['extra'] = out['extra'][:, crop_range[0]:crop_range[1]]
+        if 'main_mask' in out:
+            out['main_mask'] = out['main_mask'][:, crop_range[0]:crop_range[1]]
+            out['main_true'] = out['main_true'][:, crop_range[0]:crop_range[1]]
 
     return out  #.replace('U', 'C').replace('O', 'X')
 

@@ -18,6 +18,9 @@ from alphadock import dataset
 from alphadock import all_atom
 from alphadock import utils
 
+#import warnings
+#warnings.filterwarnings("error")
+
 import torchvision
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.tensorboard import SummaryWriter
@@ -84,7 +87,8 @@ def add_loss_to_stats(stats, output):
         stats['Loss_FAPE_BB_Rec_Rec_Final'] = output['loss']['loss_fape']['loss_bb_rec_rec'][-1].item()
         stats['Loss_FAPE_AA_Rec_Rec_Final'] = output['loss']['loss_fape']['loss_aa_rec_rec'].item()
         stats['Loss_FAPE_BB_Rec_Rec_MeanTraj'] = output['loss']['loss_fape']['loss_bb_rec_rec'].mean().item()
-        stats['Loss_PredDmat_RecRec'] = output['loss']['loss_pred_dmat']['rr'].item()
+        stats['Loss_PredDmat_RecRec'] = output['loss']['loss_pred_dmat'].item()
+        stats['Loss_MSA_BERT'] = output['loss']['loss_msa_bert'].item()
 
     if 'violations' in output['loss']:
         viol = output['loss']['violations']
@@ -350,6 +354,9 @@ def train(epoch, set_json, data_dir, seed):
         sys.stdout.flush()
 
         if HOROVOD_RANK == 0:
+            for k, v in step_stats[0].items():
+                print(HOROVOD_RANK, ':', f'stats[{k}] = {v}')
+            sys.stdout.flush()
             if (GLOBAL_STEP - global_step_start) / len(dset) > 0.05:
                 nan_frac = sum(global_stats['Generated_NaN']) / len(global_stats['Generated_NaN'])
                 assert nan_frac < MAX_NAN_ITER_FRAC, (nan_frac, MAX_NAN_ITER_FRAC)
@@ -423,12 +430,13 @@ def main(
         CONFIG_DICT = utils.merge_dicts(CONFIG_DICT, utils.read_json(config_update_json))
 
     model = docker.DockerIteration(CONFIG_DICT['model'], CONFIG_DICT)
+    model.modules_to_devices()
 
     if HOROVOD_RANK == 0:
         print('Num params:', sum(p.numel() for p in model.parameters() if p.requires_grad))
         print('Num param sets:', len([p for p in model.parameters() if p.requires_grad]))
-        for x in range(torch.cuda.device_count()):
-            print('cuda:' + str(x), ':', torch.cuda.memory_stats(x)['allocated_bytes.all.peak'] / 1024**2)
+        #for x in range(torch.cuda.device_count()):
+        #    print('cuda:' + str(x), ':', torch.cuda.memory_stats(x)['allocated_bytes.all.peak'] / 1024**2)
         sys.stdout.flush()
 
     lr_scaler = 1 if not HOROVOD or not lr_scale else hvd.size()
@@ -525,7 +533,7 @@ def main(
 @click.option('--lr', default=0.001 / 128, show_default=True, type=click.FLOAT,
               help='Learning rate. Effective only when starting training from scratch unless --lr_reset is used')
 @click.option('--lr_reset', is_flag=True,
-              help='Reset learning rate to user specified in --lr')
+              help='Do not use LR from previous epoch')
 @click.option('--lr_scale/--no_lr_scale', default=True, show_default=True,
               help='Multiply learning rate by Horovod batch size')
 @click.option('--scheduler_patience', default=50, show_default=True, type=click.INT,
@@ -534,6 +542,8 @@ def main(
               help='LR scheduler factor')
 @click.option('--scheduler_min_lr', default=1e-6 / 128, show_default=True, type=click.FLOAT,
               help='LR scheduler minimum lr')
+@click.option('--scheduler_reset', is_flag=True,
+              help='Erase LR scheduler memory')
 @click.option('--clip_gradient/--no_clip_gradient', default=True, show_default=True,
               help='Clip gradient')
 @click.option('--clip_gradient_value', default=0.1, show_default=True, type=click.FLOAT,

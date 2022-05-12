@@ -395,6 +395,8 @@ class EvoformerIteration(nn.Module):
         # TODO: fix dropout everywhere
 
     def forward(self, r1d, pair):
+        r1d = r1d.clone()
+        pair = pair.clone()
         a = self.RowAttentionWithPairBias(r1d.clone(), pair.clone())
         # r1d += self.dropout1d_15(a)
         r1d += a #self.dropout2d_15(b)
@@ -520,14 +522,14 @@ class InputEmbedder(torch.nn.Module):
         target_feat = global_config['data']['target_feat']
         r1d_num_c = global_config['model']['rep1d_feat']
         
-        self.rec_1d_project = nn.Linear(target_feat, r1d_num_c).to(config['device'])
-        self.main_msa_project = nn.Linear(global_config['data']['msa_clus_feat'], r1d_num_c).to(config['device'])
+        self.rec_1d_project = nn.Linear(target_feat, r1d_num_c)
+        self.main_msa_project = nn.Linear(global_config['data']['msa_clus_feat'], r1d_num_c)
 
-        self.InitPairRepresentation = InitPairRepresentation(global_config).to(config['device'])
+        self.InitPairRepresentation = InitPairRepresentation(global_config)
         #self.TemplatePairStack = TemplatePairStack(config['TemplatePairStack'], global_config).to(config['TemplatePairStack']['device'])
         #self.TemplatePointwiseAttention = TemplatePointwiseAttention(config['TemplatePointwiseAttention'], global_config).to(config['TemplatePointwiseAttention']['device'])
-        self.FragExtraStack = FragExtraStack(config['FragExtraStack'], global_config).to(config['FragExtraStack']['device'])
-        self.RecyclingEmbedder = RecyclingEmbedder(config['RecyclingEmbedder'], global_config).to(config['device'])
+        self.FragExtraStack = FragExtraStack(config['FragExtraStack'], global_config)
+        self.RecyclingEmbedder = RecyclingEmbedder(config['RecyclingEmbedder'], global_config)
 
         self.config = config
         self.global_config = global_config
@@ -541,6 +543,13 @@ class InputEmbedder(torch.nn.Module):
             'rec_cbeta_prev': torch.zeros(num_batch, seq_len, 3),
             'rec_mask_prev': torch.zeros(num_batch, seq_len)
         }
+
+    def modules_to_devices(self):
+        self.rec_1d_project.to(self.config['device'])
+        self.main_msa_project.to(self.config['device'])
+        self.InitPairRepresentation.to(self.config['device'])
+        self.FragExtraStack.to(self.config['FragExtraStack']['device'])
+        self.RecyclingEmbedder.to(self.config['device'])
 
     def forward(self, inputs, recycling=None):
         # create pair representation

@@ -64,7 +64,8 @@ def add_loss_to_stats(stats, output):
         stats['Loss_FAPE_BB_Rec_Rec_Final'] = output['loss']['loss_fape']['loss_bb_rec_rec'][-1].item()
         stats['Loss_FAPE_AA_Rec_Rec_Final'] = output['loss']['loss_fape']['loss_aa_rec_rec'].item()
         stats['Loss_FAPE_BB_Rec_Rec_MeanTraj'] = output['loss']['loss_fape']['loss_bb_rec_rec'].mean().item()
-        stats['Loss_PredDmat_RecRec'] = output['loss']['loss_pred_dmat']['rr'].item()
+        stats['Loss_PredDmat_RecRec'] = output['loss']['loss_pred_dmat'].item()
+        stats['Loss_MSA_BERT'] = output['loss']['loss_msa_bert'].item()
 
     if 'violations' in output['loss']:
         viol = output['loss']['violations']
@@ -135,6 +136,14 @@ def parse_first_sequence_a3m(a3m_file):
     return seq
 
 
+def print_input_shapes(inputs):
+    for k1, v1 in inputs.items():
+        print(HOROVOD_RANK, ':', k1)
+        for k2, v2 in v1.items():
+            print(HOROVOD_RANK, ':', '    ', k2, v1[k2].shape, v1[k2].dtype)
+    sys.stdout.flush()
+
+
 def main(
         model_pth,
         seed=123456,
@@ -146,7 +155,8 @@ def main(
         cif_file=None,
         cif_asym_id=None,
         out_dir='.',
-        horovod=False
+        horovod=False,
+        device='cuda:0'
 ):
     global HOROVOD, HOROVOD_RANK, hvd
 
@@ -160,6 +170,10 @@ def main(
     torch.manual_seed(seed)
     logging.getLogger('.prody').setLevel('CRITICAL')
 
+    if device.startswith('cuda'):
+        assert torch.cuda.is_available(), 'CUDA is not available'
+
+    # remove checkpointing to get rid of the grad is none warning
     config_dict = deepcopy(config.config)
     config_dict = utils.merge_dicts(config_dict, {
         'data': {
@@ -167,9 +181,16 @@ def main(
             'msa_max_extra': extra_msa_size,
             'use_cache': False,
             'msa_block_del_num': 0,
+            'msa_keep_true_msa': False
         },
         'loss': {
             'compute_loss': False
+        },
+        'model': {
+            'msa_bert_block': False,
+            'Evoformer': {'device': device, 'EvoformerIteration': {'checkpoint': False}},
+            'InputEmbedder': {'device': device, 'FragExtraStack': {'device': device, 'FragExtraStackIteration': {'checkpoint': False}}},
+            'StructureModule': {'device': device}
         }
     })
 
@@ -177,18 +198,20 @@ def main(
         config_dict = utils.merge_dicts(config_dict, utils.read_json(config_update_json))
 
     model = docker.DockerIteration(config_dict['model'], config_dict)
-    model.eval()
 
     if HOROVOD_RANK == 0:
         print('Num params:', sum(p.numel() for p in model.parameters() if p.requires_grad))
         print('Num param sets:', len([p for p in model.parameters() if p.requires_grad]))
-        for x in range(torch.cuda.device_count()):
-            print('cuda:' + str(x), ':', torch.cuda.memory_stats(x)['allocated_bytes.all.peak'] / 1024**2)
+        #for x in range(torch.cuda.device_count()):
+        #    print('cuda:' + str(x), ':', torch.cuda.memory_stats(x)['allocated_bytes.all.peak'] / 1024**2)
         sys.stdout.flush()
 
     if HOROVOD_RANK == 0:
         print('Loading saved model from', model_pth)
-        pth = torch.load(model_pth)
+        pth = torch.load(model_pth, map_location=device)
+        if 'MSA_BERT.weight' in pth['model_state_dict']:
+            del pth['model_state_dict']['MSA_BERT.weight']
+            del pth['model_state_dict']['MSA_BERT.bias']
         model.load_state_dict(pth['model_state_dict'])
 
     if HOROVOD:
@@ -228,8 +251,12 @@ def main(
     global_stats = {}
     num_recycles = config_dict['model']['recycling_num_iter'] if config_dict['model']['recycling_on'] else 1
 
+    model.modules_to_devices()
+    model.eval()
     with torch.no_grad():
         for inputs in (tqdm(loader, desc='Processed') if HOROVOD_RANK == 0 else loader):
+            print_input_shapes(inputs)
+
             for recycle_iter in range(num_recycles):
                 output = model(inputs, recycling=output['recycling_input'] if recycle_iter > 0 else None)
 
@@ -269,6 +296,7 @@ def main(
               type=click.Path(exists=True, file_okay=False, writable=True),
               help='Directory where to put predicted models')
 @click.option('--horovod', is_flag=True, help='Use Horovod for multi-GPU batch calculation')
+@click.option('--device', default='cuda:0', show_default=True, help='"cpu" or "cuda:N" where N - CUDA device ID')
 def cli(**kwargs):
     """Predict structures for a single protein or a batch using MSAs in a3m format.
 

@@ -23,6 +23,7 @@ config = {
         'msa_uniform_prob': 0.1,
         'msa_profile_prob': 0.1,
         'msa_same_prob': 0.1,
+        'msa_keep_true_msa': True,
         'template_max': 4,
         'template_use_prob': 0.5,
         'clamp_fape_prob': 0.9,
@@ -38,15 +39,17 @@ config = {
     'loss': {
         'compute_loss': True,
 
-        'loss_fape_aa_weight': 0.5,       # L_FAPE
+        'loss_fape_aa_weight': 0.5,          # L_FAPE
 
-        'loss_fape_bb_weight': 0.5,       #
+        'loss_fape_bb_weight': 0.5,          #
         'loss_chi_value_weight': 0.5,        # L_aux
         'loss_chi_norm_weight': 0.5 * 0.02,  #
 
-        'loss_lddt_weight': 0.01,    # L_conf
+        'loss_lddt_weight': 0.01,            # L_conf
 
-        'loss_pred_dmat_weight': 0.3,     # L_dist
+        'loss_pred_dmat_weight': 0.3,        # L_dist
+
+        'loss_msa_bert_weight': 2.0,         # L_msa
 
         'loss_violation_weight': 0.0,        # L_viol
 
@@ -66,6 +69,7 @@ config = {
         'rep2d_feat': 128,
         'single_rep_feat': 384,
         'rep1d_extra_feat': 64,
+        'msa_bert_block': True,
 
         'Evoformer': {
             'num_iter': 48,
@@ -198,7 +202,6 @@ config = {
             'num_iter': 8,
             'device': 'cuda:0',
             'StructureModuleIteration': {
-                'checkpoint': False,
                 'InvariantPointAttention': {
                     'num_head': 12,
                     'num_scalar_qk': 16,

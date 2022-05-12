@@ -31,9 +31,12 @@ class DockerIteration(nn.Module):
         super().__init__()
         self.InputEmbedder = modules.InputEmbedder(config['InputEmbedder'], global_config)
         self.Evoformer = nn.ModuleList([modules.EvoformerIteration(config['Evoformer']['EvoformerIteration'], global_config)
-                                        for x in range(config['Evoformer']['num_iter'])]).to(config['Evoformer']['device'])
-        self.EvoformerExtractSingleRec = nn.Linear(global_config['model']['rep1d_feat'], global_config['model']['single_rep_feat']).to(config['Evoformer']['device'])
-        self.StructureModule = structure.StructureModule(config['StructureModule'], global_config).to(config['StructureModule']['device'])
+                                        for _ in range(config['Evoformer']['num_iter'])])
+        self.EvoformerExtractSingleRec = nn.Linear(global_config['model']['rep1d_feat'], global_config['model']['single_rep_feat'])
+        self.StructureModule = structure.StructureModule(config['StructureModule'], global_config)
+
+        if config['msa_bert_block']:
+            self.MSA_BERT = nn.Linear(global_config['model']['rep1d_feat'], 23)
 
         self.config = config
         self.global_config = global_config
@@ -52,22 +55,31 @@ class DockerIteration(nn.Module):
             module.man_name = name
             module.register_forward_hook(nan_hook)
 
+    def modules_to_devices(self):
+        self.InputEmbedder.modules_to_devices()
+        self.Evoformer.to(self.config['Evoformer']['device'])
+        self.EvoformerExtractSingleRec.to(self.config['Evoformer']['device'])
+        self.StructureModule.to(self.config['StructureModule']['device'])
+        if self.config['msa_bert_block']:
+            self.MSA_BERT.to(self.config['Evoformer']['device'])
+
     def forward(self, input, recycling=None):
         x = self.InputEmbedder(input, recycling=recycling)
 
         x['r1d'], x['pair'] = x['r1d'].to(self.config['Evoformer']['device']), x['pair'].to(self.config['Evoformer']['device'])
 
-        def checkpoint_fun(function):
-            return lambda a, b: function(a.clone(), b.clone())
-
         for evo_i, evo_iter in enumerate(self.Evoformer):
             if self.config['Evoformer']['EvoformerIteration']['checkpoint']:
-                x['r1d'], x['pair'] = checkpoint(checkpoint_fun(evo_iter), x['r1d'], x['pair'])
+                x['r1d'], x['pair'] = checkpoint(evo_iter, x['r1d'], x['pair'])
             else:
                 x['r1d'], x['pair'] = evo_iter(x['r1d'], x['pair'])
 
         pair = x['pair']
         rec_single = self.EvoformerExtractSingleRec(x['r1d'][:, 0])
+
+        msa_bert = None
+        if self.config['msa_bert_block'] and 'main_mask' in input['msa']:
+            msa_bert = self.MSA_BERT(x['r1d'])
 
         input = {k: {k1: v1.to(self.config['StructureModule']['device']) for k1, v1 in v.items()} for k, v in input.items()}
         struct_out = self.StructureModule({
@@ -92,7 +104,7 @@ class DockerIteration(nn.Module):
 
         # compute loss
         if self.global_config['loss']['compute_loss']:
-            out_dict['loss'] = loss.total_loss(input, struct_out, final_all_atom, self.global_config)
+            out_dict['loss'] = loss.total_loss(input, struct_out, final_all_atom, self.global_config, msa_bert=msa_bert)
 
         # make recycling input
         cbeta_coords, cbeta_mask = all_atom.atom14_to_cbeta_coords(
