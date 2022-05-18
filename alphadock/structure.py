@@ -22,9 +22,9 @@ class InvariantPointAttention(torch.nn.Module):
         #self.num_point_v = config['num_point_v']
         self.num_2d_v = config['num_2d_v']
 
-        self.num_output_c = global_config['num_single_c'] #config['num_channel']
-        self.rep_1d_num_c = global_config['num_single_c']
-        self.rep_2d_num_c = global_config['rep_2d']['num_c']
+        self.num_output_c = global_config['model']['single_rep_feat'] #config['num_channel']
+        self.rep_1d_num_c = global_config['model']['single_rep_feat']
+        self.rep_2d_num_c = global_config['model']['rep2d_feat']
 
         self.q = nn.Linear(self.rep_1d_num_c, self.num_scalar_qk* self.num_head)
         self.kv = nn.Linear(self.rep_1d_num_c, (self.num_scalar_qk + self.num_scalar_v) * self.num_head)
@@ -112,9 +112,9 @@ class InvariantPointAttention(torch.nn.Module):
 class PredictSidechains(torch.nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        num_in_c = global_config['num_single_c']
+        num_in_c = global_config['model']['single_rep_feat']
         num_c = config['num_c']
-        self.num_torsions = global_config['num_torsions']
+        self.num_torsions = global_config['model']['num_torsions']
 
         self.s_cur = nn.Linear(num_in_c, num_c)
         self.s_ini = nn.Linear(num_in_c, num_c)
@@ -149,7 +149,7 @@ class PredictSidechains(torch.nn.Module):
 class PredictLDDT(torch.nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        num_in_c = global_config['num_single_c']
+        num_in_c = global_config['model']['single_rep_feat']
         num_c = config['num_c']
         num_bins = config['num_bins']
 
@@ -172,10 +172,10 @@ class StructureModuleIteration(torch.nn.Module):
         super().__init__()
         self.InvariantPointAttention = InvariantPointAttention(config['InvariantPointAttention'], global_config)
         self.drop = nn.Dropout(0.1)
-        self.rec_norm = nn.LayerNorm(global_config['num_single_c'])
-        self.rec_norm2 = nn.LayerNorm(global_config['num_single_c'])
+        self.rec_norm = nn.LayerNorm(global_config['model']['single_rep_feat'])
+        self.rec_norm2 = nn.LayerNorm(global_config['model']['single_rep_feat'])
 
-        num_1dc = global_config['num_single_c']
+        num_1dc = global_config['model']['single_rep_feat']
         self.transition_r = nn.Sequential(
             nn.Linear(num_1dc, num_1dc),
             nn.ReLU(),
@@ -214,7 +214,7 @@ class StructureModuleIteration(torch.nn.Module):
 class PredictDistogram(torch.nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        num_in_c = global_config['rep_2d']['num_c']
+        num_in_c = global_config['model']['rep2d_feat']
         self.rr_proj = nn.Linear(num_in_c, config['rec_num_bins'])
 
     def forward(self, rep_2d, rec_size):
@@ -227,17 +227,17 @@ class StructureModule(torch.nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
         self.num_iter = config['num_iter']
-        num_1dc = global_config['num_single_c']
+        num_1dc = global_config['model']['single_rep_feat']
 
         self.StructureModuleIteration = StructureModuleIteration(config['StructureModuleIteration'], global_config)
 
         self.layers = [self.StructureModuleIteration for _ in range(self.num_iter)]
         self.norm_rec_1d_init = nn.LayerNorm(num_1dc)
-        self.norm_2d_init = nn.LayerNorm(global_config['rep_2d']['num_c'])
+        self.norm_2d_init = nn.LayerNorm(global_config['model']['rep2d_feat'])
         self.rec_1d_proj = nn.Linear(num_1dc, num_1dc)
         self.pred_distogram = PredictDistogram(config['PredictDistogram'], global_config)
 
-        self.position_scale = global_config['position_scale']
+        self.position_scale = global_config['model']['position_scale']
         self.config = config
         self.global_config = global_config
 
@@ -260,7 +260,7 @@ class StructureModule(torch.nn.Module):
         rec_T[:, :, 0] = 1
         rec_T.requires_grad = True
 
-        rec_torsions = torch.zeros((1, rec_1d.shape[1], self.global_config['num_torsions'], 2), device=rec_1d.device, dtype=rec_1d.dtype)
+        rec_torsions = torch.zeros((1, rec_1d.shape[1], self.global_config['model']['num_torsions'], 2), device=rec_1d.device, dtype=rec_1d.dtype)
         rec_torsions[..., 0] = 1
 
         struct_dict = {
@@ -280,10 +280,7 @@ class StructureModule(torch.nn.Module):
                 struct_traj[-1]['rec_T'],
                 struct_traj[-1]['rec_torsions']
             ]
-            if self.config['StructureModuleIteration']['checkpoint']:
-                update = checkpoint(l, *args)
-            else:
-                update = l(*args)
+            update = l(*args)
             struct_traj.append(
                 {
                     'rec_1d_init': rec_1d_init,

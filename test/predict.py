@@ -63,10 +63,10 @@ if __name__ == '__main__':
     with open('features.pkl', 'rb') as f:
         inputs = pickle.load(f)
 
-    model = docker.DockerIteration(config_summit, config_summit)
-    model.load_state_dict(torch.load(sys.argv[1]))
+    model = docker.DockerIteration(config_summit['model'], config_summit)
+    model.load_state_dict(torch.load(sys.argv[1])['model_state_dict'])
     model.eval()
-    num_recycles = config_summit['recycling_num_iter'] if config_summit['recycling_on'] else 1
+    num_recycles = config_summit['model']['recycling_num_iter'] if config_summit['model']['recycling_on'] else 1
     with torch.no_grad():
         for recycle_iter in range(num_recycles):
             output = model(inputs, recycling=output['recycling_input'] if recycle_iter > 0 else None)

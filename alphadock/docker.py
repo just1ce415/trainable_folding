@@ -31,69 +31,80 @@ class DockerIteration(nn.Module):
         super().__init__()
         self.InputEmbedder = modules.InputEmbedder(config['InputEmbedder'], global_config)
         self.Evoformer = nn.ModuleList([modules.EvoformerIteration(config['Evoformer']['EvoformerIteration'], global_config)
-                                        for x in range(config['Evoformer']['num_iter'])]).to(config['Evoformer']['device'])
-        self.EvoformerExtractSingleRec = nn.Linear(global_config['rep_1d']['num_c'], global_config['num_single_c']).to(config['Evoformer']['device'])
-        self.StructureModule = structure.StructureModule(config['StructureModule'], global_config).to(config['StructureModule']['device'])
+                                        for _ in range(config['Evoformer']['num_iter'])])
+        self.EvoformerExtractSingleRec = nn.Linear(global_config['model']['rep1d_feat'], global_config['model']['single_rep_feat'])
+        self.StructureModule = structure.StructureModule(config['StructureModule'], global_config)
+
+        if config['msa_bert_block']:
+            self.MSA_BERT = nn.Linear(global_config['model']['rep1d_feat'], 23)
 
         self.config = config
         self.global_config = global_config
 
+        def nan_hook(self, input, output):
+            if any([torch.any(torch.isnan(x)) for x in output]):
+                print(f'Module {self.man_name} generated nans')
+                print('Inputs contains nan: ', [torch.any(torch.isnan(x)) for x in input])
+                print('Output contains nan: ', [torch.any(torch.isnan(x)) for x in output])
+                print('Inputs were: ', input)
+                print('Outputs were: ', output)
+                sys.stdout.flush()
+                raise utils.GeneratedNans(f'Module {self.man_name} generated nans')
+
         for name, module in self.Evoformer.named_modules():
-        #for name, module in (list(self.Evoformer.named_modules()) + list(self.InputEmbedder.named_modules())):
             module.man_name = name
-            def nan_hook(self, input, output):
-                if any([torch.any(torch.isnan(x)) for x in output]):
-                    print(f'Module {self.man_name} generated nans')
-                    print('Inputs contains nan: ', [torch.any(torch.isnan(x)) for x in input])
-                    print('Output contains nan: ', [torch.any(torch.isnan(x)) for x in output])
-                    print('Inputs were: ', input)
-                    print('Outputs were: ', output)
-                    sys.stdout.flush()
-                    raise utils.GeneratedNans(f'Module {self.man_name} generated nans')
             module.register_forward_hook(nan_hook)
+
+    def modules_to_devices(self):
+        self.InputEmbedder.modules_to_devices()
+        self.Evoformer.to(self.config['Evoformer']['device'])
+        self.EvoformerExtractSingleRec.to(self.config['Evoformer']['device'])
+        self.StructureModule.to(self.config['StructureModule']['device'])
+        if self.config['msa_bert_block']:
+            self.MSA_BERT.to(self.config['Evoformer']['device'])
 
     def forward(self, input, recycling=None):
         x = self.InputEmbedder(input, recycling=recycling)
-        #return {'loss_total': x['r1d'].sum()}
 
-        #x = {k: v.to('cuda:1') for k, v in x.items()}
         x['r1d'], x['pair'] = x['r1d'].to(self.config['Evoformer']['device']), x['pair'].to(self.config['Evoformer']['device'])
-
-        def checkpoint_fun(function):
-            return lambda a, b: function(a.clone(), b.clone())
 
         for evo_i, evo_iter in enumerate(self.Evoformer):
             if self.config['Evoformer']['EvoformerIteration']['checkpoint']:
-                x['r1d'], x['pair'] = checkpoint(checkpoint_fun(evo_iter), x['r1d'], x['pair'])
+                x['r1d'], x['pair'] = checkpoint(evo_iter, x['r1d'], x['pair'])
             else:
                 x['r1d'], x['pair'] = evo_iter(x['r1d'], x['pair'])
 
         pair = x['pair']
         rec_single = self.EvoformerExtractSingleRec(x['r1d'][:, 0])
 
+        msa_bert = None
+        if self.config['msa_bert_block'] and 'main_mask' in input['msa']:
+            msa_bert = self.MSA_BERT(x['r1d'])
+
         input = {k: {k1: v1.to(self.config['StructureModule']['device']) for k1, v1 in v.items()} for k, v in input.items()}
         struct_out = self.StructureModule({
             'r1d': rec_single.to(self.config['StructureModule']['device']),
-            'pair': pair.to(self.config['StructureModule']['device']),
-            'rec_bb_affine': input['ground_truth']['gt_bb_affine'],
-            'rec_bb_affine_mask': input['ground_truth']['gt_bb_affine_mask']
+            'pair': pair.to(self.config['StructureModule']['device'])
         })
 
         # rescale to angstroms
-        struct_out['rec_T'][..., -3:] = struct_out['rec_T'][..., -3:] * self.global_config['position_scale']
+        struct_out['rec_T'][..., -3:] = struct_out['rec_T'][..., -3:] * self.global_config['model']['position_scale']
 
+        # compute all atom representation
         assert struct_out['rec_T'].shape[0] == 1
         final_all_atom = all_atom.backbone_affine_and_torsions_to_all_atom(
             struct_out['rec_T'][0][-1].clone(),
             struct_out['rec_torsions'][0][-1],
             input['target']['rec_aatype'][0]
         )
-        #print({k: v.shape for k, v in struct_out.items()})
 
         out_dict = {}
-        out_dict['loss'] = loss.total_loss(input, struct_out, final_all_atom, self.global_config)
-        out_dict['final_all_atom'] = final_all_atom
         out_dict['struct_out'] = struct_out
+        out_dict['final_all_atom'] = final_all_atom
+
+        # compute loss
+        if self.global_config['loss']['compute_loss']:
+            out_dict['loss'] = loss.total_loss(input, struct_out, final_all_atom, self.global_config, msa_bert=msa_bert)
 
         # make recycling input
         cbeta_coords, cbeta_mask = all_atom.atom14_to_cbeta_coords(
@@ -101,10 +112,6 @@ class DockerIteration(nn.Module):
             input['target']['rec_atom14_atom_exists'][0],
             input['target']['rec_aatype'][0]
         )
-        #for i in range(len(input['target']['rec_aatype'][0])):
-        #    print(input['target']['rec_aatype'][0][i])
-        #    print(final_all_atom['atom_pos_tensor'][i])
-        #    print(cbeta_mask[i])
         out_dict['recycling_input'] = {
             'rec_1d_prev': x['r1d'][:, 0],
             'rep_2d_prev': pair,

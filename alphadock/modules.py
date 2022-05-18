@@ -13,8 +13,8 @@ class RowAttentionWithPairBias(nn.Module):
 
         attn_num_c = config['attention_num_c']
         num_heads = config['num_heads']
-        in_num_c = config['extra_msa_channel']
-        pair_rep_num_c = global_config['rep_2d']['num_c']
+        in_num_c = global_config['model']['rep1d_extra_feat'] if config['msa_extra_stack'] else global_config['model']['rep1d_feat']
+        pair_rep_num_c = global_config['model']['rep2d_feat']
 
         self.norm = nn.LayerNorm(in_num_c)
         self.norm_2d = nn.LayerNorm(pair_rep_num_c)
@@ -54,7 +54,7 @@ class LigColumnAttention(nn.Module):
 
         attn_num_c = config['attention_num_c']
         num_heads = config['num_heads']
-        in_num_c = global_config['rep_1d']['num_c']
+        in_num_c = global_config['model']['rep1d_feat']
 
         self.norm = nn.LayerNorm(in_num_c)
         self.q = nn.Linear(in_num_c, attn_num_c*num_heads, bias=False)
@@ -90,13 +90,12 @@ class ExtraColumnGlobalAttention(nn.Module):
         self.attn_num_c = config['attention_num_c']
         self.num_heads = config['num_heads']
 
-        self.norm = nn.LayerNorm(global_config['extra_msa_channel'])
-        self.q = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c*self.num_heads, bias=False)
-        self.k = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c, bias=False)
-        self.v = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c, bias=False)
-        #self.kqv = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c * (self.num_heads + 2), bias=False)
-        self.gate = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c * self.num_heads)
-        self.final = nn.Linear(self.attn_num_c * self.num_heads, global_config['extra_msa_channel'])
+        self.norm = nn.LayerNorm(global_config['model']['rep1d_extra_feat'])
+        self.q = nn.Linear(global_config['model']['rep1d_extra_feat'], self.attn_num_c*self.num_heads, bias=False)
+        self.k = nn.Linear(global_config['model']['rep1d_extra_feat'], self.attn_num_c, bias=False)
+        self.v = nn.Linear(global_config['model']['rep1d_extra_feat'], self.attn_num_c, bias=False)
+        self.gate = nn.Linear(global_config['model']['rep1d_extra_feat'], self.attn_num_c * self.num_heads)
+        self.final = nn.Linear(self.attn_num_c * self.num_heads, global_config['model']['rep1d_extra_feat'])
 
     def forward(self, x1d):
         x1d = x1d.transpose(-2,-3)
@@ -133,7 +132,8 @@ class Transition(nn.Module):
 class OuterProductMean(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        in_c, out_c = config['extra_msa_channel'], global_config['rep_2d']['num_c']
+        in_c = global_config['model']['rep1d_extra_feat'] if config['msa_extra_stack'] else global_config['model']['rep1d_feat']
+        out_c = global_config['model']['rep2d_feat']
         mid_c = config['mid_c']
         self.norm = nn.LayerNorm(in_c)
         #self.proj = nn.Linear(in_c, mid_c * 2)
@@ -157,7 +157,7 @@ class OuterProductMean(nn.Module):
 class TriangleMultiplicationOutgoing(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        in_c = global_config['rep_2d']['num_c']
+        in_c = global_config['model']['rep2d_feat']
         mid_c = config['mid_c']
         self.norm1 = nn.LayerNorm(in_c)
         self.norm2 = nn.LayerNorm(mid_c)
@@ -182,7 +182,7 @@ class TriangleMultiplicationOutgoing(nn.Module):
 class TriangleMultiplicationIngoing(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        in_c = global_config['rep_2d']['num_c']
+        in_c = global_config['model']['rep2d_feat']
         mid_c = config['mid_c']
         self.norm1 = nn.LayerNorm(in_c)
         self.norm2 = nn.LayerNorm(mid_c)
@@ -209,7 +209,7 @@ class TriangleAttentionStartingNode(nn.Module):
         super().__init__()
         attn_num_c = config['attention_num_c']
         num_heads = config['num_heads']
-        num_in_c = global_config['rep_2d']['num_c']
+        num_in_c = global_config['model']['rep2d_feat']
         self.rand_remove = config['rand_remove']
         self.attn_num_c = attn_num_c
         self.num_heads = num_heads
@@ -259,7 +259,7 @@ class TriangleAttentionEndingNode(nn.Module):
         super().__init__()
         attention_num_c = config['attention_num_c']
         num_heads = config['num_heads']
-        num_in_c = global_config['rep_2d']['num_c']
+        num_in_c = global_config['model']['rep2d_feat']
         self.rand_remove = config['rand_remove']
 
         self.attention_num_c = attention_num_c
@@ -314,7 +314,7 @@ class TemplatePairStackIteration(nn.Module):
         self.TriangleAttentionEndingNode = TriangleAttentionEndingNode(config['TriangleAttentionEndingNode'], global_config)
         self.TriangleMultiplicationOutgoing = TriangleMultiplicationOutgoing(config['TriangleMultiplicationOutgoing'], global_config)
         self.TriangleMultiplicationIngoing = TriangleMultiplicationIngoing(config['TriangleMultiplicationIngoing'], global_config)
-        self.PairTransition = Transition(global_config['rep_2d']['num_c'], config['PairTransition']['n'])
+        self.PairTransition = Transition(global_config['model']['rep2d_feat'], config['PairTransition']['n'])
         self.dropout2d_25 = nn.Dropout2d(0.25)
 
     def forward(self, x2d):
@@ -329,9 +329,9 @@ class TemplatePairStackIteration(nn.Module):
 class TemplatePairStack(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        self.rr_proj = nn.Linear(global_config['hh_rr'], global_config['rep_2d']['num_c'])
+        self.rr_proj = nn.Linear(global_config['hh_rr'], global_config['model']['rep2d_feat'])
         self.layers = nn.ModuleList([TemplatePairStackIteration(config['TemplatePairStackIteration'], global_config) for _ in range(config['num_iter'])])
-        self.norm = nn.LayerNorm(global_config['rep_2d']['num_c'])
+        self.norm = nn.LayerNorm(global_config['model']['rep2d_feat'])
         self.config = config
 
     def forward(self, inputs):
@@ -352,7 +352,7 @@ class TemplatePointwiseAttention(nn.Module):
         super().__init__()
         attention_num_c = config['attention_num_c']
         num_heads = config['num_heads']
-        num_in_c = global_config['rep_2d']['num_c']
+        num_in_c = global_config['model']['rep2d_feat']
 
         self.attention_num_c = attention_num_c
         self.num_heads = num_heads
@@ -380,14 +380,14 @@ class EvoformerIteration(nn.Module):
         super().__init__()
         self.RowAttentionWithPairBias = RowAttentionWithPairBias(config['RowAttentionWithPairBias'], global_config)
         self.LigColumnAttention = LigColumnAttention(config['LigColumnAttention'], global_config)
-        self.RecTransition = Transition(global_config['rep_1d']['num_c'], config['RecTransition']['n'])
+        self.RecTransition = Transition(global_config['model']['rep1d_feat'], config['RecTransition']['n'])
         self.OuterProductMean = OuterProductMean(config['OuterProductMean'], global_config)
 
         self.TriangleMultiplicationOutgoing = TriangleMultiplicationOutgoing(config['TriangleMultiplicationOutgoing'], global_config)
         self.TriangleMultiplicationIngoing = TriangleMultiplicationIngoing(config['TriangleMultiplicationIngoing'], global_config)
         self.TriangleAttentionStartingNode = TriangleAttentionStartingNode(config['TriangleAttentionStartingNode'], global_config)
         self.TriangleAttentionEndingNode = TriangleAttentionEndingNode(config['TriangleAttentionEndingNode'], global_config)
-        self.PairTransition = Transition(global_config['rep_2d']['num_c'], config['PairTransition']['n'])
+        self.PairTransition = Transition(global_config['model']['rep2d_feat'], config['PairTransition']['n'])
 
         self.dropout1d_15 = nn.Dropout(0.15)
         self.dropout2d_15 = nn.Dropout2d(0.15)
@@ -395,6 +395,8 @@ class EvoformerIteration(nn.Module):
         # TODO: fix dropout everywhere
 
     def forward(self, r1d, pair):
+        r1d = r1d.clone()
+        pair = pair.clone()
         a = self.RowAttentionWithPairBias(r1d.clone(), pair.clone())
         # r1d += self.dropout1d_15(a)
         r1d += a #self.dropout2d_15(b)
@@ -416,13 +418,13 @@ class FragExtraStackIteration(torch.nn.Module):
         super().__init__()
         self.RowAttentionWithPairBias = RowAttentionWithPairBias(config['RowAttentionWithPairBias'], global_config)
         self.ExtraColumnGlobalAttention = ExtraColumnGlobalAttention(config['ExtraColumnGlobalAttention'], global_config)
-        self.RecTransition = Transition(config['extra_msa_channel'], config['RecTransition']['n'])
+        self.RecTransition = Transition(global_config['model']['rep1d_extra_feat'], config['RecTransition']['n'])
         self.OuterProductMean = OuterProductMean(config['OuterProductMean'], global_config)
         self.TriangleMultiplicationOutgoing = TriangleMultiplicationOutgoing(config['TriangleMultiplicationOutgoing'], global_config)
         self.TriangleMultiplicationIngoing = TriangleMultiplicationIngoing(config['TriangleMultiplicationOutgoing'], global_config)
         self.TriangleAttentionStartingNode = TriangleAttentionStartingNode(config['TriangleAttentionStartingNode'], global_config)
         self.TriangleAttentionEndingNode = TriangleAttentionEndingNode(config['TriangleAttentionEndingNode'], global_config)
-        self.PairTransition = Transition(global_config['rep_2d']['num_c'], config['PairTransition']['n'])
+        self.PairTransition = Transition(global_config['model']['rep2d_feat'], config['PairTransition']['n'])
 
         self.dropout1d_15 = nn.Dropout(0.15)
         self.dropout2d_15 = nn.Dropout2d(0.15)
@@ -450,7 +452,7 @@ class FragExtraStackIteration(torch.nn.Module):
 class FragExtraStack(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        self.project = nn.Linear(global_config['msa_extra_in_c'], config['extra_msa_channel'])
+        self.project = nn.Linear(global_config['data']['msa_extra_feat'], global_config['model']['rep1d_extra_feat'])
         self.layers = nn.ModuleList([FragExtraStackIteration(config['FragExtraStackIteration'], global_config) for _ in range(config['num_iter'])])
         self.config = config
 
@@ -471,13 +473,13 @@ class InitPairRepresentation(torch.nn.Module):
     def __init__(self, global_config):
         super().__init__()
 
-        rec_in_c = global_config['rec_in_c']
-        relpos_c = global_config['rec_relpos_c']
-        pair_num_c = global_config['rep_2d']['num_c']
+        target_feat = global_config['data']['target_feat']
+        relpos_feat = 2 * global_config['data']['relpos_max'] + 1
+        pair_num_c = global_config['model']['rep2d_feat']
 
-        self.r_proj1 = nn.Linear(rec_in_c, pair_num_c)
-        self.r_proj2 = nn.Linear(rec_in_c, pair_num_c)
-        self.relpos_proj = nn.Linear(relpos_c, pair_num_c)
+        self.r_proj1 = nn.Linear(target_feat, pair_num_c)
+        self.r_proj2 = nn.Linear(target_feat, pair_num_c)
+        self.relpos_proj = nn.Linear(relpos_feat, pair_num_c)
 
     def forward(self, feats):
         r1d, relpos = feats['rec_1d'], feats['rec_relpos']
@@ -495,9 +497,9 @@ class InitPairRepresentation(torch.nn.Module):
 class RecyclingEmbedder(torch.nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        self.rec_norm = nn.LayerNorm(global_config['rep_1d']['num_c'])
-        self.x2d_norm = nn.LayerNorm(global_config['rep_2d']['num_c'])
-        self.rr_proj = nn.Linear(config['rec_num_bins'], global_config['rep_2d']['num_c'])
+        self.rec_norm = nn.LayerNorm(global_config['model']['rep1d_feat'])
+        self.x2d_norm = nn.LayerNorm(global_config['model']['rep2d_feat'])
+        self.rr_proj = nn.Linear(config['rec_num_bins'], global_config['model']['rep2d_feat'])
         self.config = config
 
     def forward(self, inputs):
@@ -507,7 +509,6 @@ class RecyclingEmbedder(torch.nn.Module):
         rec_crd = inputs['rec_cbeta_prev'][0]
         rec_mask = inputs['rec_mask_prev'][0]
         assert len(rec_crd.shape) == 2 and rec_crd.shape[-1] == 3, rec_crd.shape
-
         dmat = torch.sqrt(torch.square(rec_crd[:, None, :] - rec_crd[None, :, :]).sum(-1) + 10e-10)
         dgram = utils.dmat_to_dgram(dmat, self.config['rec_min_dist'], self.config['rec_max_dist'], self.config['rec_num_bins'])[1]
         rep_2d[0] += self.rr_proj(dgram * rec_mask[:, None, None] * rec_mask[None, :, None])
@@ -518,42 +519,52 @@ class InputEmbedder(torch.nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
         
-        rec_in_c = global_config['rec_in_c']
-        r1d_num_c = global_config['rep_1d']['num_c']
+        target_feat = global_config['data']['target_feat']
+        r1d_num_c = global_config['model']['rep1d_feat']
         
-        self.rec_1d_project = nn.Linear(rec_in_c, r1d_num_c).to(config['device'])
-        self.main_msa_project = nn.Linear(global_config['msa_main_in_c'], r1d_num_c).to(config['device'])
+        self.rec_1d_project = nn.Linear(target_feat, r1d_num_c)
+        self.main_msa_project = nn.Linear(global_config['data']['msa_clus_feat'], r1d_num_c)
 
-        self.InitPairRepresentation = InitPairRepresentation(global_config).to(config['device'])
-        self.TemplatePairStack = TemplatePairStack(config['TemplatePairStack'], global_config).to(config['TemplatePairStack']['device'])
-        self.TemplatePointwiseAttention = TemplatePointwiseAttention(config['TemplatePointwiseAttention'], global_config).to(config['TemplatePointwiseAttention']['device'])
-        self.FragExtraStack = FragExtraStack(config['FragExtraStack'], global_config).to(config['FragExtraStack']['device'])
-        self.RecyclingEmbedder = RecyclingEmbedder(config['RecyclingEmbedder'], global_config).to(config['device'])
+        self.InitPairRepresentation = InitPairRepresentation(global_config)
+        #self.TemplatePairStack = TemplatePairStack(config['TemplatePairStack'], global_config).to(config['TemplatePairStack']['device'])
+        #self.TemplatePointwiseAttention = TemplatePointwiseAttention(config['TemplatePointwiseAttention'], global_config).to(config['TemplatePointwiseAttention']['device'])
+        self.FragExtraStack = FragExtraStack(config['FragExtraStack'], global_config)
+        self.RecyclingEmbedder = RecyclingEmbedder(config['RecyclingEmbedder'], global_config)
 
         self.config = config
         self.global_config = global_config
 
+    @staticmethod
+    def _zero_init_recycling(pair, rec_1d):
+        num_batch, seq_len, rec_2d_c = pair.shape[0], pair.shape[1], pair.shape[-1]
+        return {
+            'rec_1d_prev': torch.zeros(num_batch, seq_len, rec_1d.shape[-1]),
+            'rep_2d_prev': torch.zeros(num_batch, seq_len, seq_len, rec_2d_c),
+            'rec_cbeta_prev': torch.zeros(num_batch, seq_len, 3),
+            'rec_mask_prev': torch.zeros(num_batch, seq_len)
+        }
+
+    def modules_to_devices(self):
+        self.rec_1d_project.to(self.config['device'])
+        self.main_msa_project.to(self.config['device'])
+        self.InitPairRepresentation.to(self.config['device'])
+        self.FragExtraStack.to(self.config['FragExtraStack']['device'])
+        self.RecyclingEmbedder.to(self.config['device'])
+
     def forward(self, inputs, recycling=None):
         # create pair representation
         pair = self.InitPairRepresentation({k: v.to(self.config['device']) for k, v in inputs['target'].items()})
-        num_batch, seq_len, rec_2d_c = pair.shape[0], pair.shape[1], pair.shape[-1]
 
         # make lig 1d rep
         rec_1d = self.rec_1d_project(inputs['target']['rec_1d'].to(self.config['device'])).unsqueeze(1)
-        rec_1d_c = rec_1d.shape[-1]
         if 'msa' in inputs:
             rec_1d = self.main_msa_project(inputs['msa']['main'].to(self.config['device'])) + rec_1d.clone()
 
+        # initiaze recycling if firt iteration
+        if self.global_config['model']['recycling_on'] and recycling is None:
+            recycling = self._zero_init_recycling(pair, rec_1d)
+
         # add recycling
-        if (self.global_config['recycling_num_iter'] > 0 and recycling == None):
-            tmp_inp = {'rec_1d_prev': torch.zeros(num_batch,seq_len,rec_1d_c),
-                    'rep_2d_prev': torch.zeros(num_batch,seq_len,seq_len,rec_2d_c),
-                    'rec_cbeta_prev': torch.zeros(num_batch, seq_len ,3),
-                    'rec_mask_prev': torch.zeros(num_batch,seq_len)
-                    }
-            recyc_out = self.RecyclingEmbedder({k: v.to(self.config['device']) for k, v in tmp_inp.items()})
-            pair += recyc_out['pair_update']
-            rec_1d[:, 0] += recyc_out['rec_1d_update']
         if recycling is not None:
             recyc_out = self.RecyclingEmbedder({k: v.to(self.config['device']) for k, v in recycling.items()})
             pair += recyc_out['pair_update']
