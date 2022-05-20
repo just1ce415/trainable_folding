@@ -32,6 +32,7 @@ if __name__ == '__main__':
 
     model = docker.DockerIteration(config.config['model'], config.config)
     model.load_state_dict(torch.load(sys.argv[1])['model_state_dict'])
+    model.modules_to_devices()
     model.eval()
     num_recycles = config.config['model']['recycling_num_iter'] if config.config['model']['recycling_on'] else 1
     with torch.no_grad():

@@ -453,6 +453,8 @@ def main(
             print('Updating configuration using', config_update_json)
         config_dict = utils.merge_dicts(config_dict, utils.read_json(config_update_json))
 
+    CONFIG_DICT = config_dict
+
     model = docker.DockerIteration(config_dict['model'], config_dict)
     model.modules_to_devices()
 
