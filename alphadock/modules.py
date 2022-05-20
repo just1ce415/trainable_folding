@@ -270,7 +270,7 @@ class ExtraMsaStackIteration(torch.nn.Module):
         self.MSATransition = Transition(global_config['model']['rep1d_extra_feat'], config['MSATransition']['n'])
         self.OuterProductMean = OuterProductMean(config['OuterProductMean'], global_config)
         self.TriangleMultiplicationOutgoing = TriangleMultiplication(config['TriangleMultiplicationOutgoing'], global_config)
-        self.TriangleMultiplicationIngoing = TriangleMultiplication(config['TriangleMultiplicationOutgoing'], global_config)
+        self.TriangleMultiplicationIngoing = TriangleMultiplication(config['TriangleMultiplicationIngoing'], global_config)
         self.TriangleAttentionStartingNode = TriangleAttention(config['TriangleAttentionStartingNode'], global_config)
         self.TriangleAttentionEndingNode = TriangleAttention(config['TriangleAttentionEndingNode'], global_config)
         self.PairTransition = Transition(global_config['model']['rep2d_feat'], config['PairTransition']['n'])
