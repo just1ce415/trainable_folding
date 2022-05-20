@@ -1,4 +1,4 @@
-#Example: inference using AF2 parameters
+# Example: inference using AF2 parameters
 
 Predict structure for `1ezi` from MSA files in a3m format
 

@@ -1,4 +1,4 @@
-#Example: training on a toy dataset
+# Example: training on a toy dataset
 
 The dataset `train_set.json` includes 3 protein chains. Start training a new model by running:
 
