@@ -1,13 +1,10 @@
 from path import Path
 import numpy as np
 
-DATA_DIR = Path(__file__).abspath().dirname().dirname() / 'data_preparation' / 'data' / 'small_debug_set'
 SRC_DIR = Path(__file__).abspath().dirname()
-
 TEST_DATA_DIR = Path(__file__).abspath().dirname() / 'test_data'
 
 DTYPE_FLOAT = np.float32
-
 DTYPE_INT = np.int64
 
 config = {
@@ -81,14 +78,11 @@ config = {
                     'num_heads': 8,
                     'msa_extra_stack': False
                 },
-                'LigColumnAttention': {
+                'MSAColumnAttention': {
                     'attention_num_c': 32,
                     'num_heads': 8
                 },
-                'LigTransition': {
-                    'n': 4
-                },
-                'RecTransition': {
+                'MSATransition': {
                     'n': 4
                 },
                 'OuterProductMean': {
@@ -97,19 +91,21 @@ config = {
                 },
                 'TriangleMultiplicationIngoing': {
                     'mid_c': 128,
+                    'ingoing': True
                 },
                 'TriangleMultiplicationOutgoing': {
                     'mid_c': 128,
+                    'ingoing': False
                 },
                 'TriangleAttentionStartingNode': {
                     'attention_num_c': 32,
                     'num_heads': 4,
-                    'rand_remove': 0.0
+                    'ending_node': False
                 },
                 'TriangleAttentionEndingNode': {
                     'attention_num_c': 32,
                     'num_heads': 4,
-                    'rand_remove': 0.0
+                    'ending_node': True
                 },
                 'PairTransition': {
                     'n': 4
@@ -123,53 +119,21 @@ config = {
                 'rec_min_dist': 3.375,
                 'rec_max_dist': 21.375
             },
-            'TemplatePairStack': {
-                'num_iter': 2,
-                'checkpoint': True,
-                'device': 'cuda:0',
-                'TemplatePairStackIteration': {
-                    #'checkpoint': True,
-                    'TriangleAttentionStartingNode': {
-                        'attention_num_c': 32,
-                        'num_heads': 4,
-                        'rand_remove': 0.25
-                    },
-                    'TriangleAttentionEndingNode': {
-                        'attention_num_c': 32,
-                        'num_heads': 4,
-                        'rand_remove': 0.25
-                    },
-                    'TriangleMultiplicationOutgoing': {
-                        'mid_c': 64
-                    },
-                    'TriangleMultiplicationIngoing': {
-                        'mid_c': 64
-                    },
-                    'PairTransition': {
-                        'n': 2
-                    }
-                }
-            },
-            'TemplatePointwiseAttention': {
-                'device': 'cuda:0',
-                'attention_num_c': 64,
-                'num_heads': 4
-            },
-            'FragExtraStack': {
+            'ExtraMsaStack': {
                 'num_iter': 4,
                 'device': 'cuda:0',
-                'FragExtraStackIteration': {
+                'ExtraMsaStackIteration': {
                     'checkpoint': True,
                     'RowAttentionWithPairBias': {
                         'attention_num_c': 8,
                         'num_heads': 8,
                         'msa_extra_stack': True
                     },
-                    'ExtraColumnGlobalAttention': {
+                    'MSAColumnGlobalAttention': {
                         'attention_num_c': 8,
                         'num_heads': 8
                     },
-                    'RecTransition': {
+                    'MSATransition': {
                         'n': 4
                     },
                     'OuterProductMean': {
@@ -178,19 +142,21 @@ config = {
                     },
                     'TriangleMultiplicationIngoing': {
                         'mid_c': 128,
+                        'ingoing': True
                     },
                     'TriangleMultiplicationOutgoing': {
                         'mid_c': 128,
+                        'ingoing': False
                     },
                     'TriangleAttentionStartingNode': {
                         'attention_num_c': 32,
                         'num_heads': 4,
-                        'rand_remove': 0.0
+                        'ending_node': False
                     },
                     'TriangleAttentionEndingNode': {
                         'attention_num_c': 32,
                         'num_heads': 4,
-                        'rand_remove': 0.0
+                        'ending_node': True
                     },
                     'PairTransition': {
                         'n': 4

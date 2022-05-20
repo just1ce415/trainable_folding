@@ -48,7 +48,7 @@ class RowAttentionWithPairBias(nn.Module):
         return out_1d
 
 
-class LigColumnAttention(nn.Module):
+class MSAColumnAttention(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
 
@@ -84,7 +84,7 @@ class LigColumnAttention(nn.Module):
         return out_1d
 
 
-class ExtraColumnGlobalAttention(nn.Module):
+class MSAColumnGlobalAttention(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
         self.attn_num_c = config['attention_num_c']
@@ -154,11 +154,12 @@ class OuterProductMean(nn.Module):
         return out
 
 
-class TriangleMultiplicationOutgoing(nn.Module):
+class TriangleMultiplication(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
         in_c = global_config['model']['rep2d_feat']
         mid_c = config['mid_c']
+        self.ingoing = config['ingoing']
         self.norm1 = nn.LayerNorm(in_c)
         self.norm2 = nn.LayerNorm(mid_c)
         self.l1i = nn.Linear(in_c, mid_c)
@@ -172,96 +173,23 @@ class TriangleMultiplicationOutgoing(nn.Module):
         x2d = self.norm1(x2d)
         i = self.l1i(x2d) * torch.sigmoid(self.l1i_sigm(x2d))
         j = self.l1j(x2d) * torch.sigmoid(self.l1j_sigm(x2d))
-        out = torch.einsum('bikc,bjkc->bijc', i, j)
+        if self.ingoing:
+            out = torch.einsum('bkjc,bkic->bijc', i, j)
+        else:
+            out = torch.einsum('bikc,bjkc->bijc', i, j)
         out = self.norm2(out)
         out = self.l2_proj(out)
         out = out * torch.sigmoid(self.l3_sigm(x2d))
         return out
 
 
-class TriangleMultiplicationIngoing(nn.Module):
-    def __init__(self, config, global_config):
-        super().__init__()
-        in_c = global_config['model']['rep2d_feat']
-        mid_c = config['mid_c']
-        self.norm1 = nn.LayerNorm(in_c)
-        self.norm2 = nn.LayerNorm(mid_c)
-        self.l1i = nn.Linear(in_c, mid_c)
-        self.l1j = nn.Linear(in_c, mid_c)
-        self.l1i_sigm = nn.Linear(in_c, mid_c)
-        self.l1j_sigm = nn.Linear(in_c, mid_c)
-        self.l2_proj = nn.Linear(mid_c, in_c)
-        self.l3_sigm = nn.Linear(in_c, in_c)
-
-    def forward(self, x2d):
-        x2d = self.norm1(x2d)
-        i = self.l1i(x2d) * torch.sigmoid(self.l1i_sigm(x2d))
-        j = self.l1j(x2d) * torch.sigmoid(self.l1j_sigm(x2d))
-        out = torch.einsum('bkjc,bkic->bijc', i, j)
-        out = self.norm2(out)
-        out = self.l2_proj(out)
-        out = out * torch.sigmoid(self.l3_sigm(x2d))
-        return out
-
-
-class TriangleAttentionStartingNode(nn.Module):
-    def __init__(self, config, global_config):
-        super().__init__()
-        attn_num_c = config['attention_num_c']
-        num_heads = config['num_heads']
-        num_in_c = global_config['model']['rep2d_feat']
-        self.rand_remove = config['rand_remove']
-        self.attn_num_c = attn_num_c
-        self.num_heads = num_heads
-
-        self.norm = nn.LayerNorm(num_in_c)
-        self.q = nn.Linear(num_in_c, attn_num_c*num_heads, bias=False)
-        self.k = nn.Linear(num_in_c, attn_num_c*num_heads, bias=False)
-        self.v = nn.Linear(num_in_c, attn_num_c*num_heads, bias=False)
-        #self.qkv = nn.Linear(num_in_c, attention_num_c * num_heads * 3, bias=False)
-        self.bias = nn.Linear(num_in_c, num_heads, bias=False)
-        self.gate = nn.Linear(num_in_c, attn_num_c * num_heads)
-        self.out = nn.Linear(attn_num_c * num_heads, num_in_c)
-
-    def forward(self, x2d):
-        x2d = self.norm(x2d)
-
-        if self.rand_remove > 0.0 and self.training:
-            selection = torch.randperm(x2d.shape[1], device=x2d.device)
-            selection = selection[:max(1, int(selection.shape[0] * (1 - self.rand_remove)))]
-            shape_full = x2d.shape
-            res_ids_cart = torch.cartesian_prod(selection, selection)
-            x2d = x2d[:, res_ids_cart[:, 0], res_ids_cart[:, 1]].reshape(x2d.shape[0], len(selection), len(selection), x2d.shape[-1])
-
-        q = self.q(x2d).view(*x2d.shape[:-1], self.num_heads, self.attn_num_c)
-        k = self.k(x2d).view(*x2d.shape[:-1], self.num_heads, self.attn_num_c)
-        v = self.v(x2d).view(*x2d.shape[:-1], self.num_heads, self.attn_num_c)
-        factor = 1 / math.sqrt(self.attn_num_c)
-        aff = torch.einsum('bmihc,bmjhc->bmhij', q*factor, k)
-        b = self.bias(x2d)
-        b = b.permute(0, 3, 1, 2)
-        weights = torch.softmax(aff + b, dim=-1)
-        g = torch.sigmoid(self.gate(x2d).view(*x2d.shape[:-1], self.num_heads, self.attn_num_c))
-        out = torch.einsum('bmhqk,bmkhc->bmqhc', weights, v)*g
-
-        out = self.out(out.flatten(start_dim=-2))
-
-        if self.rand_remove > 0.0 and self.training:
-            out_full = torch.zeros(shape_full, device=out.device, dtype=out.dtype)
-            out_full[:, res_ids_cart[:, 0], res_ids_cart[:, 1]] = out.flatten(1, 2)
-            out = out_full
-
-        return out
-
-
-class TriangleAttentionEndingNode(nn.Module):
+class TriangleAttention(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
         attention_num_c = config['attention_num_c']
         num_heads = config['num_heads']
         num_in_c = global_config['model']['rep2d_feat']
-        self.rand_remove = config['rand_remove']
-
+        self.ending_node = config['ending_node']
         self.attention_num_c = attention_num_c
         self.num_heads = num_heads
 
@@ -274,15 +202,9 @@ class TriangleAttentionEndingNode(nn.Module):
         self.out = nn.Linear(attention_num_c * num_heads, num_in_c)
 
     def forward(self, x2d):
-        x2d = x2d.transpose(-2,-3)
+        if self.ending_node:
+            x2d = x2d.transpose(-2, -3)
         x2d = self.norm(x2d)
-
-        if self.rand_remove > 0.0 and self.training:
-            selection = torch.randperm(x2d.shape[1], device=x2d.device)
-            selection = selection[:max(1, int(selection.shape[0] * (1 - self.rand_remove)))]
-            shape_full = x2d.shape
-            res_ids_cart = torch.cartesian_prod(selection, selection)
-            x2d = x2d[:, res_ids_cart[:, 0], res_ids_cart[:, 1]].reshape(x2d.shape[0], len(selection), len(selection), x2d.shape[-1])
 
         q = self.q(x2d).view(*x2d.shape[:-1], self.num_heads, self.attention_num_c)
         k = self.k(x2d).view(*x2d.shape[:-1], self.num_heads, self.attention_num_c)
@@ -296,82 +218,9 @@ class TriangleAttentionEndingNode(nn.Module):
         out = torch.einsum('bmhqk,bmkhc->bmqhc', weights, v)*g
 
         out = self.out(out.flatten(start_dim=-2))
-        out = out.transpose(-2,-3)
+        if self.ending_node:
+            out = out.transpose(-2,-3)
 
-
-        if self.rand_remove > 0.0 and self.training:
-            out_full = torch.zeros(shape_full, device=out.device, dtype=out.dtype)
-            out_full[:, res_ids_cart[:, 0], res_ids_cart[:, 1]] = out.flatten(1, 2)
-            out = out_full
-
-        return out
-
-
-class TemplatePairStackIteration(nn.Module):
-    def __init__(self, config, global_config):
-        super().__init__()
-        self.TriangleAttentionStartingNode = TriangleAttentionStartingNode(config['TriangleAttentionStartingNode'], global_config)
-        self.TriangleAttentionEndingNode = TriangleAttentionEndingNode(config['TriangleAttentionEndingNode'], global_config)
-        self.TriangleMultiplicationOutgoing = TriangleMultiplicationOutgoing(config['TriangleMultiplicationOutgoing'], global_config)
-        self.TriangleMultiplicationIngoing = TriangleMultiplicationIngoing(config['TriangleMultiplicationIngoing'], global_config)
-        self.PairTransition = Transition(global_config['model']['rep2d_feat'], config['PairTransition']['n'])
-        self.dropout2d_25 = nn.Dropout2d(0.25)
-
-    def forward(self, x2d):
-        x2d += self.TriangleAttentionStartingNode(x2d.clone()) #self.dropout2d_25(self.TriangleAttentionStartingNode(x2d.clone()))
-        #x2d += self.dropout2d_25(self.TriangleAttentionEndingNode(x2d.clone()).transpose_(1, 2)).transpose_(1, 2)
-        x2d += self.TriangleAttentionEndingNode(x2d.clone())
-        x2d += self.TriangleMultiplicationOutgoing(x2d.clone())
-        x2d += self.TriangleMultiplicationIngoing(x2d.clone())
-        return x2d
-
-
-class TemplatePairStack(nn.Module):
-    def __init__(self, config, global_config):
-        super().__init__()
-        self.rr_proj = nn.Linear(global_config['hh_rr'], global_config['model']['rep2d_feat'])
-        self.layers = nn.ModuleList([TemplatePairStackIteration(config['TemplatePairStackIteration'], global_config) for _ in range(config['num_iter'])])
-        self.norm = nn.LayerNorm(global_config['model']['rep2d_feat'])
-        self.config = config
-
-    def forward(self, inputs):
-        rr = self.rr_proj(inputs['rr_2d']).squeeze(0)
-        out = rr
-
-        for l in self.layers:
-            #if self.config['TemplatePairStackIteration']['checkpoint']:
-            #    out = checkpoint(lambda x: l(x), out)
-            #else:
-            out = l(out)
-
-        return self.norm(out).unsqueeze(0)
-
-
-class TemplatePointwiseAttention(nn.Module):
-    def __init__(self, config, global_config):
-        super().__init__()
-        attention_num_c = config['attention_num_c']
-        num_heads = config['num_heads']
-        num_in_c = global_config['model']['rep2d_feat']
-
-        self.attention_num_c = attention_num_c
-        self.num_heads = num_heads
-        self.num_in_c = num_in_c
-
-        #self.norm = nn.LayerNorm(num_in_c)
-        self.q = nn.Linear(num_in_c, attention_num_c * num_heads, bias=False)
-        self.k = nn.Linear(num_in_c, attention_num_c * num_heads, bias=False)
-        self.v = nn.Linear(num_in_c, attention_num_c * num_heads, bias=False)
-        self.out = nn.Linear(attention_num_c * num_heads, num_in_c)
-
-    def forward(self, z2d, t2d):
-        q = self.q(z2d).view(*z2d.shape[:-1], self.attention_num_c, self.num_heads)
-        k = self.k(t2d).view(*t2d.shape[:-1], self.attention_num_c, self.num_heads)
-        v = self.v(t2d).view(*t2d.shape[:-1], self.attention_num_c, self.num_heads)
-
-        w = torch.softmax(torch.einsum('bijch,btijch->btijh', q, k) / math.sqrt(self.num_in_c), dim=1)
-        out = torch.einsum('btijh,btijch->bijch', w, v)
-        out = self.out(out.flatten(start_dim=-2))
         return out
 
 
@@ -379,14 +228,14 @@ class EvoformerIteration(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
         self.RowAttentionWithPairBias = RowAttentionWithPairBias(config['RowAttentionWithPairBias'], global_config)
-        self.LigColumnAttention = LigColumnAttention(config['LigColumnAttention'], global_config)
-        self.RecTransition = Transition(global_config['model']['rep1d_feat'], config['RecTransition']['n'])
+        self.MSAColumnAttention = MSAColumnAttention(config['MSAColumnAttention'], global_config)
+        self.MSATransition = Transition(global_config['model']['rep1d_feat'], config['MSATransition']['n'])
         self.OuterProductMean = OuterProductMean(config['OuterProductMean'], global_config)
 
-        self.TriangleMultiplicationOutgoing = TriangleMultiplicationOutgoing(config['TriangleMultiplicationOutgoing'], global_config)
-        self.TriangleMultiplicationIngoing = TriangleMultiplicationIngoing(config['TriangleMultiplicationIngoing'], global_config)
-        self.TriangleAttentionStartingNode = TriangleAttentionStartingNode(config['TriangleAttentionStartingNode'], global_config)
-        self.TriangleAttentionEndingNode = TriangleAttentionEndingNode(config['TriangleAttentionEndingNode'], global_config)
+        self.TriangleMultiplicationOutgoing = TriangleMultiplication(config['TriangleMultiplicationOutgoing'], global_config)
+        self.TriangleMultiplicationIngoing = TriangleMultiplication(config['TriangleMultiplicationIngoing'], global_config)
+        self.TriangleAttentionStartingNode = TriangleAttention(config['TriangleAttentionStartingNode'], global_config)
+        self.TriangleAttentionEndingNode = TriangleAttention(config['TriangleAttentionEndingNode'], global_config)
         self.PairTransition = Transition(global_config['model']['rep2d_feat'], config['PairTransition']['n'])
 
         self.dropout1d_15 = nn.Dropout(0.15)
@@ -400,8 +249,8 @@ class EvoformerIteration(nn.Module):
         a = self.RowAttentionWithPairBias(r1d.clone(), pair.clone())
         # r1d += self.dropout1d_15(a)
         r1d += a #self.dropout2d_15(b)
-        r1d += self.LigColumnAttention(r1d.clone())
-        r1d += self.RecTransition(r1d.clone())
+        r1d += self.MSAColumnAttention(r1d.clone())
+        r1d += self.MSATransition(r1d.clone())
         pair += self.OuterProductMean(r1d.clone())
 
         pair += self.TriangleMultiplicationOutgoing(pair.clone())
@@ -413,17 +262,17 @@ class EvoformerIteration(nn.Module):
         return r1d.clone(), pair.clone()
 
 
-class FragExtraStackIteration(torch.nn.Module):
+class ExtraMsaStackIteration(torch.nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
         self.RowAttentionWithPairBias = RowAttentionWithPairBias(config['RowAttentionWithPairBias'], global_config)
-        self.ExtraColumnGlobalAttention = ExtraColumnGlobalAttention(config['ExtraColumnGlobalAttention'], global_config)
-        self.RecTransition = Transition(global_config['model']['rep1d_extra_feat'], config['RecTransition']['n'])
+        self.MSAColumnGlobalAttention = MSAColumnGlobalAttention(config['MSAColumnGlobalAttention'], global_config)
+        self.MSATransition = Transition(global_config['model']['rep1d_extra_feat'], config['MSATransition']['n'])
         self.OuterProductMean = OuterProductMean(config['OuterProductMean'], global_config)
-        self.TriangleMultiplicationOutgoing = TriangleMultiplicationOutgoing(config['TriangleMultiplicationOutgoing'], global_config)
-        self.TriangleMultiplicationIngoing = TriangleMultiplicationIngoing(config['TriangleMultiplicationOutgoing'], global_config)
-        self.TriangleAttentionStartingNode = TriangleAttentionStartingNode(config['TriangleAttentionStartingNode'], global_config)
-        self.TriangleAttentionEndingNode = TriangleAttentionEndingNode(config['TriangleAttentionEndingNode'], global_config)
+        self.TriangleMultiplicationOutgoing = TriangleMultiplication(config['TriangleMultiplicationOutgoing'], global_config)
+        self.TriangleMultiplicationIngoing = TriangleMultiplication(config['TriangleMultiplicationOutgoing'], global_config)
+        self.TriangleAttentionStartingNode = TriangleAttention(config['TriangleAttentionStartingNode'], global_config)
+        self.TriangleAttentionEndingNode = TriangleAttention(config['TriangleAttentionEndingNode'], global_config)
         self.PairTransition = Transition(global_config['model']['rep2d_feat'], config['PairTransition']['n'])
 
         self.dropout1d_15 = nn.Dropout(0.15)
@@ -436,8 +285,8 @@ class FragExtraStackIteration(torch.nn.Module):
         a = self.RowAttentionWithPairBias(extra.clone(), pair.clone())
         # extra += self.dropout1d_15(a)
         extra += a #self.dropout2d_15(b)
-        extra += self.ExtraColumnGlobalAttention(extra.clone())
-        extra += self.RecTransition(extra.clone())
+        extra += self.MSAColumnGlobalAttention(extra.clone())
+        extra += self.MSATransition(extra.clone())
         pair += self.OuterProductMean(extra.clone())
         # pair += self.dropout2d_25(self.TriangleMultiplicationOutgoing(pair.clone()))
         pair += self.TriangleMultiplicationOutgoing(pair.clone())
@@ -449,20 +298,17 @@ class FragExtraStackIteration(torch.nn.Module):
         return extra.clone(), pair.clone()
 
 
-class FragExtraStack(nn.Module):
+class ExtraMsaStack(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
         self.project = nn.Linear(global_config['data']['msa_extra_feat'], global_config['model']['rep1d_extra_feat'])
-        self.layers = nn.ModuleList([FragExtraStackIteration(config['FragExtraStackIteration'], global_config) for _ in range(config['num_iter'])])
+        self.layers = nn.ModuleList([ExtraMsaStackIteration(config['ExtraMsaStackIteration'], global_config) for _ in range(config['num_iter'])])
         self.config = config
 
     def forward(self, extra, pair):
         extra = self.project(extra)
-        #print([x for x in self.layers[0].parameters()])
-        #print(list(self.layers[0].parameters())[0])
-
         for l in self.layers:
-            if self.config['FragExtraStackIteration']['checkpoint']:
+            if self.config['ExtraMsaStackIteration']['checkpoint']:
                 extra, pair = checkpoint(l, extra, pair)
             else:
                 extra, pair = l(extra, pair)
@@ -526,9 +372,7 @@ class InputEmbedder(torch.nn.Module):
         self.main_msa_project = nn.Linear(global_config['data']['msa_clus_feat'], r1d_num_c)
 
         self.InitPairRepresentation = InitPairRepresentation(global_config)
-        #self.TemplatePairStack = TemplatePairStack(config['TemplatePairStack'], global_config).to(config['TemplatePairStack']['device'])
-        #self.TemplatePointwiseAttention = TemplatePointwiseAttention(config['TemplatePointwiseAttention'], global_config).to(config['TemplatePointwiseAttention']['device'])
-        self.FragExtraStack = FragExtraStack(config['FragExtraStack'], global_config)
+        self.ExtraMsaStack = ExtraMsaStack(config['ExtraMsaStack'], global_config)
         self.RecyclingEmbedder = RecyclingEmbedder(config['RecyclingEmbedder'], global_config)
 
         self.config = config
@@ -548,7 +392,7 @@ class InputEmbedder(torch.nn.Module):
         self.rec_1d_project.to(self.config['device'])
         self.main_msa_project.to(self.config['device'])
         self.InitPairRepresentation.to(self.config['device'])
-        self.FragExtraStack.to(self.config['FragExtraStack']['device'])
+        self.ExtraMsaStack.to(self.config['ExtraMsaStack']['device'])
         self.RecyclingEmbedder.to(self.config['device'])
 
     def forward(self, inputs, recycling=None):
@@ -570,53 +414,11 @@ class InputEmbedder(torch.nn.Module):
             pair += recyc_out['pair_update']
             rec_1d[:, 0] += recyc_out['rec_1d_update']
 
-        # make template embedding
-        if 'hhpred' in inputs:
-            hh_inputs = {k: v.to(self.config['TemplatePairStack']['device']) for k, v in inputs['hhpred'].items()}
-            if self.config['TemplatePairStack']['checkpoint']:
-                hh_2d = checkpoint(lambda x: self.TemplatePairStack(x), hh_inputs)
-            else:
-                hh_2d = self.TemplatePairStack(hh_inputs)
-            template_embedding = self.TemplatePointwiseAttention(pair.clone().to(self.config['TemplatePointwiseAttention']['device']), hh_2d.to(self.config['TemplatePointwiseAttention']['device']))
-
-            # add embeddings to the pair rep
-            pair += template_embedding.to(pair.device)
-
         # embed extra stack
         if 'msa' in inputs and 'extra' in inputs['msa']:
-            pair = self.FragExtraStack(
-                inputs['msa']['extra'].to(self.config['FragExtraStack']['device']),
-                pair.to(self.config['FragExtraStack']['device'])
+            pair = self.ExtraMsaStack(
+                inputs['msa']['extra'].to(self.config['ExtraMsaStack']['device']),
+                pair.to(self.config['ExtraMsaStack']['device'])
             )
 
         return {'r1d': rec_1d, 'pair': pair}
-
-
-def example3():
-    from config import config, DATA_DIR
-    with torch.no_grad():
-        model = InputEmbedder(config['InputEmbedder'], config).cuda()
-
-        pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-        print('Num params:', pytorch_total_params)
-
-        from dataset import DockingDataset
-        ds = DockingDataset(DATA_DIR, 'train_split/debug.json')
-        #print(ds[0])
-        item = ds[0]
-
-        for k1, v1 in item.items():
-            print(k1)
-            for k2, v2 in v1.items():
-                v1[k2] = torch.as_tensor(v2)[None].cuda()
-                print('    ', k2, v1[k2].shape, v1[k2].dtype)
-
-        #print(item['fragments']['num_res'])
-        #print(item['fragments']['num_atoms'])
-        out = model(item)
-        for k1, v1 in out.items():
-            print(k1, v1.shape, v1.dtype)
-
-
-if __name__ == '__main__':
-    example3()

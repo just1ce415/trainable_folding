@@ -185,7 +185,7 @@ def check_grads(inputs):
 
     modules = list(model.StructureModule.named_parameters()) + list(model.Evoformer.named_parameters())
     if 'msa' in inputs and 'extra' in inputs['msa']:
-        modules += list(model.InputEmbedder.FragExtraStack.named_parameters())
+        modules += list(model.InputEmbedder.ExtraMsaStack.named_parameters())
     grads_are_none = [name for name, x in modules if x.grad is None]
     if len(grads_are_none) > 0:
         for x in sorted(grads_are_none):
@@ -379,6 +379,7 @@ def main(
         valid_json=None,
         data_dir=None,
         horovod=False,
+        gpu=True,
         seed=123456,
         model_pth=None,
         config_update_json=None,
@@ -426,28 +427,56 @@ def main(
     USE_AMP = amp
     USE_AMP_SCALER = amp_scale
 
-    if config_update_json:
-        CONFIG_DICT = utils.merge_dicts(CONFIG_DICT, utils.read_json(config_update_json))
+    if gpu:
+        assert torch.cuda.is_available(), 'CUDA is not available'
+        device = 'cuda:0'
+        if horovod:
+            device = f'cuda:{hvd.local_rank()}'
+    else:
+        device = 'cpu'
 
-    model = docker.DockerIteration(CONFIG_DICT['model'], CONFIG_DICT)
+    print(HOROVOD_RANK, ':', 'Using device', device)
+
+    # remove checkpointing to get rid of the grad is none warning
+    config_dict = deepcopy(config.config)
+    config_dict = utils.merge_dicts(config_dict, {
+        'model': {
+            'msa_bert_block': True,
+            'Evoformer': {'device': device, 'EvoformerIteration': {'checkpoint': True}},
+            'InputEmbedder': {'device': device, 'ExtraMsaStack': {'device': device, 'ExtraMsaStackIteration': {'checkpoint': True}}},
+            'StructureModule': {'device': device}
+        }
+    })
+
+    if config_update_json:
+        if HOROVOD_RANK == 0:
+            print('Updating configuration using', config_update_json)
+        config_dict = utils.merge_dicts(config_dict, utils.read_json(config_update_json))
+
+    model = docker.DockerIteration(config_dict['model'], config_dict)
     model.modules_to_devices()
 
     if HOROVOD_RANK == 0:
         print('Num params:', sum(p.numel() for p in model.parameters() if p.requires_grad))
         print('Num param sets:', len([p for p in model.parameters() if p.requires_grad]))
-        #for x in range(torch.cuda.device_count()):
-        #    print('cuda:' + str(x), ':', torch.cuda.memory_stats(x)['allocated_bytes.all.peak'] / 1024**2)
-        sys.stdout.flush()
 
     lr_scaler = 1 if not HOROVOD or not lr_scale else hvd.size()
+    if HOROVOD_RANK == 0:
+        print('Scaling learning rate by', lr_scaler)
+        print('Resulting learning rate', lr * lr_scaler)
     optimizer = optim.Adam(model.parameters(), lr=lr * lr_scaler) #, momentum=args.momentum)
     scheduler = ReduceLROnPlateau(optimizer, factor=scheduler_factor, patience=scheduler_patience, min_lr=scheduler_min_lr * lr_scaler)
 
     start_epoch = 1
     scheduler_state = scheduler.state_dict()
 
-    if model_pth is None:
+    if model_pth is None and HOROVOD_RANK == 0:
+        print('model_pth is not set, looking for pth in the current directory')
         model_pth = find_last_pth(OUT_DIR)
+        if model_pth is not None:
+            print('Found', model_pth)
+        else:
+            print('Did not find any saved state, starting from scratch')
 
     if model_pth is not None and HOROVOD_RANK == 0:
         print('Loading saved model from', model_pth)
@@ -455,21 +484,27 @@ def main(
         model.load_state_dict(dict_pth['model_state_dict'])
 
         if 'global_step' in dict_pth:
+            print('Setting global step to', dict_pth['global_step'])
             GLOBAL_STEP = dict_pth['global_step']
 
         if 'epoch' in dict_pth:
+            print('Setting starting epoch to', dict_pth['epoch'] + 1)
             start_epoch = dict_pth['epoch'] + 1
 
         if 'optimizer_state_dict' in dict_pth:
+            print('Loading optimizer_state_dict')
             optimizer.load_state_dict(dict_pth['optimizer_state_dict'])
 
         if 'scheduler_state_dict' in dict_pth and not scheduler_reset:
+            print('Loading scheduler_state_dict')
             scheduler_state = dict_pth['scheduler_state_dict']
 
         if 'hvd_size' in dict_pth and lr_scale:
             _hvd_size = 1 if not HOROVOD else hvd.size()
-            for g in optimizer.param_groups:
-                g['lr'] = g['lr'] * _hvd_size / dict_pth['hvd_size']
+            if _hvd_size != dict_pth['hvd_size']:
+                print('Rescaling learning rate by ', _hvd_size / dict_pth['hvd_size'])
+                for g in optimizer.param_groups:
+                    g['lr'] = g['lr'] * _hvd_size / dict_pth['hvd_size']
 
     if lr_reset:
         for g in optimizer.param_groups:
@@ -496,7 +531,8 @@ def main(
     while True:
         #with torch.autograd.set_detect_anomaly(True):
         if max_epoch is not None and epoch > max_epoch:
-            print(f'Reached max epoch {max_epoch}')
+            if HOROVOD_RANK == 0:
+                print(f'Reached max epoch {max_epoch}')
             break
         train(epoch, train_json, data_dir, seed)
         if valid_json:
@@ -513,6 +549,8 @@ def main(
               help='Directory containing files specified in train_json, paths in train_json will be prepended')
 @click.option('--model_pth', type=click.Path(exists=True, dir_okay=False),
               help='Resume training from the saved state')
+@click.option('--gpu/--no_gpu', default=True, show_default=True,
+              help='Use GPU or CPU. If GPU the device will be cuda:0 or cuda:<<local_rank>> when using Horovod')
 @click.option('--seed', default=123456, show_default=True, type=click.INT,
               help='Seed for RNG. Ensures reproducibility')
 @click.option('--config_update_json', type=click.Path(exists=True, dir_okay=False),

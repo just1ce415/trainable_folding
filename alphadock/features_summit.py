@@ -15,7 +15,8 @@ from alphadock import residue_constants
 from alphadock import all_atom
 from alphadock import r3
 from alphadock import quat_affine
-from alphadock.config import DATA_DIR, DTYPE_FLOAT, DTYPE_INT
+from alphadock.config import DTYPE_FLOAT, DTYPE_INT
+
 
 AATYPE = residue_constants.restype_order
 AATYPE_WITH_X = residue_constants.restype_order_with_x

@@ -81,7 +81,7 @@ class InvariantPointAttention(torch.nn.Module):
         attn_qk_scalar = torch.matmul(q, k.transpose(-2,-1))
         attn_logits = attn_qk_scalar + attn_qk_point
         attn_2d = self.rr_kqv_2d(rep_2d)
-        attn_2d =torch.permute(attn_2d, (0,3,1,2))
+        attn_2d = torch.permute(attn_2d, (0,3,1,2))
         attn_2d = math.sqrt(1.0/num_logit_terms) * attn_2d
         attn_logits = attn_logits + attn_2d
         attn = torch.softmax(attn_logits, dim=-1)
@@ -160,7 +160,6 @@ class PredictLDDT(torch.nn.Module):
             nn.Linear(num_c, num_c),
             nn.ReLU(),
             nn.Linear(num_c, num_bins)
-            #nn.Softmax(-1)
         )
 
     def forward(self, rep_1d):

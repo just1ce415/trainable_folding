@@ -11,28 +11,12 @@ from alphadock import loss
 from alphadock import utils
 
 
-def flatten_input(input, output=[], path=''):
-    '''
-    Wrote this to use in hooks but it turned out to be too slow
-    '''
-    if isinstance(input, tuple) or isinstance(input, list):
-        for i, x in enumerate(input):
-            flatten_input(x, output, path + '.' + str(i))
-    if isinstance(input, dict):
-        for k, v in input.items():
-            flatten_input(v, output, path + '.' + str(k))
-    if isinstance(input, torch.Tensor):
-        output += [(path, input)]
-    return output
-
-
 class DockerIteration(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
         self.InputEmbedder = modules.InputEmbedder(config['InputEmbedder'], global_config)
-        self.Evoformer = nn.ModuleList([modules.EvoformerIteration(config['Evoformer']['EvoformerIteration'], global_config)
-                                        for _ in range(config['Evoformer']['num_iter'])])
-        self.EvoformerExtractSingleRec = nn.Linear(global_config['model']['rep1d_feat'], global_config['model']['single_rep_feat'])
+        self.Evoformer = nn.ModuleList([modules.EvoformerIteration(config['Evoformer']['EvoformerIteration'], global_config) for _ in range(config['Evoformer']['num_iter'])])
+        self.EvoformerExtractSingle = nn.Linear(global_config['model']['rep1d_feat'], global_config['model']['single_rep_feat'])
         self.StructureModule = structure.StructureModule(config['StructureModule'], global_config)
 
         if config['msa_bert_block']:
@@ -58,7 +42,7 @@ class DockerIteration(nn.Module):
     def modules_to_devices(self):
         self.InputEmbedder.modules_to_devices()
         self.Evoformer.to(self.config['Evoformer']['device'])
-        self.EvoformerExtractSingleRec.to(self.config['Evoformer']['device'])
+        self.EvoformerExtractSingle.to(self.config['Evoformer']['device'])
         self.StructureModule.to(self.config['StructureModule']['device'])
         if self.config['msa_bert_block']:
             self.MSA_BERT.to(self.config['Evoformer']['device'])
@@ -75,7 +59,7 @@ class DockerIteration(nn.Module):
                 x['r1d'], x['pair'] = evo_iter(x['r1d'], x['pair'])
 
         pair = x['pair']
-        rec_single = self.EvoformerExtractSingleRec(x['r1d'][:, 0])
+        rec_single = self.EvoformerExtractSingle(x['r1d'][:, 0])
 
         msa_bert = None
         if self.config['msa_bert_block'] and 'main_mask' in input['msa']:
@@ -122,59 +106,5 @@ class DockerIteration(nn.Module):
         return out_dict
 
 
-def example4():
-    from config import config, DATA_DIR
-
-    #with torch.autograd.set_detect_anomaly(True):
-    model = DockerIteration(config, config) #.cuda()
-    model.train()
-
-    pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print('Num params:', pytorch_total_params)
-
-    from dataset import DockingDataset
-    ds = DockingDataset(DATA_DIR, 'train_split/debug.json')
-    item = ds[0]
-
-    for k1, v1 in item.items():
-        print(k1)
-        for k2, v2 in v1.items():
-            v1[k2] = torch.as_tensor(v2)[None].cuda()
-            print('    ', k2, v1[k2].shape, v1[k2].dtype)
-
-    #with torch.cuda.amp.autocast():
-    #with torch.autograd.set_detect_anomaly(True):
-    out = model(item)
-    print(out['loss'])
-    loss = out['loss']['loss_total']
-    loss.backward()
-
-    #print({k: v.shape if isinstance(v, torch.Tensor) else v for k, v in model(item).items()})
-
-
-def example_profiler():
-    from config import config, DATA_DIR
-
-    model = DockerIteration(config, config) #.cuda()
-    model.train()
-
-    pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print('Num params:', pytorch_total_params)
-
-    from dataset import DockingDataset
-    ds = DockingDataset(DATA_DIR, 'train_split/debug.json')
-    item = ds[0]
-
-    for k1, v1 in item.items():
-        print(k1)
-        for k2, v2 in v1.items():
-            v1[k2] = torch.as_tensor(v2)[None].cuda()
-            print('    ', k2, v1[k2].shape, v1[k2].dtype)
-
-    #with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True) as prof:
-    #    out = model(item)
-    #print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
-
-
 if __name__ == '__main__':
-    example4()
+    pass

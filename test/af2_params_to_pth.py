@@ -10,7 +10,10 @@ sys.path.insert(1, '../')
 from alphadock import docker
 from alphadock import config
 
+
 _NPZ_KEY_PREFIX = "alphafold/alphafold_iteration/"
+
+
 class ParamType(Enum):
     LinearWeight = partial(  # hack: partial prevents fns from becoming methods
         lambda w: w.transpose(-1, -2)
@@ -30,11 +33,13 @@ class ParamType(Enum):
     def __init__(self, fn):
         self.transformation = fn
 
+
 @dataclass
 class Param:
     param: Union[torch.Tensor, List[torch.Tensor]]
     param_type: ParamType = ParamType.Other
     stacked: bool = False
+
 
 def _process_translations_dict(d, top_layer=True):
     flat = {}
@@ -53,6 +58,7 @@ def _process_translations_dict(d, top_layer=True):
             flat[k] = v
 
     return flat
+
 
 def stacked(param_dict_list, out=None):
     """
@@ -82,6 +88,7 @@ def stacked(param_dict_list, out=None):
 
     return out
 
+
 def assign(translation_dict, orig_weights):
     for k, param in translation_dict.items():
         with torch.no_grad():
@@ -102,6 +109,7 @@ def assign(translation_dict, orig_weights):
                 print(ref[0].shape)
                 print(weights[0].shape)
                 raise
+
 
 def import_jax_weights_(model, version="model_1"):
 
@@ -246,17 +254,17 @@ def import_jax_weights_(model, version="model_1"):
     def EvoformerBlockParams(b, is_extra_msa=False):
         if is_extra_msa:
            col_att_name = "msa_column_global_attention"
-           msa_col_att_params = GlobalColMSAAttParams(b.ExtraColumnGlobalAttention)
+           msa_col_att_params = GlobalColMSAAttParams(b.MSAColumnGlobalAttention)
         else:
            col_att_name = "msa_column_attention"
-           msa_col_att_params = MSAAttParams(b.LigColumnAttention)
+           msa_col_att_params = MSAAttParams(b.MSAColumnAttention)
 
         d = {
             "msa_row_attention_with_pair_bias": MSAAttPairBiasParams(
                 b.RowAttentionWithPairBias
             ),
             col_att_name: msa_col_att_params,
-            "msa_transition": MSATransitionParams(b.RecTransition),
+            "msa_transition": MSATransitionParams(b.MSATransition),
             "outer_product_mean":
                 OuterProductMeanParams(b.OuterProductMean),
             "triangle_multiplication_outgoing":
@@ -274,7 +282,7 @@ def import_jax_weights_(model, version="model_1"):
         return d
     ExtraMSABlockParams = partial(EvoformerBlockParams, is_extra_msa=True)
 
-    ems_blocks = model.InputEmbedder.FragExtraStack.layers
+    ems_blocks = model.InputEmbedder.ExtraMsaStack.layers
     ems_blocks_params = stacked([ExtraMSABlockParams(b) for b in ems_blocks])
 
     evo_blocks = model.Evoformer
@@ -309,7 +317,7 @@ def import_jax_weights_(model, version="model_1"):
             #    "attention": AttentionParams(model.template_pointwise_att.mha),
             #},
             "extra_msa_activations": LinearParams(
-                model.InputEmbedder.FragExtraStack.project
+                model.InputEmbedder.ExtraMsaStack.project
             ),
             "extra_msa_stack": ems_blocks_params,
             #"template_single_embedding": LinearParams(
@@ -319,7 +327,7 @@ def import_jax_weights_(model, version="model_1"):
             #    model.template_angle_embedder.linear_2
             #),
             "evoformer_iteration": evo_blocks_params,
-            "single_activations": LinearParams(model.EvoformerExtractSingleRec),
+            "single_activations": LinearParams(model.EvoformerExtractSingle),
         },
         "structure_module": {
             "single_layer_norm": LayerNormParams(
