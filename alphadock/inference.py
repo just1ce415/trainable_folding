@@ -1,3 +1,18 @@
+# Copyright © 2022 Applied BioComputation Group, Stony Brook University
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
@@ -92,7 +107,7 @@ def report_step(input, output, global_stats, out_dir):
         add_loss_to_stats(stats, output)
 
     sample_idx = input["target"]["ix"].item()
-    pred_to_pdb(Path(out_dir).mkdir_p() / f'{sample_idx:06d}.pdb', input, output)
+    pred_to_pdb(Path(out_dir).mkdir_p() / f'prediction_{sample_idx:06d}.pdb', input, output)
 
     if 'loss' in output:
         utils.write_json(stats, Path(out_dir).mkdir_p() / f'{sample_idx:06d}.json')
@@ -156,7 +171,7 @@ def main(
         cif_asym_id=None,
         out_dir='.',
         horovod=False,
-        device='cuda:0'
+        gpu=True,
 ):
     global HOROVOD, HOROVOD_RANK, hvd
 
@@ -170,8 +185,13 @@ def main(
     torch.manual_seed(seed)
     logging.getLogger('.prody').setLevel('CRITICAL')
 
-    if device.startswith('cuda'):
+    if gpu:
         assert torch.cuda.is_available(), 'CUDA is not available'
+        device = 'cuda:0'
+        if horovod:
+            device = f'cuda:{hvd.local_rank()}'
+    else:
+        device = 'cpu'
 
     # remove checkpointing to get rid of the grad is none warning
     config_dict = deepcopy(config.config)
@@ -189,7 +209,7 @@ def main(
         'model': {
             'msa_bert_block': False,
             'Evoformer': {'device': device, 'EvoformerIteration': {'checkpoint': False}},
-            'InputEmbedder': {'device': device, 'FragExtraStack': {'device': device, 'FragExtraStackIteration': {'checkpoint': False}}},
+            'InputEmbedder': {'device': device, 'ExtraMsaStack': {'device': device, 'ExtraMsaStackIteration': {'checkpoint': False}}},
             'StructureModule': {'device': device}
         }
     })
@@ -296,7 +316,8 @@ def main(
               type=click.Path(exists=True, file_okay=False, writable=True),
               help='Directory where to put predicted models')
 @click.option('--horovod', is_flag=True, help='Use Horovod for multi-GPU batch calculation')
-@click.option('--device', default='cuda:0', show_default=True, help='"cpu" or "cuda:N" where N - CUDA device ID')
+@click.option('--gpu/--no_gpu', default=True, show_default=True,
+              help='Use GPU or CPU. If GPU the device will be cuda:0 or cuda:<<local_rank>> when using Horovod')
 def cli(**kwargs):
     """Predict structures for a single protein or a batch using MSAs in a3m format.
 

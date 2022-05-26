@@ -1,6 +1,20 @@
+# Copyright © 2022 Applied BioComputation Group, Stony Brook University
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 import torch
 import sys
-sys.path.insert(1, '../')
 import math
 
 from alphadock import docker
@@ -11,38 +25,6 @@ from copy import deepcopy
 import torchvision
 import pickle
 
-
-config_diff = {
-    'Evoformer': {
-        #'num_iter': 8,
-        'device': 'cuda:0'
-    },
-    'InputEmbedder': {
-        'device': 'cuda:0',
-        'TemplatePairStack': {
-            'num_iter': 2,
-            'device': 'cuda:0'
-        },
-        'TemplatePointwiseAttention': {
-            'device': 'cuda:0',
-            'attention_num_c': 64,
-            'num_heads': 4
-        }
-    },
-    'StructureModule': {
-        'num_iter': 8,
-        'device': 'cuda:0',
-        'StructureModuleIteration': {
-            'checkpoint': True
-        }
-    },
-    'loss': {
-        'loss_violation_weight': 0.0,
-    }
-}
-
-
-config_summit = utils.merge_dicts(deepcopy(config.config), config_diff)
 
 def pred_to_pdb(out_pdb, input_dict, out_dict):
     with open(out_pdb, 'w') as f:
@@ -63,12 +45,13 @@ if __name__ == '__main__':
     with open('features.pkl', 'rb') as f:
         inputs = pickle.load(f)
 
-    model = docker.DockerIteration(config_summit['model'], config_summit)
+    model = docker.DockerIteration(config.config['model'], config.config)
     model.load_state_dict(torch.load(sys.argv[1])['model_state_dict'])
+    model.modules_to_devices()
     model.eval()
-    num_recycles = config_summit['model']['recycling_num_iter'] if config_summit['model']['recycling_on'] else 1
+    num_recycles = config.config['model']['recycling_num_iter'] if config.config['model']['recycling_on'] else 1
     with torch.no_grad():
         for recycle_iter in range(num_recycles):
             output = model(inputs, recycling=output['recycling_input'] if recycle_iter > 0 else None)
-    pred_to_pdb("test.pdb", inputs, output)
+    pred_to_pdb("prediction.pdb", inputs, output)
 
