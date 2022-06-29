@@ -466,8 +466,8 @@ def msa_featurize(
             main_msa_onehot,
             main_msa_has_del[..., None],
             main_msa_del_value[..., None],
-            main_msa_del_mean[..., None],
-            main_msa_clus_profile
+            main_msa_clus_profile,
+            main_msa_del_mean[..., None]
         ], axis=-1).astype(DTYPE_FLOAT)
     }
 
