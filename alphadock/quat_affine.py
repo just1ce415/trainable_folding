@@ -487,4 +487,3 @@ def make_transform_from_reference(
     return np.transpose(rotation, (0, 2, 1)), -translation
 
 
-

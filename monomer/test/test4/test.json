@@ -1,0 +1,14 @@
+[
+  {
+    "pdb_id": "test4",
+    "entity_id": "1",
+    "entity_info": {
+      "asym_ids": ["A"],
+      "pdbx_seq_one_letter_code_can": "GPGHMVVKFSYMWTINNFSFCREEMGEVIKSSTFSSGANDKLKWCLRVNPKGLDEESKDYLSLYLLLVSCPKSEVRAKFKFSILNAKGEETKAMESQRAYRFVQGKDWGFKKFIRRGFLLDEANGLLPDDKLTLFCEVSVVQD"
+    },
+    "cif_file": null,
+    "a3m_files": [
+      "test/test4/test4.fasta"
+    ]
+  }
+]

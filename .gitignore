@@ -4,8 +4,6 @@ data/
 venv/
 sandbox/
 *.pth
-test/
-examples/
 #########################
 
 # Byte-compiled / optimized / DLL files
@@ -142,4 +140,8 @@ dmypy.json
 .pyre/
 
 # pytype static type analyzer
+<<<<<<< HEAD
 .pytype/
+=======
+.pytype/
+>>>>>>> 28230dd37e31fbef956679efe115c5da72ee361c
