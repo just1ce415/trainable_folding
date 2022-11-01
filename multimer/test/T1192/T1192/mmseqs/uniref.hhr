@@ -1,0 +1,218 @@
+Query         <unknown
+Match_columns 215
+No_of_seqs    153 out of 1992
+Neff          5.76488
+Searched_HMMs 80799
+Date          Mon Jul 25 17:20:04 2022
+Command       hhsearch -i uniref.a3m -d /storage/thu/pdb70/pdb70 -cpu 4 -n 1 
+
+ No Hit                             Prob E-value P-value  Score    SS Cols Query HMM  Template HMM
+  1 5XS0_I DNA repair protein RAD5 100.0 4.7E-49 5.8E-54  339.8   0.0  212    1-212     4-215 (215)
+  2 5JRB_C DNA repair protein RAD5 100.0 5.2E-49 6.5E-54  339.5   0.0  212    1-212     4-215 (215)
+  3 1H2I_G DNA REPAIR PROTEIN RAD5 100.0 2.7E-48 3.4E-53  333.7   0.0  209    1-209     1-209 (209)
+  4 5MMJ_e 50S ribosomal protein L  44.1      19 0.00023   34.6   0.0   29   22-52     89-117 (308)
+  5 5MMM_e 50S ribosomal protein L  44.1      19 0.00023   34.6   0.0   29   22-52     89-117 (308)
+  6 3OAK_C Transcription factor IW  15.0 1.4E+02  0.0018   18.7   0.0   13   70-82      8-20  (31)
+  7 3OAK_D Transcription factor IW  15.0 1.4E+02  0.0018   18.7   0.0   13   70-82      8-20  (31)
+  8 1CEU_A VPR; REGULATORY PROTEIN  12.8 1.8E+02  0.0022   21.0   0.0    7  162-168    42-48  (51)
+  9 5MEB_A Cell division cycle pro  11.9   2E+02  0.0025   23.8   0.0   25   29-54     55-79  (112)
+ 10 5MEB_B Cell division cycle pro  11.9   2E+02  0.0025   23.8   0.0   25   29-54     55-79  (112)
+
+No 1
+>5XS0_I DNA repair protein RAD52 homolog/DNA; Protein-DNA complex, ssDNA annealing protein; 3.0A {Homo sapiens}
+Probab=100.00  E-value=4.7e-49  Score=339.78  Aligned_cols=212  Identities=100%  Similarity=1.515  Sum_probs=176.2  Template_Neff=6.600
+
+Q <unknown          1 MSGTEEAILGGRDSHPAAGGGSVLCFGQCQYTAEEYQAIQKALRQRLGPEYISSRMAGGGQKVCYIEGHRVINLANEMFG   80 (215)
+Q Consensus         1 ~~~~~~~~~~~~~~~p~~g~~~~~~fg~~~fs~ee~~~iq~~L~~~L~p~~v~~R~g~gg~~l~Yi~g~~~I~lAN~iFG   80 (215)
+                      ||+.++.++.+++..|+++.+++..||.++||++++++|++.|+++|+++.|++|++++|..+.||++++++++||++||
+T Consensus         4 ~~~~~~~~~~~~~~~~~~~~~~~~~~g~~~~s~~~~~~i~~~L~~pl~~~~I~~R~~~gg~~~~Yl~~~~vi~~aN~vFG   83 (215)
+T 5XS0_I            4 MSGTEEAILGGRDSHPAAGGGSVLCFGQCQYTAEEYQAIQKALRQRLGPEYISSRMAGGGQKVCYIEGHRVINLANEMFG   83 (215)
+T ss_dssp             ------------------------CTTTCCCCHHHHHHHHHHTTCCBCTTTEEEEECTTSCEEEEECHHHHHHHHHHHHC
+T ss_pred             CCcccccccCCcCCCCCCCCCcccccccCCCCHHHHHHHHHHHhcccCHHHeEEccCCCCCceeeecHHHHHHHHHHHhC
+Confidence            89999999999999999999999999999999999999999999999999999999988889999999999999999999
+
+
+Q <unknown         81 YNGWAHSITQQNVDFVDLNNGKFYVGVCAFVRVQLKDGSYHEDVGYGVSEGLKSKALSLEKARKEAVTDGLKRALRSFGN  160 (215)
+Q Consensus        81 f~GWS~eI~~~~~d~~d~~~g~~~v~~~a~VRVtL~dG~~hedvG~G~~~~~~~k~~A~~~A~K~AvTDAlKRalr~FG~  160 (215)
+                      |+|||++|+.+++++.+..++++.++++|+|||+++||++++++|+|..++..++++|+.+|+|.|+||||||||++||+
+T Consensus        84 f~GWS~eI~~~~~~~~~~~~~~~~v~v~~~VrVtlkdG~~~e~~G~g~~~~~~~k~~a~~~A~K~A~TDAlKRA~~~fG~  163 (215)
+T 5XS0_I           84 YNGWAHSITQQNVDFVDLNNGKFYVGVCAFVRVQLKDGSYHEDVGYGVSEGLKSKALSLEKARKEAVTDGLKRALRSFGN  163 (215)
+T ss_dssp             TTTEEEEEEEEEEEEEEEETTEEEEEEEEEEEEEETTSCEEEEEEEEEEESCSCHHHHHHHHHHHHHHHHHHHHHHTTCG
+T ss_pred             CCCceeEEEEeEeeeEecCCCeEEEEEEEEEEEEECCCeEEEeEEEEecCcccchhhhHHHHHHHHHHHHHHHHHHHHHH
+Confidence            99999999999887766566788899999999999999999999999987666889999999999999999999999999
+
+
+Q <unknown        161 ALGNCILDKDYLRSLNKLPRQLPLEVDLTKAKRQDLEPSVEEARYNSCRPNM  212 (215)
+Q Consensus       161 ~lG~~LyDk~~~~~i~k~~~~~~~~~~~~~~~~~~~~~~~~~~~p~s~~p~~  212 (215)
+                      +||+||||+++++.+++++++++.++|.+++++++.+|+++.++.+|++||+
+T Consensus       164 ~iG~~Lyd~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  215 (215)
+T 5XS0_I          164 ALGNCILDKDYLRSLNKLPRQLPLEVDLTKAKRQDLEPSVEEARYNSCRPNM  215 (215)
+T ss_dssp             GGTGGGGCHHHHHHHHTSCCCCCCCCCGGGCBCSSCCHHHHHHHHTTC----
+T ss_pred             HHHHhccCHHHHHHHhcCCCCCCCCCChHHHhcCCCCcchhHHHHhhccCCC
+Confidence            9999999999999999999999999999999999999999999999999985
+
+
+No 2
+>5JRB_C DNA repair protein RAD52 homolog; DNA annealing protein, ssDNA binding; 2.405A {Homo sapiens}
+Probab=100.00  E-value=5.2e-49  Score=339.49  Aligned_cols=212  Identities=99%  Similarity=1.498  Sum_probs=176.2  Template_Neff=6.600
+
+Q <unknown          1 MSGTEEAILGGRDSHPAAGGGSVLCFGQCQYTAEEYQAIQKALRQRLGPEYISSRMAGGGQKVCYIEGHRVINLANEMFG   80 (215)
+Q Consensus         1 ~~~~~~~~~~~~~~~p~~g~~~~~~fg~~~fs~ee~~~iq~~L~~~L~p~~v~~R~g~gg~~l~Yi~g~~~I~lAN~iFG   80 (215)
+                      ||+.++.++.+++..|+++.+++..||.++||++++++|++.|+++|+|+.|++|++++|..++||++++++++||++||
+T Consensus         4 ~~~~~~~~~~~~~~~~~~~~~~~~~~g~~~~s~~~~~~i~~~L~~pl~p~~I~~R~~~gg~~~~YI~~~~vie~aN~vFG   83 (215)
+T 5JRB_C            4 MSGTEEAILGGRDSHPAAGGGSVLCFGQCQYTAEEYQAIQKALRQRLGPEYISSRMAGGGQKVCYIEGHRVINLANEMFG   83 (215)
+T ss_dssp             ------------------------CTTSCCCCHHHHHHHHHHHHCCBCGGGEEEEECTTSCEEEEECHHHHHHHHHHHHC
+T ss_pred             CCcccccccCCcCCCCCCCCCcccccccCCCCHHHHHHHHHHHhcccCHHHeEeccCCCCCceeeecHHHHHHHHHHHhC
+Confidence            89999999999999999999999999999999999999999999999999999999888889999999999999999999
+
+
+Q <unknown         81 YNGWAHSITQQNVDFVDLNNGKFYVGVCAFVRVQLKDGSYHEDVGYGVSEGLKSKALSLEKARKEAVTDGLKRALRSFGN  160 (215)
+Q Consensus        81 f~GWS~eI~~~~~d~~d~~~g~~~v~~~a~VRVtL~dG~~hedvG~G~~~~~~~k~~A~~~A~K~AvTDAlKRalr~FG~  160 (215)
+                      |+|||++|+++++++.+.+++++.++++|+|||+|++|++++++|+|..++..++++|+.+|+|.|+||||||||++||+
+T Consensus        84 f~GWS~eI~~~~~~~~~~~~g~~~v~~~~~VrItl~dG~~~e~~G~G~~~~~~~k~~a~~~A~K~A~TDAlKRA~~~fG~  163 (215)
+T 5JRB_C           84 YNGWAHSITQQNVDFVDLNNGAFYVGVCAFVRVQLKDGSYHEDVGYGVSEGLASKALSLEKARKEAVTDGLKRALRSFGN  163 (215)
+T ss_dssp             TTTEEEEEEEEEEEEEEEETTEEEEEEEEEEEEEETTSCEEEEEEEEEEEEESCHHHHHHHHHHHHHHHHHHHHHHTTCG
+T ss_pred             CCCceeEEEEeEeeeEecCCCeEEEEEEEEEEEEeCCCcEEEEEEEEecCCcccccccHHHHHHHHHHHHHHHHHHHHHH
+Confidence            99999999999888766666788899999999999999999999999987666889999999999999999999999999
+
+
+Q <unknown        161 ALGNCILDKDYLRSLNKLPRQLPLEVDLTKAKRQDLEPSVEEARYNSCRPNM  212 (215)
+Q Consensus       161 ~lG~~LyDk~~~~~i~k~~~~~~~~~~~~~~~~~~~~~~~~~~~p~s~~p~~  212 (215)
+                      +||+||||+++++.++++++++++++++++.++++.+|+++.++.+|++||+
+T Consensus       164 ~lG~~Lyd~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  215 (215)
+T 5JRB_C          164 ALGNCILDKDYLRSLNKLPRQLPLEVDLTKAKRQDLEPSVEAARYNSCRPNM  215 (215)
+T ss_dssp             GGTGGGGCHHHHHHHHTSCCCCCCCCCCTTCBCSSCCHHHHHHHHHTC----
+T ss_pred             HHHHhhcCHHHHHHHhcCCCCCCCCCChHHhhcCCCchhHHHHHHHhcCCCC
+Confidence            9999999999999999999999999999999999999999999999999985
+
+
+No 3
+>1H2I_G DNA REPAIR PROTEIN RAD52 HOMOLOG; DNA-BINDING PROTEIN, DNA REPAIR, DNA; 2.7A {HOMO SAPIENS} SCOP: d.50.1.3
+Probab=100.00  E-value=2.7e-48  Score=333.66  Aligned_cols=209  Identities=100%  Similarity=1.512  Sum_probs=177.3  Template_Neff=6.700
+
+Q <unknown          1 MSGTEEAILGGRDSHPAAGGGSVLCFGQCQYTAEEYQAIQKALRQRLGPEYISSRMAGGGQKVCYIEGHRVINLANEMFG   80 (215)
+Q Consensus         1 ~~~~~~~~~~~~~~~p~~g~~~~~~fg~~~fs~ee~~~iq~~L~~~L~p~~v~~R~g~gg~~l~Yi~g~~~I~lAN~iFG   80 (215)
+                      ||+.++.++.+++..|+++.++...||+++||++++++|++.|+++|+++.|++|++++|..++||++++++++||++||
+T Consensus         1 ~~~~~~~~~~~~~~~~~~~~~~~~~~g~~~~s~~~~~~i~~~L~~pl~~~~i~~R~~~gg~~~~Yl~~~~vie~aN~vFG   80 (209)
+T 1H2I_G            1 MSGTEEAILGGRDSHPAAGGGSVLCFGQCQYTAEEYQAIQKALRQRLGPEYISSRMAGGGQKVCYIEGHRVINLANEMFG   80 (209)
+T ss_dssp             -----------------------CCTTCCCCCHHHHHHHHHHHHCCBCTTTEEEEECTTSCEEEEECHHHHHHHHHHHHC
+T ss_pred             CCcccccccCCccCCCCCCCCcccccccCCCCHHHHHHHHHHHhcccCHHHeEEccCCCCCceeeecHHHHHHHHHHHhC
+Confidence            89999999999999999999999999999999999999999999999999999999988889999999999999999999
+
+
+Q <unknown         81 YNGWAHSITQQNVDFVDLNNGKFYVGVCAFVRVQLKDGSYHEDVGYGVSEGLKSKALSLEKARKEAVTDGLKRALRSFGN  160 (215)
+Q Consensus        81 f~GWS~eI~~~~~d~~d~~~g~~~v~~~a~VRVtL~dG~~hedvG~G~~~~~~~k~~A~~~A~K~AvTDAlKRalr~FG~  160 (215)
+                      |+|||++|+.+++++.+..++++.++++|+|||++++|++++++|+|..++..++++|+.+|+|.|+||||||||++||+
+T Consensus        81 f~GWS~eI~~~~~~~~~~~~~~~~v~v~~~VrItl~dG~~~e~~G~G~~~~~~~k~~a~~~A~K~A~TDAlKRA~~~fG~  160 (209)
+T 1H2I_G           81 YNGWAHSITQQNVDFVDLNNGKFYVGVCAFVRVQLKDGSYHEDVGYGVSEGLKSKALSLEKARKEAVTDGLKRALRSFGN  160 (209)
+T ss_dssp             TTTEEEEEEEEEEEEEEESSSSEEEEEEEEEEEEETTSCEEEEEEEEEEESCSCHHHHHHHHHHHHHHHHHHHHHHTTCG
+T ss_pred             CCCceeEEEEeEeeeEecCCCeEEEEEEEEEEEEECCCeEEEeEEEEecccccchhhcHHHHHHHHHHHHHHHHHHHHHH
+Confidence            99999999999888766667788999999999999999999999999987666889999999999999999999999999
+
+
+Q <unknown        161 ALGNCILDKDYLRSLNKLPRQLPLEVDLTKAKRQDLEPSVEEARYNSCR  209 (215)
+Q Consensus       161 ~lG~~LyDk~~~~~i~k~~~~~~~~~~~~~~~~~~~~~~~~~~~p~s~~  209 (215)
+                      +||+||||+++++.+++++++++.++|+++.++++.+|+++.++.+||+
+T Consensus       161 ~iG~~Lyd~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  209 (209)
+T 1H2I_G          161 ALGNCILDKDYLRSLNKLPRQLPLEVDLTKAKRQDLEPSVEEARYNSCR  209 (209)
+T ss_dssp             GGTTGGGCHHHHHHHHTSCCCCCCCCCCSSCBCCSCCTTHHHHHHHTTC
+T ss_pred             HHHHhccCHHHHHHHhcCCCCCCCCCChhHhhcCCCCcchHHHhhhhcC
+Confidence            9999999999999999999999999999999999999999999988875
+
+
+No 4
+>5MMJ_e 50S ribosomal protein L31, plastid; chloroplast, translation, ribosome, cryo-EM; HET: MG; 3.646A {Spinacia oleracea}
+Probab=44.11  E-value=19  Score=34.63  Aligned_cols=29  Identities=17%  Similarity=0.275  Sum_probs=13.6  Template_Neff=5.200
+
+Q <unknown         22 SVLCFGQCQYTAEEYQAIQKALRQRLGPEYI   52 (215)
+Q Consensus        22 ~~~~fg~~~fs~ee~~~iq~~L~~~L~p~~v   52 (215)
+                      .++.|-.-++..+  .+|.......+++++.
+T Consensus        89 ~p~~~~~~p~~~~--~e~~~~~~~l~~~~ws  117 (308)
+T 5MMJ_e           89 PPRAVDEPPFESE--EEIALAYEELYGAAYS  117 (308)
+T ss_pred             CCCCCCCCCCCCH--HHHHHHHHHHhhcCCC
+Confidence            4445544334333  3455555555555554
+
+
+No 5
+>5MMM_e 50S ribosomal protein L31, 50S; chloroplast, translation, ribosome, cryo-EM; HET: MG; 3.4A {Spinacia oleracea}
+Probab=44.11  E-value=19  Score=34.63  Aligned_cols=29  Identities=17%  Similarity=0.275  Sum_probs=13.6  Template_Neff=5.200
+
+Q <unknown         22 SVLCFGQCQYTAEEYQAIQKALRQRLGPEYI   52 (215)
+Q Consensus        22 ~~~~fg~~~fs~ee~~~iq~~L~~~L~p~~v   52 (215)
+                      .++.|-.-++..+  .+|.......+++++.
+T Consensus        89 ~p~~~~~~p~~~~--~e~~~~~~~l~~~~ws  117 (308)
+T 5MMM_e           89 PPRAVDEPPFESE--EEIALAYEELYGAAYS  117 (308)
+T ss_pred             CCCCCCCCCCCCH--HHHHHHHHHHhhcCCC
+Confidence            4445544334333  3455555555555554
+
+
+No 6
+>3OAK_C Transcription factor IWS1, Transcription elongation; Transcription factor complex, Nucleus, TRANSCRIPTION; 2.15A {Saccharomyces cerevisiae}
+Probab=15.00  E-value=1.4e+02  Score=18.72  Aligned_cols=13  Identities=23%  Similarity=0.404  Sum_probs=4.2  Template_Neff=5.700
+
+Q <unknown         70 RVINLANEMFGYN   82 (215)
+Q Consensus        70 ~~I~lAN~iFGf~   82 (215)
+                      ..++-+++|||..
+T Consensus         8 ~al~ea~eIFGd~   20 (31)
+T 3OAK_C            8 DKIDEMYDIFGDG   20 (31)
+T ss_dssp             --------HHCCS
+T ss_pred             HHHHHHHHHHCCc
+Confidence            4567889999975
+
+
+No 7
+>3OAK_D Transcription factor IWS1, Transcription elongation; Transcription factor complex, Nucleus, TRANSCRIPTION; 2.15A {Saccharomyces cerevisiae}
+Probab=15.00  E-value=1.4e+02  Score=18.72  Aligned_cols=13  Identities=23%  Similarity=0.404  Sum_probs=10.2  Template_Neff=5.700
+
+Q <unknown         70 RVINLANEMFGYN   82 (215)
+Q Consensus        70 ~~I~lAN~iFGf~   82 (215)
+                      ..++-+++|||..
+T Consensus         8 ~al~ea~eIFGd~   20 (31)
+T 3OAK_D            8 DKIDEMYDIFGDG   20 (31)
+T ss_dssp             GHHHHHHHHHTTS
+T ss_pred             HHHHHHHHHHCCc
+Confidence            4567889999975
+
+
+No 8
+>1CEU_A VPR; REGULATORY PROTEIN, HELICAL DOMAIN, AMPHIPATICITY; NMR {N/A} SCOP: j.11.1.1
+Probab=12.85  E-value=1.8e+02  Score=21.03  Aligned_cols=7  Identities=43%  Similarity=0.795  Sum_probs=4.5  Template_Neff=3.000
+
+Q <unknown        162 LGNCILD  168 (215)
+Q Consensus       162 lG~~LyD  168 (215)
+                      ||.++|+
+T Consensus        42 lgqyiy~   48 (51)
+T 1CEU_A           42 LGQHIYE   48 (51)
+T ss_dssp             HHHHHHT
+T ss_pred             HHHHHHH
+Confidence            6677763
+
+
+No 9
+>5MEB_A Cell division cycle protein CDT1; Cdt1, MCM, winged helix, yeast; HET: SO4, MSE; 1.8A {Saccharomyces cerevisiae}
+Probab=11.87  E-value=2e+02  Score=23.76  Aligned_cols=25  Identities=24%  Similarity=0.163  Sum_probs=15.5  Template_Neff=5.400
+
+Q <unknown         29 CQYTAEEYQAIQKALRQRLGPEYISS   54 (215)
+Q Consensus        29 ~~fs~ee~~~iq~~L~~~L~p~~v~~   54 (215)
+                      .|.+++|...+...|.+.+++. ++-
+T Consensus        55 ~PIs~~E~~~cl~~La~~l~~~-i~i   79 (112)
+T 5MEB_A           55 NPIGTKEASEILAGLQGILPMD-ISV   79 (112)
+T ss_dssp             SCCCHHHHHHHHHHHHHHCTTT-EEE
+T ss_pred             CCCCHHHHHHHHHHHHhhcCCC-cEE
+Confidence            3556666666666666666655 444
+
+
+No 10
+>5MEB_B Cell division cycle protein CDT1; Cdt1, MCM, winged helix, yeast; HET: SO4, MSE; 1.8A {Saccharomyces cerevisiae}
+Probab=11.87  E-value=2e+02  Score=23.76  Aligned_cols=25  Identities=24%  Similarity=0.163  Sum_probs=15.5  Template_Neff=5.400
+
+Q <unknown         29 CQYTAEEYQAIQKALRQRLGPEYISS   54 (215)
+Q Consensus        29 ~~fs~ee~~~iq~~L~~~L~p~~v~~   54 (215)
+                      .|.+++|...+...|.+.+++. ++-
+T Consensus        55 ~PIs~~E~~~cl~~La~~l~~~-i~i   79 (112)
+T 5MEB_B           55 NPIGTKEASEILAGLQGILPMD-ISV   79 (112)
+T ss_dssp             BCCCHHHHHHHHHHHHHHCTTT-EEE
+T ss_pred             CCCCHHHHHHHHHHHHhhcCCC-cEE
+Confidence            3556666666666666666655 444
+
+

@@ -1,0 +1,6 @@
+{
+    "iptm":0.13068032264709473,
+    "max_predicted_aligned_error":31.75,
+    "ptm":0.7931613922119141,
+    "ranking_confidence":0.2631765305995941
+}
