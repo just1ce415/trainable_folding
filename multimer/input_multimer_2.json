@@ -1,0 +1,21 @@
+{
+    "A": {
+        "description": "6RP8_A",
+        "sequence": "QVQLVESGGGVVQPGRSLRLSCAASGFTFSSYTMHWVRQAPGKGLEWVTFISYDGNNKYYADSVKGRFTISRDNSKNTLYLQMNSLRAEDTAIYYCARTGWLGPFDYWGQGTLVTV",
+    	"a3m": "./test/6RP8/6RP8_A/mmseqs/uniref.a3m",
+	"hhr": "./test/6RP8/6RP8_A/mmseqs/uniref.hhr"
+    },
+    "B": {
+        "description": "6RP8_B",
+        "sequence": "EIVLTQSPGTLSLSPGERATLSCRASQSVGSSYLAWYQQKPGQAPRLLIYGAFSRATGIPDRFSGSGSGTDFTLTISRLEPEDFAVYYCQQYGSSPWTFGQGTKVEIK",
+	"a3m": "./test/6RP8/6RP8_B/mmseqs/uniref.a3m",
+        "hhr": "./test/6RP8/6RP8_B/mmseqs/uniref.hhr"
+    },
+    "E": {
+        "description": "6RP8_E",
+        "sequence": "AMHVAQPAVVLASSRGIASFVCEYASPGKATEVRVTVLRQADSQVTEVCAATYMMGNELTFLDDSICTGTSSGNQVNLTIQGLRAMDTGLYICKVELMYPPPYYLGIGNGTQIYVIDP",
+        "a3m": "./test/6RP8/6RP8_E/mmseqs/uniref.a3m",
+        "hhr": "./test/6RP8/6RP8_E/mmseqs/uniref.hhr"
+    }
+}
+

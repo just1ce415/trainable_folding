@@ -1,0 +1,260 @@
+Query         <unknown
+Match_columns 170
+No_of_seqs    24 out of 38
+Neff          3.71333
+Searched_HMMs 80799
+Date          Tue Jul 19 08:23:00 2022
+Command       hhsearch -i uniref.a3m -d /storage/thu/pdb70/pdb70 -cpu 4 -n 1 
+
+ No Hit                             Prob E-value P-value  Score    SS Cols Query HMM  Template HMM
+  1 5Z6P_A B-agarase; Glucoside hy  94.4  0.0071 8.8E-08   60.1   0.0  115   26-169    64-209 (765)
+  2 4BQ2_A B-AGARASE (E.C.3.2.1.81  94.2  0.0088 1.1E-07   59.1   0.0  118   23-169    36-190 (750)
+  3 4BQ3_B B-AGARASE (E.C.3.2.1.81  94.2  0.0088 1.1E-07   59.1   0.0  118   23-169    36-190 (750)
+  4 4BQ4_A B-AGARASE (E.C.3.2.1.81  94.2  0.0091 1.1E-07   59.0   0.0  118   23-169    36-190 (750)
+  5 6R3M_A Endoglucanase H (E.C.3.  62.5     5.9 7.3E-05   32.3   0.0  102   48-168    61-167 (178)
+  6 4O4A_A Lipoprotein, putative;   45.2      18 0.00022   31.7   0.0   47  107-154    29-75  (170)
+  7 4O4A_B Lipoprotein, putative;   45.2      18 0.00022   31.7   0.0   47  107-154    29-75  (170)
+  8 3SD2_A Putative member of DUF3  27.5      53 0.00065   25.1   0.0   41    2-42     33-84  (101)
+  9 2LRP_A Endoglucanase H (E.C.3.  16.9 1.2E+02  0.0015   24.5   0.0   87   48-153    61-154 (172)
+ 10 6ACI_A Gasdermin-A3; toxin, gl  15.8 1.3E+02  0.0016   29.0   0.0   40   17-57     55-106 (306)
+
+No 1
+>5Z6P_A B-agarase; Glucoside hydrolase 50 family, agarase; 2.061A {Agarivorans gilvus}
+Probab=94.41  E-value=0.0071  Score=60.09  Aligned_cols=115  Identities=17%  Similarity=0.232  Sum_probs=80.9  Template_Neff=7.400
+
+Q <unknown         26 GVKIETDSSKSDKERYL--YIYQNIKENWSMYN--NFYIEIQNKNKSSQKINLSIQSKNMFEFRLKEGSEVFLEGKNIIY  101 (170)
+Q Consensus        26 ~i~i~~ds~~L~kgyYt--yIY~n~~~nws~y~--~~~f~i~Nksk~~lriNl~i~~~~~~~l~~~d~s~V~lk~~n~~~  101 (170)
+                      .++|+.++.+  + +|.  .|.....-|||.|+  .|.|+|+|..+.++.+.+.|...++..                  
+T Consensus        64 ~l~v~f~~~~--~-~~~~~~~~p~~~wDWs~~~~~~La~dv~N~~~~sv~l~l~i~d~~g~~------------------  122 (765)
+T 5Z6P_A           64 CLEIKALSKK--H-FYTSVFIEPQQNWDWSDLGNFCFAFDARALDEHSTQMFINIFDHQGQM------------------  122 (765)
+T ss_dssp             EEEEEECTTT--C-SEEEEEECCSSCBCCTTSCSEEEEEEEEECSSSCEEEEEEEEETTSCE------------------
+T ss_pred             EEEEEEecCC--C-CccceEEcCCCCCCccccCcEEEEEEEEeCCCCcEEEEEEEEcCCCCE------------------
+Confidence            4566666542  2 465  54544568999999  999999999999999999999876631                  
+
+
+Q <unknown        102 SDKIKEGCIEVPGEFEGKIYVNFNSLIN-------------EE--------------SNVVLDSNMLSNIVSWGITFIPS  154 (170)
+Q Consensus       102 ~~k~~yG~IeIP~~F~G~IYIPFsSL~n-------------ek--------------~~~~~D~n~Ls~I~sWGIt~t~s  154 (170)
+                          ...++.||++-..++|||+.+..-             .-              +...+|   ++.|..-.+.+...
+T Consensus       123 ----~~~~v~l~pG~~~t~~i~L~~~~~~~~~~~~~~g~~~~P~~~~~~~~~~~~~~~~~~lD---ls~I~~I~l~~~~~  195 (765)
+T 5Z6P_A          123 ----HSRCINIAPGKQQSFMVELKGETLHGGACNYASGLRSNPCPWGTKDVYATWMWGALNID---LSAISKIELSIHGS  195 (765)
+T ss_dssp             ----EEEEEEECBSSCEEEEEEEEC----CCSCBSCSGGGCBCCCCSCSEEECEEEEECSSCC---TTSEEEEEEEEESC
+T ss_pred             ----EEEEEEECCCCCeEEEEEcCcccCCCCCcccccCccCCCCCCCCccceeeEEEecCccC---HHHceEEEEEeeCC
+Confidence                135788999999999999886520             00              011222   67788877776555
+
+
+Q <unknown        155 DEEHNIVIIKKISLL  169 (170)
+Q Consensus       155 eee~n~~~i~~~~LL  169 (170)
+                       .+...+.|++++|.
+T Consensus       196 -~~~~~l~idnirl~  209 (765)
+T 5Z6P_A          196 -LLDHHLLLSNFRLQ  209 (765)
+T ss_dssp             -SSCEEEEEEEEEEE
+T ss_pred             -CCCcEEEEEEEEEe
+Confidence             44456889999874
+
+
+No 2
+>4BQ2_A B-AGARASE (E.C.3.2.1.81); HYDROLASE; HET: GOL; 1.9A {SACCHAROPHAGUS DEGRADANS}
+Probab=94.23  E-value=0.0088  Score=59.06  Aligned_cols=118  Identities=21%  Similarity=0.309  Sum_probs=80.0  Template_Neff=7.700
+
+Q <unknown         23 EDTGVKIETDSSKSDKERYL--YIYQNIKENWSMYN--NFYIEIQNKNKSSQKINLSIQSKNMFEFRLKEGSEVFLEGKN   98 (170)
+Q Consensus        23 ed~~i~i~~ds~~L~kgyYt--yIY~n~~~nws~y~--~~~f~i~Nksk~~lriNl~i~~~~~~~l~~~d~s~V~lk~~n   98 (170)
+                      .+..++|+.++...   .|.  .|.....-|||.|+  .|.|+|.|.++.++.+.|.|...++..               
+T Consensus        36 g~~~l~v~f~~~~~---~~~~v~~~p~~~wDwS~~~~~~La~dv~N~~~~s~~l~l~i~d~~~~~---------------   97 (750)
+T 4BQ2_A           36 PSKGLKLAMQSKQH---SYTGLAIVPEQPWDWSEFTSASLYFDIVSVGDHSTQFYLDVTDQNGAV---------------   97 (750)
+T ss_dssp             EEEEEEEEECTTTC---SEEEEEECCSSCBCCTTCSSEEEEEEEEEESSCCEEEEEEEEETTSCE---------------
+T ss_pred             cCceEEEEEecCCC---CCCCEEECCCCCCCcccCCceEEEEEEEeCCCCeEEEEEEEEcCCCCE---------------
+Confidence            34447887776522   465  44444679999999  999999999999999999998876520               
+
+
+Q <unknown         99 IIYSDKIKEGCIEVPGEFEGKIYVNFNSLINE-------------------E--------------SNVVLDSNMLSNIV  145 (170)
+Q Consensus        99 ~~~~~k~~yG~IeIP~~F~G~IYIPFsSL~ne-------------------k--------------~~~~~D~n~Ls~I~  145 (170)
+                             ....+.||++=..++|+|+....-.                   -              +.+.+|   |+.|.
+T Consensus        98 -------~~~~v~v~~G~~~t~~~~L~~~~~~~~~~~~~~~~~~~~g~r~~P~~~~~~~~~~~~~~g~~~ld---ls~I~  167 (750)
+T 4BQ2_A           98 -------FTRSIDIPVGKMQSYYAKLSGHDLEVPDSGDVNDLNLASGLRSNPPTWTSDDRQFVWMWGVKNLD---LSGIA  167 (750)
+T ss_dssp             -------EEEEEEECBSSCEEEEEESSSGGGSSCSSSCTTCCSCTTSCSSCCCSSCCSSEECEEEEECSSCC---GGGEE
+T ss_pred             -------EEEEEEECCCCCcEEEEEcccCCCCCCCCCCCCccchhcCCcCCCCCCCCCCceeEEEEeCCccC---HHHee
+Confidence                   1356667777777777777543100                   0              001222   67777
+
+
+Q <unknown        146 SWGITFIPSDEEHNIVIIKKISLL  169 (170)
+Q Consensus       146 sWGIt~t~seee~n~~~i~~~~LL  169 (170)
+                      .-.+.+... .+...+.|.+++|.
+T Consensus       168 ~i~l~~~~~-~~~~~l~idnirl~  190 (750)
+T 4BQ2_A          168 KISLSVQSA-MHDKTVIIDNIRIQ  190 (750)
+T ss_dssp             EEEEEEESC-SSCEEEEEEEEEEE
+T ss_pred             EEEEEecCC-CCCCEEEEEEEEEe
+Confidence            777776666 44466999998874
+
+
+No 3
+>4BQ3_B B-AGARASE (E.C.3.2.1.81); HYDROLASE; HET: GOL, 47N; 2.1A {SACCHAROPHAGUS DEGRADANS}
+Probab=94.23  E-value=0.0088  Score=59.06  Aligned_cols=118  Identities=21%  Similarity=0.309  Sum_probs=80.0  Template_Neff=7.700
+
+Q <unknown         23 EDTGVKIETDSSKSDKERYL--YIYQNIKENWSMYN--NFYIEIQNKNKSSQKINLSIQSKNMFEFRLKEGSEVFLEGKN   98 (170)
+Q Consensus        23 ed~~i~i~~ds~~L~kgyYt--yIY~n~~~nws~y~--~~~f~i~Nksk~~lriNl~i~~~~~~~l~~~d~s~V~lk~~n   98 (170)
+                      .+..++|+.++...   .|.  .|.....-|||.|+  .|.|+|.|.++.++.+.|.|...++..               
+T Consensus        36 g~~~l~v~f~~~~~---~~~~v~~~p~~~wDwS~~~~~~La~dv~N~~~~s~~l~l~i~d~~~~~---------------   97 (750)
+T 4BQ3_B           36 PSKGLKLAMQSKQH---SYTGLAIVPEQPWDWSEFTSASLYFDIVSVGDHSTQFYLDVTDQNGAV---------------   97 (750)
+T ss_dssp             EEEEEEEEECTTTC---SEEEEEECCSSCBCCTTCTTEEEEEEEEECSSCCEEEEEEEEETTSCE---------------
+T ss_pred             cCceEEEEEecCCC---CCCCEEECCCCCCCcccCCceEEEEEEEeCCCCeEEEEEEEEcCCCCE---------------
+Confidence            34447887776522   465  44444679999999  999999999999999999998876520               
+
+
+Q <unknown         99 IIYSDKIKEGCIEVPGEFEGKIYVNFNSLINE-------------------E--------------SNVVLDSNMLSNIV  145 (170)
+Q Consensus        99 ~~~~~k~~yG~IeIP~~F~G~IYIPFsSL~ne-------------------k--------------~~~~~D~n~Ls~I~  145 (170)
+                             ....+.||++=..++|+|+....-.                   -              +.+.+|   |+.|.
+T Consensus        98 -------~~~~v~v~~G~~~t~~~~L~~~~~~~~~~~~~~~~~~~~g~r~~P~~~~~~~~~~~~~~g~~~ld---ls~I~  167 (750)
+T 4BQ3_B           98 -------FTRSIDIPVGKMQSYYAKLSGHDLEVPDSGDVNDLNLASGLRSNPPTWTSDDRQFVWMWGVKNLD---LSGIA  167 (750)
+T ss_dssp             -------EEEEEEECBSSCEEEEEESSSGGGCC-------CCSCTTSCSSCCCSSCCSSEECEEEEECSSCC---TTCEE
+T ss_pred             -------EEEEEEECCCCCcEEEEEcccCCCCCCCCCCCCccchhcCCcCCCCCCCCCCceeEEEEeCCccC---HHHee
+Confidence                   1356667777777777777543100                   0              001222   67777
+
+
+Q <unknown        146 SWGITFIPSDEEHNIVIIKKISLL  169 (170)
+Q Consensus       146 sWGIt~t~seee~n~~~i~~~~LL  169 (170)
+                      .-.+.+... .+...+.|.+++|.
+T Consensus       168 ~i~l~~~~~-~~~~~l~idnirl~  190 (750)
+T 4BQ3_B          168 KISLSVQSA-MHDKTVIIDNIRIQ  190 (750)
+T ss_dssp             EEEEEEESC-SSCEEEEEEEEEEE
+T ss_pred             EEEEEecCC-CCCCEEEEEEEEEe
+Confidence            777776666 44466999998874
+
+
+No 4
+>4BQ4_A B-AGARASE (E.C.3.2.1.81); HYDROLASE; HET: GOL, GAL, AAL; 2.05A {SACCHAROPHAGUS DEGRADANS}
+Probab=94.20  E-value=0.0091  Score=58.96  Aligned_cols=118  Identities=21%  Similarity=0.309  Sum_probs=80.5  Template_Neff=7.700
+
+Q <unknown         23 EDTGVKIETDSSKSDKERYL--YIYQNIKENWSMYN--NFYIEIQNKNKSSQKINLSIQSKNMFEFRLKEGSEVFLEGKN   98 (170)
+Q Consensus        23 ed~~i~i~~ds~~L~kgyYt--yIY~n~~~nws~y~--~~~f~i~Nksk~~lriNl~i~~~~~~~l~~~d~s~V~lk~~n   98 (170)
+                      .+..++|+.++...   +|.  .|.....-|||.|+  .|.|+|.|.++.++.+.|.|...++..               
+T Consensus        36 ~~~~l~v~f~~~~~---~~~~v~~~p~~~wDws~~~~~~La~dv~N~~~~s~~l~l~i~d~~~~~---------------   97 (750)
+T 4BQ4_A           36 PSKGLKLAMQSKQH---SYTGLAIVPEQPWDWSEFTSASLYFDIVSVGDHSTQFYLDVTDQNGAV---------------   97 (750)
+T ss_dssp             EEEEEEEEECTTTC---SEEEEEECCSSCBCCTTCSSEEEEEEEEECSSCCEEEEEEEEETTSCE---------------
+T ss_pred             cCceEEEEEecCCC---CCCCEEEcCCCCCCcccCCceEEEEEEEeCCCCeEEEEEEEEcCCCCE---------------
+Confidence            44447888777522   465  44444679999999  999999999999999999998876520               
+
+
+Q <unknown         99 IIYSDKIKEGCIEVPGEFEGKIYVNFNSLINE-------------------E--------------SNVVLDSNMLSNIV  145 (170)
+Q Consensus        99 ~~~~~k~~yG~IeIP~~F~G~IYIPFsSL~ne-------------------k--------------~~~~~D~n~Ls~I~  145 (170)
+                             ....+.||++=..++|+|+....-.                   -              +.+.+|   ++.|.
+T Consensus        98 -------~~~~v~l~~G~~~t~~~~L~~~~~~~~~~~~~~~~~~~~g~r~~P~~~~~~~~~~~~~~g~~~ld---ls~I~  167 (750)
+T 4BQ4_A           98 -------FTRSIDIPVGKMQSYYAKLSGHDLEVPDSGDVNDLNLASGLRSNPPTWTSDDRQFVWMWGVKNLD---LSGIA  167 (750)
+T ss_dssp             -------EEEEEEECBSSCEEEEEECSSGGGSSCSSSCTTCCSCTTSCSSCCCSSCCSSEECEEEEECSSCC---TTCEE
+T ss_pred             -------EEEEEEEcCCCCcEEEEEcccCCCCCCCCCCCCccchhcCCcCCCCCCCCCCceeEEEEeCCccC---HHHee
+Confidence                   1356777777777778877544110                   0              011222   67777
+
+
+Q <unknown        146 SWGITFIPSDEEHNIVIIKKISLL  169 (170)
+Q Consensus       146 sWGIt~t~seee~n~~~i~~~~LL  169 (170)
+                      .-.+.+... .+...+.|.+++|.
+T Consensus       168 ~i~l~~~~~-~~~~~~~idnirl~  190 (750)
+T 4BQ4_A          168 KISLSVQSA-MHDKTVIIDNIRIQ  190 (750)
+T ss_dssp             EEEEEEESC-SSCEEEEEEEEEEE
+T ss_pred             EEEEEecCC-CCCCEEEEEEEEEe
+Confidence            777776665 44466999998874
+
+
+No 5
+>6R3M_A Endoglucanase H (E.C.3.2.1.4); CtCBM11 beta-1, 3-1, 4-mixed-linked glucan; HET: PO4, BGC, GLC; 1.45A {Hungateiclostridium thermocellum ATCC 27405}
+Probab=62.46  E-value=5.9  Score=32.29  Aligned_cols=102  Identities=17%  Similarity=0.230  Sum_probs=54.2  Template_Neff=8.500
+
+Q <unknown         48 IKENWSMYNNFYIEIQNKNKSSQKINLSIQSKNMFEFRLKEGSEVFLEGKNIIYSDKIKEGCIEVPGEFEGKIYVNFNSL  127 (170)
+Q Consensus        48 ~~~nws~y~~~~f~i~Nksk~~lriNl~i~~~~~~~l~~~d~s~V~lk~~n~~~~~k~~yG~IeIP~~F~G~IYIPFsSL  127 (170)
+                      ...||+.|.+|+|.++.......++.+.|...+...-  .         +...+..     .+..+++| -.|.|||++|
+T Consensus        61 ~~~D~s~~~gl~l~vrg~dg~~~~y~l~l~~~~~~~~--~---------~~~~~~~-----~f~~~~~W-~~v~iPfs~F  123 (178)
+T 6R3M_A           61 PDGDWSKWLKISFDIKSVDGSANEIRFMIAEKSINGV--G---------DGEHWVY-----SITPDSSW-KTIEIPFSSF  123 (178)
+T ss_dssp             SCCCCTTCCEEEEEEEEC-CCCCCEEEEEEEECSSSS--S---------EEEEEEE-----EECCCSSC-EEEEEEGGGC
+T ss_pred             CCCChhhcCeEEEEEEeCCCCCcEEEEEEEecCCCCC--C---------CcEEEEE-----EEeCCCCc-EEEEEEHHHc
+Confidence            4579999999999998833332344444421111100  0         0111110     12224444 5789999999
+
+
+Q <unknown        128 INEESNVVLD-----SNMLSNIVSWGITFIPSDEEHNIVIIKKISL  168 (170)
+Q Consensus       128 ~nek~~~~~D-----~n~Ls~I~sWGIt~t~seee~n~~~i~~~~L  168 (170)
+                      .........+     +-.++.|.+.||.+...  +.-.|.|-++.|
+T Consensus       124 ~~~~~G~~~~~~~~~~ld~~~I~~igi~~~~~--~~G~f~Ld~i~l  167 (178)
+T 6R3M_A          124 RRRLDYQPPGQDMSGTLDLDNIDSIHFMYANN--KSGKFVVDNIKL  167 (178)
+T ss_dssp             EECSSCCCTTCCCCSSCCTTSEEEEEEEESSS--CEEEEEEEEEEE
+T ss_pred             eEccCCCCCCCCcCCCCChhhEEEEEEEEeCC--CceeEEEEEEEE
+Confidence            4332211111     11268899999887653  334577666654
+
+
+No 6
+>4O4A_A Lipoprotein, putative; Structural Genomics, NIAID, National Institute; HET: SO4, MSE, P6G; 2.75A {Bacillus anthracis}
+Probab=45.20  E-value=18  Score=31.74  Aligned_cols=47  Identities=17%  Similarity=0.210  Sum_probs=27.6  Template_Neff=4.200
+
+Q <unknown        107 EGCIEVPGEFEGKIYVNFNSLINEESNVVLDSNMLSNIVSWGITFIPS  154 (170)
+Q Consensus       107 yG~IeIP~~F~G~IYIPFsSL~nek~~~~~D~n~Ls~I~sWGIt~t~s  154 (170)
+                      .=.+-||.+|+|.|+|=|+.=-...-.+. |...+=.|..=|+-.|.+
+T Consensus        29 ~eiYLIPeGyeG~V~VvYnq~~g~plk~e-dg~~Vy~IP~nGiL~TSs   75 (170)
+T 4O4A_A           29 DTIYLIPEEYEGDLIVVYNVPGAELLPKE-EEFSVVTFAADGTAVTST   75 (170)
+T ss_dssp             EEEEEEETTCCEEEEEECCCTTSCCCBEE-TTEEEEECCTTSEEECCS
+T ss_pred             CeEEEeeCCceeeEEEEEccCCCcCCcee-CCEEEEEeCCCCEEEecC
+Confidence            34678999999999999976522211111 222344555556665544
+
+
+No 7
+>4O4A_B Lipoprotein, putative; Structural Genomics, NIAID, National Institute; HET: SO4, MSE, P6G; 2.75A {Bacillus anthracis}
+Probab=45.20  E-value=18  Score=31.74  Aligned_cols=47  Identities=17%  Similarity=0.210  Sum_probs=27.6  Template_Neff=4.200
+
+Q <unknown        107 EGCIEVPGEFEGKIYVNFNSLINEESNVVLDSNMLSNIVSWGITFIPS  154 (170)
+Q Consensus       107 yG~IeIP~~F~G~IYIPFsSL~nek~~~~~D~n~Ls~I~sWGIt~t~s  154 (170)
+                      .=.+-||.+|+|.|+|=|+.=-...-.+. |...+=.|..=|+-.|.+
+T Consensus        29 ~eiYLIPeGyeG~V~VvYnq~~g~plk~e-dg~~Vy~IP~nGiL~TSs   75 (170)
+T 4O4A_B           29 DTIYLIPEEYEGDLIVVYNVPGAELLPKE-EEFSVVTFAADGTAVTST   75 (170)
+T ss_dssp             CEEEEEETTCCEEEEEECCCTTSCCCCEE-TTEEEEECCTTSEEECCS
+T ss_pred             CeEEEeeCCceeeEEEEEccCCCcCCcee-CCEEEEEeCCCCEEEecC
+Confidence            34678999999999999976522211111 222344555556665544
+
+
+No 8
+>3SD2_A Putative member of DUF3244 protein; Immunoglobulin-like beta-sandwich, Structural Genomics, Joint; 1.4A {Bacteroides thetaiotaomicron}
+Probab=27.45  E-value=53  Score=25.08  Aligned_cols=41  Identities=22%  Similarity=0.324  Sum_probs=24.6  Template_Neff=7.500
+
+Q <unknown          2 DKILDLSFKKIETDLSSKITYE-DTGV----------KIETDSSKSDKERYL   42 (170)
+Q Consensus         2 ~~~~~~s~~ki~~~l~~~i~~e-d~~i----------~i~~ds~~L~kgyYt   42 (170)
+                      ++.|.+.|.+-.+++.+.|+.+ ..++          .+..+-+++.+|.|+
+T Consensus        33 ~~~l~i~f~~~~~~vtI~I~d~~tG~iVy~~~~~~~~~~~i~L~~~~~G~Y~   84 (101)
+T 3SD2_A           33 SNILNVSFGRAKDYAIITVTNKATGEIVHSKTYHNTSIVMIDMSSCEKGEYT   84 (101)
+T ss_dssp             TTEEEEEESSCCSCEEEEEEETTTCCEEEEEEESSCSEEEEECTTSCSEEEE
+T ss_pred             CCEEEEEEcCCCCeEEEEEEECCCCCEEEEEEeeCCCEEEEECccCCCeEEE
+Confidence            4566777777777777777665 2332          233444566677776
+
+
+No 9
+>2LRP_A Endoglucanase H (E.C.3.2.1.4); Cellulosome, HYDROLASE; HET: CA; NMR {Clostridium thermocellum}
+Probab=16.87  E-value=1.2e+02  Score=24.49  Aligned_cols=87  Identities=18%  Similarity=0.190  Sum_probs=48.3  Template_Neff=8.900
+
+Q <unknown         48 IKENWSMYNNFYIEIQNKNKSSQKINLSI--QSKNMFEFRLKEGSEVFLEGKNIIYSDKIKEGCIEVPGEFEGKIYVNFN  125 (170)
+Q Consensus        48 ~~~nws~y~~~~f~i~Nksk~~lriNl~i--~~~~~~~l~~~d~s~V~lk~~n~~~~~k~~yG~IeIP~~F~G~IYIPFs  125 (170)
+                      ...||+.|.+++|.++.......++.+.|  ...... .            +...+..     .+..+++| -+|.|||+
+T Consensus        61 ~~~d~s~y~gl~l~v~g~dg~~~~y~~~l~~~~~~~~-~------------~~~~~~~-----~f~~~~~w-~~v~iPf~  121 (172)
+T 2LRP_A           61 PDGDWSKWLKISFDIKSVDGSANEIRFMIAEKSINGV-G------------DGEHWVY-----SITPDSSW-KTIEIPFS  121 (172)
+T ss_dssp             SCCCCTTCCEEEEEEEECSSSCCCBCCEEEEECSSSS-S------------EEEEEEC-----CBCCCSSC-EEEEEEGG
+T ss_pred             CCCChhhcCeEEEEEEeCCCCCcEEEEEEEeCCCCCC-C------------CceEEEE-----EEeCCCCc-EEEEEEHH
+Confidence            35799999999999988444423444444  332210 0            0111110     12224554 57999999
+
+
+Q <unknown        126 SLINEESNVVLD-----SNMLSNIVSWGITFIP  153 (170)
+Q Consensus       126 SL~nek~~~~~D-----~n~Ls~I~sWGIt~t~  153 (170)
+                      +|.........+     +-.++.|.+.||.+..
+T Consensus       122 ~F~~~~~g~~~~~~~~~~l~~~~I~~i~i~~~~  154 (172)
+T 2LRP_A          122 SFRRRLDYQPPGQDMSGTLDLDNIDSIHFMYAN  154 (172)
+T ss_dssp             GCEECSSCCCSSCCCSSSCCTTSEEEEECCBSS
+T ss_pred             HceEeecCCCCCCCcCCCCCHhheEEEEEEEeC
+Confidence            995432221111     1126889999988755
+
+
+No 10
+>6ACI_A Gasdermin-A3; toxin, glycosyltransferase; HET: UDP; 1.87A {Escherichia coli O127:H6}
+Probab=15.78  E-value=1.3e+02  Score=28.98  Aligned_cols=40  Identities=20%  Similarity=0.212  Sum_probs=26.5  Template_Neff=2.900
+
+Q <unknown         17 SSKITYEDTGVKIETDSSKSDKERYL------YIYQNI------KENWSMYNN   57 (170)
+Q Consensus        17 ~~~i~~ed~~i~i~~ds~~L~kgyYt------yIY~n~------~~nws~y~~   57 (170)
+                      +..+.+..+-|.+-+|+ ++..+.+.      .-|+|+      .-|||+|+-
+T Consensus        55 naA~iE~eR~Igl~i~G-gFt~~Q~k~l~~Le~~~~NI~vId~~d~D~s~YD~  106 (306)
+T 6ACI_A           55 NAAKIENERIIGVLVDG-NFTYEQKKEFLNLENEHQNIAIIYRADVDFSMYDK  106 (306)
+T ss_dssp             HHHHHCTTSCEEEEEES-CCCHHHHHHHHHHHHHSTTEEEEEGGGSCCGGGCC
+T ss_pred             HHHHhcccceEEEEEcC-CCCHHHHHHHHHhhCCcCCeEEEehhhcChHHhhH
+Confidence            44444555558888898 88888774      223333      368888886
+
+

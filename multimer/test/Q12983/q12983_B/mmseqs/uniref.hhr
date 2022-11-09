@@ -1,0 +1,568 @@
+Query         <unknown
+Match_columns 194
+No_of_seqs    127 out of 1171
+Neff          5.76878
+Searched_HMMs 80799
+Date          Thu Jul 21 11:37:15 2022
+Command       hhsearch -i uniref.a3m -d /storage/thu/pdb70/pdb70 -cpu 4 -n 1 
+
+ No Hit                             Prob E-value P-value  Score    SS Cols Query HMM  Template HMM
+  1 2J5D_A BCL2/ADENOVIRUS E1B 19   99.4 1.3E-16 1.6E-21  105.6   0.0   43  146-188     1-43  (45)
+  2 2KA2_B BCL2/adenovirus E1B 19   99.0 5.4E-13 6.7E-18   84.0   0.0   34  154-187     1-34  (35)
+  3 5NWM_B Nuclear receptor coacti  61.5     6.3 7.8E-05   24.8   0.0   14   42-55     19-32  (32)
+  4 5NWX_B Nuclear receptor coacti  61.5     6.3 7.8E-05   24.8   0.0   14   42-55     19-32  (32)
+  5 6M97_A Chimera protein of High  61.1     6.5   8E-05   34.5   0.0   28  160-187   182-213 (234)
+  6 4OGQ_F Cytochrome b6, Cytochro  57.6     8.2  0.0001   24.8   0.0   19  166-185    10-28  (34)
+  7 2D2C_S Cytochrome b6, Cytochro  56.9     8.6 0.00011   24.9   0.0   12  174-185    17-28  (35)
+  8 6RQF_F PROTEIN; Plastoquinol-p  52.1      12 0.00014   24.5   0.0   18  167-185    12-29  (36)
+  9 1Q90_M Apocytochrome f, Cytoch  50.8      13 0.00016   24.8   0.0   12  174-185    18-29  (39)
+ 10 6D0Y_B Nuclear cap-binding pro  44.2      19 0.00023   22.8   0.0   14   39-52     15-28  (31)
+ 11 6O5B_D Calcium uniporter prote  43.2      20 0.00025   28.9   0.0   18  171-188    72-89  (107)
+ 12 2KSE_A Sensor protein qseC (E.  42.4      21 0.00026   27.1   0.0   23  164-186   163-185 (186)
+ 13 6S7T_C Dolichyl-diphosphooligo  37.3      28 0.00035   26.3   0.0   20  160-179    49-68  (79)
+ 14 3P5S_A CD38 molecule (E.C.3.2.  31.0      42 0.00052   31.3   0.0   27  159-185     9-35  (278)
+ 15 5KBN_B Putative fluoride ion t  29.2      47 0.00058   27.7   0.0   24  164-188   102-125 (147)
+ 16 1SCF_B STEM CELL FACTOR, PENTA  29.1      47 0.00059   31.0   0.0   26  160-186   214-239 (273)
+ 17 5KBN_A Putative fluoride ion t  28.4      50 0.00061   27.5   0.0   24  164-188   102-125 (147)
+ 18 5IJI_A Nitrate/nitrite sensor   28.3      50 0.00062   26.2   0.0   19  169-187   158-176 (236)
+ 19 1N93_X p40 nucleoprotein; RNA   27.3      53 0.00066   31.9   0.0   23  167-189   142-173 (375)
+ 20 1PP1_X p40 nucleoprotein; RNA   27.3      53 0.00066   31.9   0.0   23  167-189   142-173 (375)
+ 21 2MFR_A Insulin receptor (E.C.2  26.0      58 0.00072   23.0   0.0   13  172-184    28-40  (57)
+ 22 6B2A_B Fluoride ion transporte  26.0      59 0.00072   26.1   0.0   24  164-188   102-125 (126)
+ 23 5KOM_A Putative fluoride ion t  25.8      59 0.00073   27.0   0.0   25  163-188   101-125 (147)
+ 24 5JEQ_A Nitrate/nitrite sensor   25.7      60 0.00074   25.8   0.0   19  169-187   158-176 (236)
+ 25 6BX4_B Fluoride ion transporte  24.9      63 0.00078   25.8   0.0   23  164-187   101-123 (123)
+ 26 6NYQ_C 1H3 Fab light chain, 1H  24.6      65  0.0008   31.5   0.0   22  165-186   372-393 (404)
+ 27 6EZN_E Dolichyl-diphosphooligo  24.4      65 0.00081   24.8   0.0   20  160-179    56-75  (86)
+ 28 4H0L_E Cytochrome b6, Cytochro  23.9      68 0.00084   20.5   0.0   16  171-186    12-27  (32)
+ 29 4H13_E Cytochrome b6, Cytochro  23.9      68 0.00084   20.5   0.0   16  171-186    12-27  (32)
+ 30 4I7Z_E Cytochrome b6, Cytochro  23.9      68 0.00084   20.5   0.0   16  171-186    12-27  (32)
+ 31 5O31_d NADH-ubiquinone oxidore  23.8      68 0.00084   26.2   0.0   23  165-187    57-79  (116)
+ 32 4CLV_B NICKEL-COBALT-CADMIUM R  23.7      69 0.00085   25.5   0.0    9  176-184    23-31  (148)
+ 33 5LDX_d NADH-ubiquinone oxidore  23.1      72 0.00089   26.1   0.0   23  165-187    55-77  (114)
+ 34 3TUI_A D-methionine transport   22.2      77 0.00095   26.5   0.0   24  163-186    18-41  (217)
+ 35 5XTI_Bg NADH dehydrogenase [ub  22.1      78 0.00096   26.0   0.0   23  165-187    56-78  (119)
+ 36 6O7U_b V-type proton ATPase su  21.9      79 0.00097   29.5   0.0   28  155-182   217-244 (265)
+ 37 6C6L_N V-type proton ATPase su  21.7      80 0.00099   29.5   0.0   28  155-182   217-244 (265)
+ 38 4GN0_A Hamp domain of AF1503;   21.3      82   0.001   20.6   0.0   12  175-186    35-46  (105)
+
+No 1
+>2J5D_A BCL2/ADENOVIRUS E1B 19 KDA PROTEIN-INTERACTING; MEMBRANE PROTEIN, MITOCHONDRION, TRANSMEMBRANE, TRANSMEMBRANE; NMR {HOMO SAPIENS}
+Probab=99.40  E-value=1.3e-16  Score=105.59  Aligned_cols=43  Identities=100%  Similarity=1.456  Sum_probs=41.3  Template_Neff=5.100
+
+Q <unknown        146 RNTSVMKKGGIFSAEFLKVFLPSLLLSHLLAIGLGIYIGRRLT  188 (194)
+Q Consensus       146 R~s~vmk~~~lFS~e~L~~~ipS~llS~ll~~GlGiyigkRla  188 (194)
+                      |+++||||+++||+|+|++|+|+|++||+||+|+|+||+||++
+T Consensus         1 r~~~v~kk~~lfs~e~l~~~~~s~l~s~llg~G~Gi~i~kRl~   43 (45)
+T 2J5D_A            1 RNTSVMKKGGIFSAEFLKVFLPSLLLSHLLAIGLGIYIGRRLT   43 (45)
+T ss_dssp             CCCCCCCCCSCSCHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+T ss_pred             CCcchhhccCcccHHHHHHHHHHHHHHHHHHHHHHHHHHHHhc
+Confidence            6789999999999999999999999999999999999999994
+
+
+No 2
+>2KA2_B BCL2/adenovirus E1B 19 kDa protein-interacting; integral membrane protein, membrane helix-helix; NMR {Homo sapiens}
+Probab=98.98  E-value=5.4e-13  Score=84.04  Aligned_cols=34  Identities=100%  Similarity=1.550  Sum_probs=32.7  Template_Neff=4.900
+
+Q <unknown        154 GGIFSAEFLKVFLPSLLLSHLLAIGLGIYIGRRL  187 (194)
+Q Consensus       154 ~~lFS~e~L~~~ipS~llS~ll~~GlGiyigkRl  187 (194)
+                      +++||+|+|++|+|++++||+||+|+|+||+||+
+T Consensus         1 ~glfs~e~l~~~l~s~l~s~ll~~G~Gi~i~kRl   34 (35)
+T 2KA2_B            1 GGIFSAEFLKVFLPSLLLSHLLAIGLGIYIGRRL   34 (35)
+T ss_dssp             CCSSTHHHHTTTHHHHHHHHHHHHHHHHHHHHTC
+T ss_pred             CCcccHHHHHHHHHHHHHHHHHHHHHHHHHHhhc
+Confidence            4799999999999999999999999999999997
+
+
+No 3
+>5NWM_B Nuclear receptor coactivator 1 (E.C.2.3.1.48); NCoA-1, STAT6, PAS-B domain, transactivation; NMR {Homo sapiens}
+Probab=61.49  E-value=6.3  Score=24.85  Aligned_cols=14  Identities=57%  Similarity=0.911  Sum_probs=12.5  Template_Neff=1.800
+
+Q <unknown         42 DMEKILLDAQHESG   55 (194)
+Q Consensus        42 ~~ErlLlEAQrES~   55 (194)
+                      |+.|||+|.|.|++
+T Consensus        19 dLtkLLlegq~e~~   32 (32)
+T 5NWM_B           19 DLTKLLLEGQGESG   32 (32)
+T ss_dssp             HHHHHHHCCSSCCC
+T ss_pred             HHHHHHHhcCCcCC
+Confidence            89999999999863
+
+
+No 4
+>5NWX_B Nuclear receptor coactivator 1 (E.C.2.3.1.48); NcoA1, STAT6, PAS-B domain, transactivation; 2.51A {Mus musculus}
+Probab=61.49  E-value=6.3  Score=24.85  Aligned_cols=14  Identities=57%  Similarity=0.911  Sum_probs=7.7  Template_Neff=1.800
+
+Q <unknown         42 DMEKILLDAQHESG   55 (194)
+Q Consensus        42 ~~ErlLlEAQrES~   55 (194)
+                      |+.|||+|.|.|++
+T Consensus        19 dLtkLLlegq~e~~   32 (32)
+T 5NWX_B           19 DLTKLLLEGQGESG   32 (32)
+T ss_dssp             HHHHHHHC------
+T ss_pred             HHHHHHHhcCCcCC
+Confidence            89999999999863
+
+
+No 5
+>6M97_A Chimera protein of High affinity; Membrane proteins, Ion transporters, Ion; HET: TBR; 3.03A {Salmo salar}
+Probab=61.12  E-value=6.5  Score=34.51  Aligned_cols=28  Identities=21%  Similarity=0.322  Sum_probs=20.0  Template_Neff=8.100
+
+Q <unknown        160 EFLKVFLPS----LLLSHLLAIGLGIYIGRRL  187 (194)
+Q Consensus       160 e~L~~~ipS----~llS~ll~~GlGiyigkRl  187 (194)
+                      -+|.+++.|    ++++.++|+|+|+++..|.
+T Consensus       182 YlLMLivMTyN~~lf~aVvlG~~iG~~~Fg~~  213 (234)
+T 6M97_A          182 YFLMLVFMTYNAYLCMAVAAGAGLGYFLFSWK  213 (234)
+T ss_pred             HHHHHHHHhccHHHHHHHHHHHHHHHHHhCcc
+Confidence            334444444    5888999999998887654
+
+
+No 6
+>4OGQ_F Cytochrome b6, Cytochrome b6-f complex; Electron transfer, Plastocyanin, cytochrome c6; HET: HEM, SQD, 3WM, MYS, UMQ, 7PH, 1O2, CLA, 2WM, 8K6, OPC, BCR, 2WD, 2WA; 2.501A {Nostoc sp.}
+Probab=57.57  E-value=8.2  Score=24.85  Aligned_cols=19  Identities=26%  Similarity=0.310  Sum_probs=12.2  Template_Neff=3.700
+
+Q <unknown        166 LPSLLLSHLLAIGLGIYIGR  185 (194)
+Q Consensus       166 ipS~llS~ll~~GlGiyigk  185 (194)
+                      +.++.+. ++|+++|+++-|
+T Consensus        10 ~i~~~lv-LvGlalGf~LLk   28 (34)
+T 4OGQ_F           10 LLSFGLI-FVGWALGALLLK   28 (34)
+T ss_dssp             HHHHHHH-HHHHHHHHHHHH
+T ss_pred             HHHHHHH-HHHHHHHHHHHH
+Confidence            3334344 568999988755
+
+
+No 7
+>2D2C_S Cytochrome b6, Cytochrome b6-f complex; Photosynthesis; HET: OPC, HEM, BNT, HEC, BCR, CLA; 3.8A {Mastigocladus laminosus} SCOP: f.23.25.1
+Probab=56.91  E-value=8.6  Score=24.92  Aligned_cols=12  Identities=25%  Similarity=0.664  Sum_probs=9.4  Template_Neff=3.700
+
+Q <unknown        174 LLAIGLGIYIGR  185 (194)
+Q Consensus       174 ll~~GlGiyigk  185 (194)
+                      ++|+++|+++-|
+T Consensus        17 lvGlalGf~LLk   28 (35)
+T 2D2C_S           17 FVGWGLGVLLLK   28 (35)
+T ss_pred             HHHHHHHHHHHH
+Confidence            568889988865
+
+
+No 8
+>6RQF_F PROTEIN; Plastoquinol-plastocyanin oxido-reductase Cytochrome b6f Photosynthesis; HET: BCR, PGV, SQD, 6PL, HEM, CLA, LMG, PL9, HEC; 3.58A {Spinacia oleracea}
+Probab=52.05  E-value=12  Score=24.49  Aligned_cols=18  Identities=22%  Similarity=0.320  Sum_probs=11.7  Template_Neff=3.600
+
+Q <unknown        167 PSLLLSHLLAIGLGIYIGR  185 (194)
+Q Consensus       167 pS~llS~ll~~GlGiyigk  185 (194)
+                      .++.+. ++|+++|+++-|
+T Consensus        12 i~~~Lv-LvGlalGf~LLk   29 (36)
+T 6RQF_F           12 VMNGLT-LVGVAIGFVLLR   29 (36)
+T ss_dssp             HHHHHH-HHHHHHHHHHHH
+T ss_pred             HHHHHH-HHHHHHHHHHHH
+Confidence            333334 568889988855
+
+
+No 9
+>1Q90_M Apocytochrome f, Cytochrome b6, Cytochrome; MEMBRANE PROTEIN COMPLEX, PHOTOSYNTHESIS, ELECTRON; HET: LFA, BCR, HEM, TDS, SQD, LMG, CLA; 3.1A {Chlamydomonas reinhardtii} SCOP: f.23.25.1
+Probab=50.77  E-value=13  Score=24.77  Aligned_cols=12  Identities=25%  Similarity=0.611  Sum_probs=9.5  Template_Neff=3.400
+
+Q <unknown        174 LLAIGLGIYIGR  185 (194)
+Q Consensus       174 ll~~GlGiyigk  185 (194)
+                      ++|+++|+++-|
+T Consensus        18 LvGLalGF~LLk   29 (39)
+T 1Q90_M           18 LVGLAIGFVLLR   29 (39)
+T ss_pred             HHHHHHHHHHHH
+Confidence            568899988865
+
+
+No 10
+>6D0Y_B Nuclear cap-binding protein subunit 1; Cap-binding, m7GpppA, transcription, mRNA; HET: IYR, GTA; 2.676A {Homo sapiens}
+Probab=44.24  E-value=19  Score=22.80  Aligned_cols=14  Identities=29%  Similarity=0.389  Sum_probs=11.5  Template_Neff=2.300
+
+Q <unknown         39 YNGDMEKILLDAQH   52 (194)
+Q Consensus        39 ~ng~~ErlLlEAQr   52 (194)
+                      ..-|..-||.|||+
+T Consensus        15 ealDFDtLLkqAQ~   28 (31)
+T 6D0Y_B           15 EAMDFDSLLKEAQQ   28 (31)
+T ss_pred             hcCCHHHHHHHHHH
+Confidence            34488899999997
+
+
+No 11
+>6O5B_D Calcium uniporter protein, mitochondrial, Essential; ion channel, complex, membrane protein; 3.6A {Homo sapiens}
+Probab=43.23  E-value=20  Score=28.94  Aligned_cols=18  Identities=11%  Similarity=0.167  Sum_probs=12.3  Template_Neff=3.500
+
+Q <unknown        171 LSHLLAIGLGIYIGRRLT  188 (194)
+Q Consensus       171 lS~ll~~GlGiyigkRla  188 (194)
+                      +..|-++.+|-||.|.++
+T Consensus        72 ~vvip~l~~Ga~ISK~~A   89 (107)
+T 6O5B_D           72 SIVIPFLYVGTLISKNFA   89 (107)
+T ss_dssp             HHHHHHHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHHHHHHHHH
+Confidence            334456667889999864
+
+
+No 12
+>2KSE_A Sensor protein qseC (E.C.2.7.13.3); methods development, Histidine kinase receptor; NMR {Escherichia coli}
+Probab=42.38  E-value=21  Score=27.14  Aligned_cols=23  Identities=13%  Similarity=0.018  Sum_probs=14.4  Template_Neff=12.300
+
+Q <unknown        164 VFLPSLLLSHLLAIGLGIYIGRR  186 (194)
+Q Consensus       164 ~~ipS~llS~ll~~GlGiyigkR  186 (194)
+                      .++...++..++.+.+|+++.||
+T Consensus       163 ~~~~~~~~~~~~~~~~~~~~~~~  185 (186)
+T 2KSE_A          163 GQLIPWLVALPIMLIIMMVLLGR  185 (186)
+T ss_dssp             HHHHHHHHHHHHHHHHHHHHHTC
+T ss_pred             HhHHHHHHHHHHHHHHHHHHHcC
+Confidence            34444455566666677888776
+
+
+No 13
+>6S7T_C Dolichyl-diphosphooligosaccharide--protein glycosyltransferase subunit STT3B (E.C.2.4.99.18); N-glycosylation, Oligosaccharyltransferase, OSTB, TRANSFERASE; HET: NAG, BMA, 0K3, EGY, MAN, KZB; 3.5A {Homo sapiens}
+Probab=37.32  E-value=28  Score=26.31  Aligned_cols=20  Identities=30%  Similarity=0.504  Sum_probs=13.3  Template_Neff=5.500
+
+Q <unknown        160 EFLKVFLPSLLLSHLLAIGL  179 (194)
+Q Consensus       160 e~L~~~ipS~llS~ll~~Gl  179 (194)
+                      .++..++.+.+-|..+|+|.
+T Consensus        49 sl~~e~~~a~~ASlflG~G~   68 (79)
+T 6S7T_C           49 DIYKELLISLVASLFMGFGV   68 (79)
+T ss_dssp             CHHHHHHHHHHHHHHHHHHH
+T ss_pred             hHHHHHHHHHHHHHHHHHHH
+Confidence            34455666777777888873
+
+
+No 14
+>3P5S_A CD38 molecule (E.C.3.2.2.5); CD38, CYCLIC ADP RIBOSE, ECTO-ADP-RIBOSYL; HET: AVU, NAG, SO4; 1.95A {Bos taurus}
+Probab=31.05  E-value=42  Score=31.34  Aligned_cols=27  Identities=19%  Similarity=0.224  Sum_probs=0.0  Template_Neff=5.400
+
+Q <unknown        159 AEFLKVFLPSLLLSHLLAIGLGIYIGR  185 (194)
+Q Consensus       159 ~e~L~~~ipS~llS~ll~~GlGiyigk  185 (194)
+                      .+++..+++.+|++-|+|..+|+|++.
+T Consensus         9 ~~~~~~~~~~~~~~~~~~~~~~~~~~~   35 (278)
+T 3P5S_A            9 KKLCWCVLLFFLVAGITGGAIGIYKWH   35 (278)
+T ss_dssp             ---------------------------
+T ss_pred             HHHHHHHHHHHHHHHHHHHHHHHHHhc
+Confidence            445566677788899999999999987
+
+
+No 15
+>5KBN_B Putative fluoride ion transporter CrcB; alpha helix, ion channel, membrane; HET: DMU; 2.48A {Escherichia coli}
+Probab=29.21  E-value=47  Score=27.67  Aligned_cols=24  Identities=29%  Similarity=0.347  Sum_probs=15.2  Template_Neff=6.800
+
+Q <unknown        164 VFLPSLLLSHLLAIGLGIYIGRRLT  188 (194)
+Q Consensus       164 ~~ipS~llS~ll~~GlGiyigkRla  188 (194)
+                      +++.+.++. ++++.+|++++||+.
+T Consensus       102 y~~~sv~~g-l~a~~~G~~l~~~~~  125 (147)
+T 5KBN_B          102 SVLVHVIGS-LIMTALGFFIITILF  125 (147)
+T ss_pred             HHHHHHHHH-HHHHHHHHHHHHHHH
+Confidence            344444444 455667899998874
+
+
+No 16
+>1SCF_B STEM CELL FACTOR, PENTAETHYLENE GLYCOL; HUMAN STEM CELL FACTOR, STEEL; HET: 1PE; 2.2A {Homo sapiens} SCOP: a.26.1.2
+Probab=29.08  E-value=47  Score=30.96  Aligned_cols=26  Identities=19%  Similarity=0.443  Sum_probs=0.0  Template_Neff=3.100
+
+Q <unknown        160 EFLKVFLPSLLLSHLLAIGLGIYIGRR  186 (194)
+Q Consensus       160 e~L~~~ipS~llS~ll~~GlGiyigkR  186 (194)
+                      +.+.+.++ .|+|+++||++|+...|+
+T Consensus       214 q~~siaL~-sl~sLviGF~lGal~WkK  239 (273)
+T 1SCF_B          214 HWAAMALP-ALFSLIIGFAFGALYWKK  239 (273)
+T ss_dssp             ---------------------------
+T ss_pred             HHHHHHHH-HHHHHHHHHHHHHHHHHH
+Confidence            44444444 468999999999766654
+
+
+No 17
+>5KBN_A Putative fluoride ion transporter CrcB; alpha helix, ion channel, membrane; HET: DMU; 2.48A {Escherichia coli}
+Probab=28.39  E-value=50  Score=27.53  Aligned_cols=24  Identities=29%  Similarity=0.347  Sum_probs=14.9  Template_Neff=6.800
+
+Q <unknown        164 VFLPSLLLSHLLAIGLGIYIGRRLT  188 (194)
+Q Consensus       164 ~~ipS~llS~ll~~GlGiyigkRla  188 (194)
+                      +++.+.++. ++.+.+|++++||+.
+T Consensus       102 y~~~si~~g-l~a~~~G~~l~~~~~  125 (147)
+T 5KBN_A          102 SVLVHVIGS-LIMTALGFFIITILF  125 (147)
+T ss_dssp             HHHHHHHHH-HHHHHHHHHHHHHTC
+T ss_pred             HHHHHHHHH-HHHHHHHHHHHHHHH
+Confidence            344444444 445667899998874
+
+
+No 18
+>5IJI_A Nitrate/nitrite sensor histidine kinase NarQ; membrane protein, sensor, histidine kinase; HET: LFA; 1.94A {Escherichia coli}
+Probab=28.35  E-value=50  Score=26.22  Aligned_cols=19  Identities=11%  Similarity=-0.213  Sum_probs=12.0  Template_Neff=12.300
+
+Q <unknown        169 LLLSHLLAIGLGIYIGRRL  187 (194)
+Q Consensus       169 ~llS~ll~~GlGiyigkRl  187 (194)
+                      .++..++++.++++|.|++
+T Consensus       158 ~~~~~~~~~~~~~~i~r~i  176 (236)
+T 5IJI_A          158 GIGIFTLVFFTLRRIRHQV  176 (236)
+T ss_pred             HHHHHHHHHHHHHHHHhhc
+Confidence            3445566666777777665
+
+
+No 19
+>1N93_X p40 nucleoprotein; RNA virus nucleoprotein tetramer, Viral; 1.76A {Borna disease virus} SCOP: a.206.1.1
+Probab=27.28  E-value=53  Score=31.90  Aligned_cols=23  Identities=30%  Similarity=0.303  Sum_probs=17.1  Template_Neff=3.000
+
+Q <unknown        167 PSLLLSHLLAIGLG---------IYIGRRLTT  189 (194)
+Q Consensus       167 pS~llS~ll~~GlG---------iyigkRla~  189 (194)
+                      ++++|++++|.++|         -||.||+.|
+T Consensus       142 ~~hcC~Lligv~~gss~ki~~ns~qIkKRfsA  173 (375)
+T 1N93_X          142 FSHCCSLLIGVVIGSSSKIKAGAEQIKKRFKT  173 (375)
+T ss_dssp             HHHHHHHHHHHHHTCSHHHHSCCHHHHHHHHH
+T ss_pred             HHHHHHHHHHhhcCCChhhccCHHHHHHHHHH
+Confidence            34557888888887         689999854
+
+
+No 20
+>1PP1_X p40 nucleoprotein; RNA VIRUS NUCLEOPROTEIN TETRAMER, Viral; 1.9A {Borna disease virus} SCOP: a.206.1.1
+Probab=27.28  E-value=53  Score=31.90  Aligned_cols=23  Identities=30%  Similarity=0.303  Sum_probs=17.1  Template_Neff=3.000
+
+Q <unknown        167 PSLLLSHLLAIGLG---------IYIGRRLTT  189 (194)
+Q Consensus       167 pS~llS~ll~~GlG---------iyigkRla~  189 (194)
+                      ++++|++++|.++|         -||.||+.|
+T Consensus       142 ~~hcC~Lligv~~gss~ki~~ns~qIkKRfsA  173 (375)
+T 1PP1_X          142 FSHCCSLLIGVVIGSSSKIKAGAEQIKKRFKT  173 (375)
+T ss_dssp             HHHHHHHHHHHHHTCSHHHHSCCHHHHHHHHH
+T ss_pred             HHHHHHHHHHhhcCCChhhccCHHHHHHHHHH
+Confidence            34557888888887         689999854
+
+
+No 21
+>2MFR_A Insulin receptor (E.C.2.7.10.1); insulin recepotr, membrane protein, detergent; NMR {Homo sapiens}
+Probab=26.03  E-value=58  Score=22.97  Aligned_cols=13  Identities=15%  Similarity=-0.016  Sum_probs=5.5  Template_Neff=5.900
+
+Q <unknown        172 SHLLAIGLGIYIG  184 (194)
+Q Consensus       172 S~ll~~GlGiyig  184 (194)
+                      -++++++.++|+.
+T Consensus        28 ilii~~~~~~~~~   40 (57)
+T 2MFR_A           28 FLFSVVIGSIYLF   40 (57)
+T ss_dssp             HHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHHHH
+Confidence            3344434444444
+
+
+No 22
+>6B2A_B Fluoride ion transporter CrcB, monobody; alpha helix, ion channel, membrane; HET: DMU; 2.65A {Escherichia coli}
+Probab=25.95  E-value=59  Score=26.09  Aligned_cols=24  Identities=29%  Similarity=0.347  Sum_probs=15.2  Template_Neff=7.500
+
+Q <unknown        164 VFLPSLLLSHLLAIGLGIYIGRRLT  188 (194)
+Q Consensus       164 ~~ipS~llS~ll~~GlGiyigkRla  188 (194)
+                      +++.+.+++ ++.+.+|++++||+.
+T Consensus       102 y~~~s~~~g-l~a~~~G~~l~~~~~  125 (126)
+T 6B2A_B          102 SVLVHVIGS-LIMTALGFFIITILF  125 (126)
+T ss_dssp             HHHHHHHHH-HHHHHHHHHHHHHHC
+T ss_pred             HHHHHHHHH-HHHHHHHHHHHHHHh
+Confidence            344444444 455667999998874
+
+
+No 23
+>5KOM_A Putative fluoride ion transporter CrcB; alpha helix, ion channel, membrane; HET: DMU; 2.69A {Escherichia coli}
+Probab=25.76  E-value=59  Score=27.04  Aligned_cols=25  Identities=28%  Similarity=0.335  Sum_probs=15.4  Template_Neff=6.900
+
+Q <unknown        163 KVFLPSLLLSHLLAIGLGIYIGRRLT  188 (194)
+Q Consensus       163 ~~~ipS~llS~ll~~GlGiyigkRla  188 (194)
+                      .+++.+.++. ++.+.+|++++|++.
+T Consensus       101 ~y~~~sv~~g-l~a~~~G~~l~~~~~  125 (147)
+T 5KOM_A          101 TSVLVHVIGS-LIMTALGFFIITILF  125 (147)
+T ss_dssp             HHHHHHHHHH-HHHHHHHHHHHHHHC
+T ss_pred             HHHHHHHHHH-HHHHHHHHHHHHHHH
+Confidence            3344444444 445667889988874
+
+
+No 24
+>5JEQ_A Nitrate/nitrite sensor protein NarQ (E.C.2.7.13.3); membrane protein, sensor, histidine kinase; HET: PO4; 1.9A {Escherichia coli}
+Probab=25.72  E-value=60  Score=25.78  Aligned_cols=19  Identities=11%  Similarity=-0.213  Sum_probs=11.7  Template_Neff=12.300
+
+Q <unknown        169 LLLSHLLAIGLGIYIGRRL  187 (194)
+Q Consensus       169 ~llS~ll~~GlGiyigkRl  187 (194)
+                      .++..++++.+++++.|++
+T Consensus       158 ~~~~~~~~~~~~~~i~r~i  176 (236)
+T 5JEQ_A          158 GIGIFTLVFFTLRRIRHQV  176 (236)
+T ss_dssp             HHHHHHHHHHHHHHHCCCC
+T ss_pred             HHHHHHHHHHHHHHHHHhc
+Confidence            3445566666777776654
+
+
+No 25
+>6BX4_B Fluoride ion transporter CrcB, Monobody; Fluc, Fluoride channel, monobody, TRANSPORT; HET: DMU; 2.55A {Escherichia coli}
+Probab=24.93  E-value=63  Score=25.80  Aligned_cols=23  Identities=30%  Similarity=0.394  Sum_probs=14.6  Template_Neff=7.500
+
+Q <unknown        164 VFLPSLLLSHLLAIGLGIYIGRRL  187 (194)
+Q Consensus       164 ~~ipS~llS~ll~~GlGiyigkRl  187 (194)
+                      +++.+.++. ++.+.+|++++||+
+T Consensus       101 y~~~s~~~g-l~a~~~G~~l~~~~  123 (123)
+T 6BX4_B          101 SVLVHVIGS-LIMTALGFFIITIL  123 (123)
+T ss_dssp             HHHHHHHHH-HHHHHHHHHHHHTC
+T ss_pred             HHHHHHHHH-HHHHHHHHHHHHhC
+Confidence            344444444 45566789998885
+
+
+No 26
+>6NYQ_C 1H3 Fab light chain, 1H3; lysosome, luminal domain, IMMUNE SYSTEM; HET: NAG; 1.85A {Mus musculus}
+Probab=24.55  E-value=65  Score=31.51  Aligned_cols=22  Identities=23%  Similarity=0.335  Sum_probs=0.0  Template_Neff=6.400
+
+Q <unknown        165 FLPSLLLSHLLAIGLGIYIGRR  186 (194)
+Q Consensus       165 ~ipS~llS~ll~~GlGiyigkR  186 (194)
+                      +.+.+.+-.||.++-|+|+|.|
+T Consensus       372 iavgLG~P~llll~ggi~v~~r  393 (404)
+T 6NYQ_C          372 MAVALGAPGLMFLGGGLFLLLR  393 (404)
+T ss_dssp             ----------------------
+T ss_pred             HHHHhHHHHHHHHHHHHHHHHH
+Confidence            3333433444444447887754
+
+
+No 27
+>6EZN_E Dolichyl-diphosphooligosaccharide--protein glycosyltransferase subunit 1 (E.C.2.4.99.18); OST complex, oligosaccharyltransferase, N-linked glycosylation; HET: NAG, BMA, CPL, PTY, MAN;{Saccharomyces cerevisiae (strain ATCC 204508 / S288c)}
+Probab=24.45  E-value=65  Score=24.83  Aligned_cols=20  Identities=10%  Similarity=0.060  Sum_probs=13.3  Template_Neff=5.400
+
+Q <unknown        160 EFLKVFLPSLLLSHLLAIGL  179 (194)
+Q Consensus       160 e~L~~~ipS~llS~ll~~Gl  179 (194)
+                      +++..++.+.+-|..+|+|.
+T Consensus        56 ~l~~e~~~a~~ASlf~GfG~   75 (86)
+T 6EZN_E           56 KLFFYTILSVIGSLFAGLTT   75 (86)
+T ss_dssp             HHHHHHHHHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHHHHHHHHHHH
+Confidence            34455666777777888875
+
+
+No 28
+>4H0L_E Cytochrome b6, Cytochrome b6-f complex; Alpha-helix, beta -sheet, Plastoquinol-plastocyanin oxidoreductase; HET: OPC, HEM, SQD, BCR, CLA, QNO, UMQ; 3.25A {Mastigocladus laminosus}
+Probab=23.88  E-value=68  Score=20.53  Aligned_cols=16  Identities=19%  Similarity=0.511  Sum_probs=11.7  Template_Neff=3.500
+
+Q <unknown        171 LSHLLAIGLGIYIGRR  186 (194)
+Q Consensus       171 lS~ll~~GlGiyigkR  186 (194)
+                      +....|+++|.|+|-|
+T Consensus        12 l~~~~~~A~gLyfGLr   27 (32)
+T 4H0L_E           12 IALFFGIAVGIIFAIK   27 (32)
+T ss_dssp             HHHHHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHHHHHHH
+Confidence            3456677888899876
+
+
+No 29
+>4H13_E Cytochrome b6, Cytochrome b6-f complex; Alpha helix, beta sheet, Plastoquinol-plastocyanin; HET: 7PH, UMQ, CLA, TDS, OPC, HEM, 8K6, OCT, SQD, MYS, BCR; 3.07A {Mastigocladus laminosus}
+Probab=23.88  E-value=68  Score=20.53  Aligned_cols=16  Identities=19%  Similarity=0.511  Sum_probs=11.7  Template_Neff=3.500
+
+Q <unknown        171 LSHLLAIGLGIYIGRR  186 (194)
+Q Consensus       171 lS~ll~~GlGiyigkR  186 (194)
+                      +....|+++|.|+|-|
+T Consensus        12 l~~~~~~A~gLyfGLr   27 (32)
+T 4H13_E           12 IALFFGIAVGIIFAIK   27 (32)
+T ss_dssp             HHHHHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHHHHHHH
+Confidence            3456677888899876
+
+
+No 30
+>4I7Z_E Cytochrome b6, Cytochrome b6-f complex; CYTOCHROME, MEMBRANE PROTEIN, PLASTOQUINOL:PLASTOCYANIN OXIDOREDUCTASE; HET: 1E2, MYS, CLA, OZ2, HEM, UMQ, 8K6, OCT, BCR; 2.803A {Mastigocladus laminosus}
+Probab=23.88  E-value=68  Score=20.53  Aligned_cols=16  Identities=19%  Similarity=0.511  Sum_probs=11.7  Template_Neff=3.500
+
+Q <unknown        171 LSHLLAIGLGIYIGRR  186 (194)
+Q Consensus       171 lS~ll~~GlGiyigkR  186 (194)
+                      +....|+++|.|+|-|
+T Consensus        12 l~~~~~~A~gLyfGLr   27 (32)
+T 4I7Z_E           12 IALFFGIAVGIIFAIK   27 (32)
+T ss_dssp             HHHHHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHHHHHHH
+Confidence            3456677888899876
+
+
+No 31
+>5O31_d NADH-ubiquinone oxidoreductase chain 3 (E.C.1.6.5.3); Complex I, redox enzyme, proton; HET: FMN, SF4, NAP; 4.13A {Bos taurus}
+Probab=23.81  E-value=68  Score=26.25  Aligned_cols=23  Identities=26%  Similarity=0.171  Sum_probs=16.3  Template_Neff=4.800
+
+Q <unknown        165 FLPSLLLSHLLAIGLGIYIGRRL  187 (194)
+Q Consensus       165 ~ipS~llS~ll~~GlGiyigkRl  187 (194)
+                      -|.-.++..++|.++|+|++|..
+T Consensus        57 Gi~R~il~~~iG~~~Gy~l~k~r   79 (116)
+T 5O31_d           57 GLHRQLLYITSFVFVGYYLLKRQ   79 (116)
+T ss_pred             cHHHHHHHHHHHHHHHHHHHHHH
+Confidence            45555666677888899998753
+
+
+No 32
+>4CLV_B NICKEL-COBALT-CADMIUM RESISTANCE PROTEIN NCCX; METAL BINDING PROTEIN, MEMBRANE PROTEIN; HET: PC, ZN, PO4; 3.12A {CUPRIAVIDUS METALLIDURANS}
+Probab=23.73  E-value=69  Score=25.47  Aligned_cols=9  Identities=22%  Similarity=0.567  Sum_probs=3.8  Template_Neff=9.300
+
+Q <unknown        176 AIGLGIYIG  184 (194)
+Q Consensus       176 ~~GlGiyig  184 (194)
+                      |+.+|.|+.
+T Consensus        23 ~~~~~~~~~   31 (148)
+T 4CLV_B           23 MAIVGVYVT   31 (148)
+T ss_dssp             HHHHHHHHH
+T ss_pred             HHHHHHHHc
+Confidence            444444433
+
+
+No 33
+>5LDX_d NADH-ubiquinone oxidoreductase chain 3 (E.C.1.6.5.3); NADH:ubiquinone oxidoreductase, multienzyme complexes, Complex; HET: FMN, NAP, SF4; 5.6A {Bos taurus}
+Probab=23.10  E-value=72  Score=26.15  Aligned_cols=23  Identities=26%  Similarity=0.171  Sum_probs=16.1  Template_Neff=4.100
+
+Q <unknown        165 FLPSLLLSHLLAIGLGIYIGRRL  187 (194)
+Q Consensus       165 ~ipS~llS~ll~~GlGiyigkRl  187 (194)
+                      -|.-.++..++|.++|+||+|+.
+T Consensus        55 GI~Rhil~~~iG~~~GY~l~k~r   77 (114)
+T 5LDX_d           55 GLHRQLLYITSFVFVGYYLLKRQ   77 (114)
+T ss_pred             hHHHHHHHHHHHHHHHHHHHHHH
+Confidence            44455566677888899998753
+
+
+No 34
+>3TUI_A D-methionine transport system permease protein; ABC-TRANSPORTER, TYPE I ABC TYPE; HET: ADP; 2.9A {Escherichia coli}
+Probab=22.22  E-value=77  Score=26.51  Aligned_cols=24  Identities=8%  Similarity=0.220  Sum_probs=16.8  Template_Neff=10.000
+
+Q <unknown        163 KVFLPSLLLSHLLAIGLGIYIGRR  186 (194)
+Q Consensus       163 ~~~ipS~llS~ll~~GlGiyigkR  186 (194)
+                      ...+.+.+++.++|+.+|+++.|+
+T Consensus        18 ~~~~~~~~l~~~lg~~la~~~~~~   41 (217)
+T 3TUI_A           18 AMTFVSGFFGFVIGLPVGVLLYVT   41 (217)
+T ss_dssp             HHHHHHHHHHHHHHHHHHHHHHHT
+T ss_pred             HHHHHHHHHHHHHHHHHHHHHHhc
+Confidence            345566677888888888777643
+
+
+No 35
+>5XTI_Bg NADH dehydrogenase [ubiquinone] flavoprotein 1; Homo sapiens, Oxidoreductase, Respiratory, OXIDOREDUCTASE-ELECTRON; HET: FES, PLX, HEM, NDP, 8Q1, CDL, HEC, PEE, FMN, HEA, SF4; 17.4A {Homo sapiens}
+Probab=22.07  E-value=78  Score=26.00  Aligned_cols=23  Identities=26%  Similarity=0.109  Sum_probs=15.7  Template_Neff=5.000
+
+Q <unknown        165 FLPSLLLSHLLAIGLGIYIGRRL  187 (194)
+Q Consensus       165 ~ipS~llS~ll~~GlGiyigkRl  187 (194)
+                      -|.-.++..++|.++|+||+|..
+T Consensus        56 Gi~R~il~~~iG~~~Gy~l~k~~   78 (119)
+T 5XTI_Bg          56 GLHRQLLYITAFFFAGYYLVKRE   78 (119)
+T ss_pred             cHHHHHHHHHHHHHHHHHHHHHH
+Confidence            34445556677888899998753
+
+
+No 36
+>6O7U_b V-type proton ATPase subunit a; Proton pump, MEMBRANE PROTEIN; 3.1A {Saccharomyces cerevisiae}
+Probab=21.91  E-value=79  Score=29.52  Aligned_cols=28  Identities=25%  Similarity=0.413  Sum_probs=22.8  Template_Neff=4.700
+
+Q <unknown        155 GIFSAEFLKVFLPSLLLSHLLAIGLGIY  182 (194)
+Q Consensus       155 ~lFS~e~L~~~ipS~llS~ll~~GlGiy  182 (194)
+                      ++|+..++.+++++.++-.||.+||.+.
+T Consensus       217 ~ffT~gl~m~Llv~~~ll~Il~~gi~~L  244 (265)
+T 6O7U_b          217 SIWTEGLLMCLIVSALLLFILIVALSWI  244 (265)
+T ss_pred             hhcCHHHHHHHHHHHHHHHHHHHHHHHH
+Confidence            6888888888888888888888888643
+
+
+No 37
+>6C6L_N V-type proton ATPase subunit c'; Vacuolar H+-ATPase, Vo proton channel;{Saccharomyces cerevisiae (strain ATCC 204508 / S288c)}
+Probab=21.73  E-value=80  Score=29.48  Aligned_cols=28  Identities=25%  Similarity=0.413  Sum_probs=22.8  Template_Neff=4.700
+
+Q <unknown        155 GIFSAEFLKVFLPSLLLSHLLAIGLGIY  182 (194)
+Q Consensus       155 ~lFS~e~L~~~ipS~llS~ll~~GlGiy  182 (194)
+                      ++|+..++.+++++.++-.||.+||.+.
+T Consensus       217 ~ffT~gl~m~Llv~~~ll~Il~~gi~~L  244 (265)
+T 6C6L_N          217 SIWTEGLLMCLIVSALLLFILIVALSWI  244 (265)
+T ss_pred             HhccHHHHHHHHHHHHHHHHHHHHHHHH
+Confidence            6888888888888888888888888643
+
+
+No 38
+>4GN0_A Hamp domain of AF1503; Four helix bundle, Hamp domain; 1.75A {Archaeoglobus fulgidus}
+Probab=21.33  E-value=82  Score=20.61  Aligned_cols=12  Identities=8%  Similarity=-0.028  Sum_probs=4.9  Template_Neff=13.000
+
+Q <unknown        175 LAIGLGIYIGRR  186 (194)
+Q Consensus       175 l~~GlGiyigkR  186 (194)
+                      +++.+++++.++
+T Consensus        35 ~~~~~~~~~~~~   46 (105)
+T 4GN0_A           35 IVNDLASTTTST   46 (105)
+T ss_pred             HHHHHHHHHHHH
+Confidence            333334444443
+
+

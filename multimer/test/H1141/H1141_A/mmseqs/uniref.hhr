@@ -1,0 +1,283 @@
+Query         <unknown
+Match_columns 219
+No_of_seqs    115 out of 530
+Neff          6.02291
+Searched_HMMs 80799
+Date          Thu Aug 11 10:49:09 2022
+Command       hhsearch -i uniref.a3m -d /storage/thu/pdb70/pdb70 -cpu 4 -n 1 
+
+ No Hit                             Prob E-value P-value  Score    SS Cols Query HMM  Template HMM
+  1 5AE0_A 2', 3'-CYCLIC-NUCLEOTID 100.0 1.5E-80 1.9E-85  533.7   0.0  219    1-219     2-221 (221)
+  2 2ILX_A 2',3'-cyclic-nucleotide 100.0 6.9E-80 8.5E-85  528.6   0.0  216    4-219     3-219 (219)
+  3 2I3E_A G-RICH; RICH protein, C 100.0 5.8E-77 7.2E-82  511.0   0.0  211    4-219     3-221 (222)
+  4 6U05_A tRNA ligase (E.C.6.5.1.  99.4 2.7E-16 3.4E-21  147.8   0.0  141   67-219   277-432 (432)
+  5 6TZO_A tRNA ligase (E.C.6.5.1.  99.3 9.1E-16 1.1E-20  144.2   0.0  141   67-219   277-432 (432)
+  6 2KD2_A Fas apoptotic inhibitor  31.4      41  0.0005   26.7   0.0   41  116-156    22-62  (94)
+  7 5H7E_A RNA 2',3'-cyclic phosph  25.5      60 0.00075   26.6   0.0   91   67-161    37-138 (182)
+  8 5JPW_A Dynein light chain Tcte  24.3      66 0.00081   27.2   0.0   55   99-157    60-131 (143)
+  9 1TQ7_A Prothrombin (E.C.3.4.21  20.3      89  0.0011   21.4   0.0   10  109-118     3-12  (44)
+ 10 3BEI_A Prothrombin (E.C.3.4.21  20.3      89  0.0011   21.4   0.0   10  109-118     3-12  (44)
+ 11 2PGQ_A Prothrombin (EC 3.4.21.  20.2      90  0.0011   21.5   0.0   10  109-118     4-13  (45)
+
+No 1
+>5AE0_A 2', 3'-CYCLIC-NUCLEOTIDE 3'-PHOSPHODIESTERASE (E.C.3.1.4.37); HYDROLASE; HET: CIT; 1.04A {MUS MUSCULUS}
+Probab=100.00  E-value=1.5e-80  Score=533.69  Aligned_cols=219  Identities=100%  Similarity=1.514  Sum_probs=209.5  Template_Neff=4.600
+
+Q <unknown          1 GLEKDFLPLYFGWFLTKKSSETLRKAGQVFLEELGNHKAFKKELRHFISGDEPKEKLELVSYFGKRPPGVLHCTTKFCDY   80 (219)
+Q Consensus         1 gl~e~v~PlYyGWFl~~~ds~~l~~~~~~~l~~~~~~~~F~~~~~~~~~~~~~~~~~~l~~y~~~~~~~~lHcTakf~~~   80 (219)
+                      +|+|+++|||||||||+.+|+.|++.++.||++|.++++|+++|++|++.++++++.||.+||+++++.+||||||||++
+T Consensus         2 ~lee~~lPlyfGWFL~~~~Se~l~~~~~~fl~~l~~~~~Fkk~~~~f~~~~~~~~~~dL~~yf~~~~~~~lHCTtkf~~~   81 (221)
+T 5AE0_A            2 GLEKDFLPLYFGWFLTKKSSETLRKAGQVFLEELGNHKAFKKELRHFISGDEPKEKLELVSYFGKRPPGVLHCTTKFCDY   81 (221)
+T ss_dssp             ---CCCCCSEEEEEECHHHHHHHHHHHHHHHHHHHHSHHHHHTGGGTCCSCCCSSCCCHHHHTCBCCSSSCEEEEEECGG
+T ss_pred             CccccchhheeeeccCHHHHHHHHHHHHHHHHHHccCHHHHHHHHHHhCCCCcchhccHHHhhccCCCCcceeEeeeccc
+Confidence            46899999999999999999999999999999999999999999999876777778899999988889999999999998
+
+
+Q <unknown         81 -KAAGAEEYAQQEVVKRSYGKAFKLSISALFVTPKTAGAQVVLTDQELQLWPSDLDKPSASEGLPPGSRAHVTLGCAADV  159 (219)
+Q Consensus        81 -~~~~a~eY~~~~~V~~alG~~f~l~i~Gl~iTpRT~gARV~L~~~Ql~LW~~D~d~~~~s~~lP~GsRAHiTLg~a~gv  159 (219)
+                       +++|++||+++++|+++|||+|+|+|+|++|||||+||||+||++|++||++|++++.++.++|+|||||||||||+||
+T Consensus        82 Gka~ga~eYa~~~~Vk~s~gk~f~L~v~gl~vTprTvGARV~Lt~~ql~LW~~d~~~~~~~~~~p~GsrAHiTLGca~gv  161 (221)
+T 5AE0_A           82 GKAAGAEEYAQQEVVKRSYGKAFKLSISALFVTPKTAGAQVVLTDQELQLWPSDLDKPSASEGLPPGSRAHVTLGCAADV  161 (221)
+T ss_dssp             GTSTTHHHHHHCHHHHHHTTCEEEEEEEEEEECSSEEEEEEECCHHHHTTSCCCSCCCGGGTTCCTTTTCEEEEEECTTC
+T ss_pred             cccCChHHHHhHHHHHHHhcceEEEEEEEEEecCCcceEEEEcCHHHHhhCCCCCCCCccCCCCCCCCeeEEEEecCCCC
+Confidence             8999999999999999999999999999999999999999999999999999988888899999999999999999999
+
+
+Q <unknown        160 QPVQTGLDLLDILQQVKGGSQGEAVGELPRGKLYSLGKGRWMLSLTKKMEVKAIFTGYYG  219 (219)
+Q Consensus       160 ~avqTG~DLl~iv~~E~~~~~~~~~~~~~~G~l~~yg~g~w~vyl~~~i~v~~lFsg~Yg  219 (219)
+                      +|||||+|||+|+++|+.+++++.+.++++|+|++||+|+|+|||+|||.|+||||||||
+T Consensus       162 ~avqTG~DlLeiv~~E~~~~~g~~~~~~~~G~l~~yg~g~W~l~l~k~i~v~a~FsgyY~  221 (221)
+T 5AE0_A          162 QPVQTGLDLLDILQQVKGGSQGEAVGELPRGKLYSLGKGRWMLSLTKKMEVKAIFTGYYG  221 (221)
+T ss_dssp             CTTHHHHHHHHHHHHHTTCCTTCCCEEETTEEEEEEETTEEEEEEEEEEEEEEEEEEECC
+T ss_pred             CccccCHhHHHHHHHHhcCCCCceEEEecCeEEEEeeCCEEEEEeCCceeeeEEEeecCC
+Confidence            999999999999999999999999999999999999999999999999999999999997
+
+
+No 2
+>2ILX_A 2',3'-cyclic-nucleotide 3'-phosphodiesterase (E.C.3.1.4.37); CNP, CNPase, nervous system, HYDROLASE; NMR {Rattus norvegicus} SCOP: d.61.1.3
+Probab=100.00  E-value=6.9e-80  Score=528.57  Aligned_cols=216  Identities=94%  Similarity=1.464  Sum_probs=208.8  Template_Neff=4.500
+
+Q <unknown          4 KDFLPLYFGWFLTKKSSETLRKAGQVFLEELGNHKAFKKELRHFISGDEPKEKLELVSYFGKRPPGVLHCTTKFCDY-KA   82 (219)
+Q Consensus         4 e~v~PlYyGWFl~~~ds~~l~~~~~~~l~~~~~~~~F~~~~~~~~~~~~~~~~~~l~~y~~~~~~~~lHcTakf~~~-~~   82 (219)
+                      |+++|||||||||+.+|+.|++.++.||++|.++++|+++|++|+..++++++.||.+||+.+++.+||||||||++ ++
+T Consensus         3 e~~lPlyfGWFL~~~~Se~l~~~~~~fl~~l~~~~~Fkk~~~~f~~~~~~~~~~dL~~yf~~~~~~~lHCTtkf~~~Gka   82 (219)
+T 2ILX_A            3 HMFLPLYFGWFLTKKSSETLRKAGQVFLEELGNHKAFKKELRHFISGDEPKEKLDLVSYFGKRPPGVLHCTTKFCDYGKA   82 (219)
+T ss_dssp             CCCCCSEEEEEECHHHHHHHHHHHHHHHHHHHTCHHHHTTHHHHCCCSSSCSCCCHHHHSCCSCTTCCEEEEEECTTTTS
+T ss_pred             CCccceEEEEecCHHHHHHHHHHHHHHHHHHccCHHHHHHHHHHhCCCCCccccChHHhcccCCCCcceeEeeecccccc
+Confidence            78999999999999999999999999999999999999999999866677778899999998889999999999998 89
+
+
+Q <unknown         83 AGAEEYAQQEVVKRSYGKAFKLSISALFVTPKTAGAQVVLTDQELQLWPSDLDKPSASEGLPPGSRAHVTLGCAADVQPV  162 (219)
+Q Consensus        83 ~~a~eY~~~~~V~~alG~~f~l~i~Gl~iTpRT~gARV~L~~~Ql~LW~~D~d~~~~s~~lP~GsRAHiTLg~a~gv~av  162 (219)
+                      +|++||+++++|+++|||+|+|+|+|++|||||+||||+||++|++||+.|++++.+++++|+|||||||||||+||+||
+T Consensus        83 ~ga~eYa~~~~Vk~s~gk~f~L~v~gl~vTprTvGARV~Lt~~ql~LW~~d~~~~~~~~~~p~GsRAHiTLGcA~gv~av  162 (219)
+T 2ILX_A           83 TGAEEYAQQDVVRRSYGKAFKLSISALFVTPKTAGAQVVLNEQELQLWPSDLDKPSSSESLPPGSRAHVTLGCAADVQPV  162 (219)
+T ss_dssp             SSHHHHHTCHHHHHHTTCEEEEEEEEEEECSSCEEEEECCCHHHHHTCCTTSSSCSSSSCCCCCSSSEEECCCCTTCCHH
+T ss_pred             CChhHHHcHHHHHHHhcceEEEEEEEEEecCCcceEEEEeCHHHHhhCCCCCCCCCCCCCCCCCceeEEEEEcCCCCCcc
+Confidence            99999999999999999999999999999999999999999999999999988888889999999999999999999999
+
+
+Q <unknown        163 QTGLDLLDILQQVKGGSQGEAVGELPRGKLYSLGKGRWMLSLTKKMEVKAIFTGYYG  219 (219)
+Q Consensus       163 qTG~DLl~iv~~E~~~~~~~~~~~~~~G~l~~yg~g~w~vyl~~~i~v~~lFsg~Yg  219 (219)
+                      |||+|||+|+++|+++++++.+.++++|+|++||+|+|+|||+|||.|+||||||||
+T Consensus       163 qTG~DlLeiv~~E~~~~~g~~~~e~~~G~l~~yg~g~W~l~l~k~i~v~a~FsgyY~  219 (219)
+T 2ILX_A          163 QTGLDLLEILQQVKGGSQGEEVGELPRGKLYSLGKGRWMLSLAKKMEVKAIFTGYYG  219 (219)
+T ss_dssp             HHHHHHHHHHHHHHTTCSCEEEEEETTEEEEECSTTCEEEEEEEEEEEEEEEEEECC
+T ss_pred             ccCHhHHHHHHHHhcCCCCceEEEeCCeEEEEeeCCEEEEEeCceeeeeEEEeecCC
+Confidence            999999999999999999998889999999999999999999999999999999997
+
+
+No 3
+>2I3E_A G-RICH; RICH protein, CNP, 2',3'-cyclic-nucleotide 3'-phosphodiesterase; NMR {Carassius auratus}
+Probab=100.00  E-value=5.8e-77  Score=510.99  Aligned_cols=211  Identities=48%  Similarity=0.850  Sum_probs=198.3  Template_Neff=4.400
+
+Q <unknown          4 KDFLPLYFGWFLTKKSSETLRKAGQVFLEELGNHKAFKKELRHFISGDEPKEKLELVSYFGKRPPGVLHCTTKFCDY-KA   82 (219)
+Q Consensus         4 e~v~PlYyGWFl~~~ds~~l~~~~~~~l~~~~~~~~F~~~~~~~~~~~~~~~~~~l~~y~~~~~~~~lHcTakf~~~-~~   82 (219)
+                      ++++|||||||||+.+|+.|++.+++||++|.++++|+++|++|.  .+++++.||.+||  +++.+||||||||++ |+
+T Consensus         3 ~~~lPlyfGWFL~~~~Se~l~~~~~~fL~~l~~~~~Fkk~~~~f~--~~~~~~~dL~~yf--~~~~~lHCTtkF~~~Gka   78 (222)
+T 2I3E_A            3 HMELPLFFGWFLLPEEEERIKCATMDFLKTLDTLEAFKEHISEFT--GEAEKEVDLEQYF--QNPLQLHCTTKFCDYGKA   78 (222)
+T ss_dssp             CCCCCCEEEEEECHHHHHHHHHHHHHHHHHHHHSHHHHHTHHHHH--TTCSSSSTHHHHS--BCCSSCEEEEEECCSSSC
+T ss_pred             CCcccceEeEecCHHHHHHHHHHHHHHHHHhhccHHHHHHHHHhh--cccccccCHHHHc--CCCCcceeEhhhcccccc
+Confidence            688999999999999999999999999999999999999999997  3566778999999  467799999999998 89
+
+
+Q <unknown         83 AGAEEYAQQEVVKRSYGKAFKLSISALFVTPKTAGAQVVLTDQELQLWPSDLDKP--SAS-----EGLPPGSRAHVTLGC  155 (219)
+Q Consensus        83 ~~a~eY~~~~~V~~alG~~f~l~i~Gl~iTpRT~gARV~L~~~Ql~LW~~D~d~~--~~s-----~~lP~GsRAHiTLg~  155 (219)
+                      +|++||+++++|+++||++|+|+|+|++|||||+||||+||++|++||+.|+|++  .|.     .++|+||||||||||
+T Consensus        79 ~ga~eYa~~~~Vk~s~gk~f~L~v~glfvTprTvGARV~Lt~~qL~LW~~d~d~~~~~~~~~~~~~~lp~GsRAHiTLGc  158 (222)
+T 2I3E_A           79 EGAKEYAELQVVKESLTKSYELSVTALIVTPRTFGARVALTEAQVKLWPEGADKEGVAPALLPSVEALPAGSRAHVTLGC  158 (222)
+T ss_dssp             HHHHHHHTCHHHHHGGGCEEEEEEEEEEECSSEEEEEEECCHHHHHTSCTGGGGSSSCGGGHHHHTTSCCCSSEEEEEEE
+T ss_pred             cChHHHHhhHHHHHHccccEEEEEEEEEEcCCcceEEEecCHHHHhhCCCCcccCCCCCCcCCccccCCCCceEEEEEec
+Confidence            9999999999999999999999999999999999999999999999999876655  333     679999999999999
+
+
+Q <unknown        156 AADVQPVQTGLDLLDILQQVKGGSQGEAVGELPRGKLYSLGKGRWMLSLTKKMEVKAIFTGYYG  219 (219)
+Q Consensus       156 a~gv~avqTG~DLl~iv~~E~~~~~~~~~~~~~~G~l~~yg~g~w~vyl~~~i~v~~lFsg~Yg  219 (219)
+                      |+||+|||||+|||+|+++|+++++++.+. +++|+|+|||+|+|+|||+|||.|+|||||||+
+T Consensus       159 A~gv~avqTG~DlLeiv~~E~~~~~g~~~~-~~~G~l~~~g~g~W~l~L~k~i~v~aiFsgyY~  221 (222)
+T 2I3E_A          159 SAGVETVQTGLDLLEILALQKEGKEGTQVE-MDLGTLTYLSEGRWFLALREPINADTTFTSFSE  221 (222)
+T ss_dssp             CSSCCTHHHHHHHHHHHHHHHTTCCCEEEE-CSSEEEEECSSCCEEEEEEEEEEEEEEEEEECC
+T ss_pred             CCCcchhhcCHHHHHHHHHHHhCCCCceEE-eeCeEEEEEeCCEEEEEeCCceeeeeeeeeccC
+Confidence            999999999999999999999998987765 999999999999999999999999999999996
+
+
+No 4
+>6U05_A tRNA ligase (E.C.6.5.1.3); RNA ligase, RNA repair, polynucleotide; HET: GDP; 1.948A {Candida albicans (strain SC5314 / ATCC MYA-2876)}
+Probab=99.37  E-value=2.7e-16  Score=147.80  Aligned_cols=141  Identities=15%  Similarity=0.108  Sum_probs=112.2  Template_Neff=8.500
+
+Q <unknown         67 PPGVLHCTTKFCDYK-AAG-----AEEYAQQEV--V----KRSYGKAFKLSISALFV-TPKTAGAQVVLTDQELQLWPSD  133 (219)
+Q Consensus        67 ~~~~lHcTakf~~~~-~~~-----a~eY~~~~~--V----~~alG~~f~l~i~Gl~i-TpRT~gARV~L~~~Ql~LW~~D  133 (219)
+                      ....+|||..+++.. ...     ..+|.+...  |    +..++..++++++++++ ++|+++++|+|++.+      +
+T Consensus       277 ~~~~~HvTl~h~~~~~~~~~~~~~w~~y~~~~~~~~~~~~~~~~~~~~~v~l~~lv~~~~~~~a~~V~~~~~~------~  350 (432)
+T 6U05_A          277 IQTEFHVTLGHIASSKQDKAGRVKWKKLVKTLGKGDPNKPKSALKFFADVKLLQIVINTDKLACIKVEILKIY------D  350 (432)
+T ss_dssp             BCSSEEEEEEEGGGGGTCHHHHHHHHHHHHHSCCCCSSSSEEEEEEEEEEEEEEEEEETTTEEEEEEEEEEEE------E
+T ss_pred             cccCceeEEEEhhcccCChhHHHHHHHHHHHHcCCCCCCCccCCceeEEEEEEEEEEcCCcEEEEEEEEcccc------C
+Confidence            346899999999863 222     467877533  4    56788899999999999 999999999998866      1
+
+
+Q <unknown        134 LDKPSASEGLPPGSRAHVTLGCAADVQPVQTGLDLLDILQQVKGGSQGEAVGELPRGKLYSLGKGRWMLSLTKK--MEVK  211 (219)
+Q Consensus       134 ~d~~~~s~~lP~GsRAHiTLg~a~gv~avqTG~DLl~iv~~E~~~~~~~~~~~~~~G~l~~yg~g~w~vyl~~~--i~v~  211 (219)
+                      ++.+......+.+.++||||||++||+|+++| ||++.+..+..+..+.     +.|.++++++++|+++|+++  +.++
+T Consensus       351 ~~~~~~~~~~~~n~~pHITigt~~~i~p~~sn-~Ll~~~~~~~~~~~~~-----~~~~~~~~~~~~~~~~~~~~~~~~~~  424 (432)
+T 6U05_A          351 TNDVLQSEIEPINKQLHITIGCIPPATAVESN-ITLEELYDNPDEQELK-----PDGTYKCGDDTLHVFNFDNPDLKLFS  424 (432)
+T ss_dssp             TTCCBCTTCCCSCSSCEEEEEECTTSCTTHHH-HHHHHHTCCTTCCSCC-----CSEEEEETTEEEEEEECSCTTCEEEE
+T ss_pred             CCcccccCCccccCceeEEEEeCCCCChHHHH-HHHHHHhcCCCccccC-----CCCccccCCCceEEEEeCCCCcceEE
+Confidence            11111112234689999999999999999999 9999988875544433     67899999999999999998  8999
+
+
+Q <unknown        212 AIFTGYYG  219 (219)
+Q Consensus       212 ~lFsg~Yg  219 (219)
+                      +.|+||||
+T Consensus       425 ~~~~~~y~  432 (432)
+T 6U05_A          425 QQLFVAYQ  432 (432)
+T ss_dssp             EEEEEECC
+T ss_pred             EEEEEEeC
+Confidence            99999997
+
+
+No 5
+>6TZO_A tRNA ligase (E.C.6.5.1.3); RNA ligase, RNA repair, polynucleotide; HET: DGI; 1.69A {Candida albicans (strain SC5314 / ATCC MYA-2876)}
+Probab=99.32  E-value=9.1e-16  Score=144.18  Aligned_cols=141  Identities=16%  Similarity=0.115  Sum_probs=0.0  Template_Neff=8.600
+
+Q <unknown         67 PPGVLHCTTKFCDY-KAAG-----AEEYAQQEV--V----KRSYGKAFKLSISALFV-TPKTAGAQVVLTDQELQLWPSD  133 (219)
+Q Consensus        67 ~~~~lHcTakf~~~-~~~~-----a~eY~~~~~--V----~~alG~~f~l~i~Gl~i-TpRT~gARV~L~~~Ql~LW~~D  133 (219)
+                      ....+|||..+++. +...     ..+|.+...  |    +..++..++++++++++ ++|+++++|++.+.+      +
+T Consensus       277 ~~~~~HvTl~h~~~~~~~~~~~~~w~~y~~~~~~~~~~~~~~~~~~~~~v~l~~lv~~~~~~~a~~V~~~~~~------~  350 (432)
+T 6TZO_A          277 IQTEFHVTLGHIASSKQDKAGRVKWKKLVKTLGKGDPNKPKSALKFFADVKLLQIVINTDKLACIKVEILKIY------D  350 (432)
+T ss_dssp             --------------------------------------------------------------------------------
+T ss_pred             hccCceeEeEEhhcccCChhHHHHHHHHHHHHcCCCCCCCccCCceeEEEEEEEEEEcCCcEEEEEEEEcccc------C
+Confidence            34679999999986 3222     457877532  4    56778899999999999 999999999998866      1
+
+
+Q <unknown        134 LDKPSASEGLPPGSRAHVTLGCAADVQPVQTGLDLLDILQQVKGGSQGEAVGELPRGKLYSLGKGRWMLSLTKK--MEVK  211 (219)
+Q Consensus       134 ~d~~~~s~~lP~GsRAHiTLg~a~gv~avqTG~DLl~iv~~E~~~~~~~~~~~~~~G~l~~yg~g~w~vyl~~~--i~v~  211 (219)
+                      ++.+......+.+.++||||||++||+||++| ||++.+..+.....+.     +.|..+++++++|+++|+++  +.++
+T Consensus       351 ~~~~~~~~~~~~n~~pHITigt~~~i~p~~sn-~Ll~~~~~~~~~~~~~-----~~~~~~~~~~~~~~~~~~~~~~~~~~  424 (432)
+T 6TZO_A          351 TNDVLQSEIEPINKQLHITIGCIPPATAVESN-ITLEELYDNPDEQELK-----PDGTYKCGDDTLHVFNFDNPDLKLFS  424 (432)
+T ss_dssp             --------------------------------------------------------------------------------
+T ss_pred             CCcccccCCccccCceeEEEEeCCCCChHHHH-HHHHHHhcCCCccccC-----CCCccccCCCceEEEEeCCCCcceEE
+Confidence            11111112234689999999999999999999 9999988875543432     67899999999999999998  8999
+
+
+Q <unknown        212 AIFTGYYG  219 (219)
+Q Consensus       212 ~lFsg~Yg  219 (219)
+                      +.|.||||
+T Consensus       425 ~~~~~~~~  432 (432)
+T 6TZO_A          425 QQLFVAYQ  432 (432)
+T ss_dssp             --------
+T ss_pred             EEEEEEeC
+Confidence            99999997
+
+
+No 6
+>2KD2_A Fas apoptotic inhibitory molecule 1; PROTEIN, BETA SANDWICH, Apoptosis; NMR {Mus musculus}
+Probab=31.42  E-value=41  Score=26.72  Aligned_cols=41  Identities=22%  Similarity=0.429  Sum_probs=31.0  Template_Neff=5.500
+
+Q <unknown        116 AGAQVVLTDQELQLWPSDLDKPSASEGLPPGSRAHVTLGCA  156 (219)
+Q Consensus       116 ~gARV~L~~~Ql~LW~~D~d~~~~s~~lP~GsRAHiTLg~a  156 (219)
+                      .-.||.|..+.+.+|-++..-+...+...-|+..|.+|+-.
+T Consensus        22 ~~~rIvL~K~tm~Vw~nG~~i~t~~eFvd~Gtet~F~i~~~   62 (94)
+T 2KD2_A           22 EDLRVVLEKDTMDVWCNGQKMETAGEFVDDGTETHFSVGNH   62 (94)
+T ss_dssp             EEEEEEEETTTTEEEESSSBCCCCCEECSSSEEEEEEETTE
+T ss_pred             ceEEEEEEeCCcEEEECCEEcccceEecCCCcEEEEEECCE
+Confidence            35699999999999998754444445556788999999843
+
+
+No 7
+>5H7E_A RNA 2',3'-cyclic phosphodiesterase (E.C.3.1.4.-); RNA repair, CPDase, 2, 3; HET: GOL, SO4; 1.6A {Deinococcus radiodurans}
+Probab=25.51  E-value=60  Score=26.60  Aligned_cols=91  Identities=14%  Similarity=0.097  Sum_probs=47.8  Template_Neff=10.400
+
+Q <unknown         67 PPGVLHCTTKFCDYKAA-GAEEYAQQEVVKRSY--GKAFKLSISALFVTPK-----TAGAQVVLTDQEL-QLWPSDLD--  135 (219)
+Q Consensus        67 ~~~~lHcTakf~~~~~~-~a~eY~~~~~V~~al--G~~f~l~i~Gl~iTpR-----T~gARV~L~~~Ql-~LW~~D~d--  135 (219)
+                      ++..+|.|-.+.+...+ .-.+..  +.+++..  .+.|++.+.|+...+.     ++-+.+. + +.+ +|...=.+  
+T Consensus        37 ~~~~~HiTl~~~~~~~~~~~~~~~--~~l~~~~~~~~~f~l~~~~~~~f~~~~~~~~~~~~~~-~-~~l~~l~~~l~~~~  112 (182)
+T 5H7E_A           37 RPDQMHVTLSYLPAVPPERVEDLK--RLGTRLTQDLPPLHVNLRGTGYFPNEGSPRVWFVKTE-A-EGLTELAENLRAGI  112 (182)
+T ss_dssp             CGGGCEEEEEEEEEECGGGHHHHH--HHHHHHHTTSCCEEEEEEEEEEESSSSSCCEEEEEEE-C-TTHHHHHHHHHHHH
+T ss_pred             CHHhceEEEEEcCCCCHHHHHHHH--HHHHHHhhcCCCeEEEEeeeEecCCCCCCeEEEEecC-h-hHHHHHHHHHHHHH
+Confidence            45679999887664211 112222  3355444  4789999999988764     5555554 3 333 22221000  
+
+
+Q <unknown        136 KPSASEGLPPGSRAHVTLGCAADVQP  161 (219)
+Q Consensus       136 ~~~~s~~lP~GsRAHiTLg~a~gv~a  161 (219)
+                      ........+..-..|||||.......
+T Consensus       113 ~~~~~~~~~~~~~PHiTla~~~~~~~  138 (182)
+T 5H7E_A          113 RELGIGTDDLAFKAHITLARKKGPAP  138 (182)
+T ss_dssp             HHTTCCCCCCSCCCEEEEEECSSCCC
+T ss_pred             HHcCCCCCCCCCcceEEEEEcCCCCC
+Confidence            00000012234578999997655443
+
+
+No 8
+>5JPW_A Dynein light chain Tctex-type 1; DNYLT1/Tctex-1  Dynein Intermediate Chain; NMR {Homo sapiens}
+Probab=24.34  E-value=66  Score=27.17  Aligned_cols=55  Identities=25%  Similarity=0.485  Sum_probs=29.6  Template_Neff=6.800
+
+Q <unknown         99 GKAFKLSISALFVTPKTAGAQVVLTDQELQLWPSDLDKPS----ASEG-----------LP--PGSRAHVTLGCAA  157 (219)
+Q Consensus        99 G~~f~l~i~Gl~iTpRT~gARV~L~~~Ql~LW~~D~d~~~----~s~~-----------lP--~GsRAHiTLg~a~  157 (219)
+                      +..|++.|...++=.+.-|    +.-....||+.+.|.-.    ..++           +|  .++|||||+|.|.
+T Consensus        60 ~~rYK~IV~v~I~qk~gqg----i~~~s~clWD~~tD~~~s~~~en~~l~~ivtVf~iy~~~~~~~~~~~~~~~~~  131 (143)
+T 5JPW_A           60 GKPFKYIVTCVIMQKNGAG----LHTASSCFWDSSTDGSCTVRWENKTMYCIVSAFGLSIGGGSGQSGPIKLGMAK  131 (143)
+T ss_dssp             SCSCEEEEEEEEEETTTBC----CEEEECCCCCSSSSEEEEEEEECSSEEEEEEEEEECCSCCCCCSSCCCCCCCC
+T ss_pred             CCCEEEEEEEEEEecCCCc----EEEEEEEEEeCCCCcEEEEEEeCCCEEEEEEEEEEEcCCCCCCCCCeeeeeee
+Confidence            3556666664444322222    22344579997654321    1111           23  3679999999875
+
+
+No 9
+>1TQ7_A Prothrombin (E.C.3.4.21.5), Inhibitor; thrombin, anticoagulant, BLOOD CLOTTING, PPACK; HET: 0G6, NAG; 2.4A {Homo sapiens} SCOP: b.47.1.2
+Probab=20.29  E-value=89  Score=21.41  Aligned_cols=10  Identities=40%  Similarity=0.816  Sum_probs=7.9  Template_Neff=1.600
+
+Q <unknown        109 LFVTPKTAGA  118 (219)
+Q Consensus       109 l~iTpRT~gA  118 (219)
+                      +++.|||+|+
+T Consensus         3 ~FF~prTFG~   12 (44)
+T 1TQ7_A            3 TFFNPRTFGS   12 (44)
+T ss_dssp             CSSCHHHHCS
+T ss_pred             cccCccccCC
+Confidence            5788898886
+
+
+No 10
+>3BEI_A Prothrombin (E.C.3.4.21.5); Serine protease, Acute phase, Blood; HET: NAG, GOL; 1.55A {Homo sapiens}
+Probab=20.29  E-value=89  Score=21.41  Aligned_cols=10  Identities=40%  Similarity=0.816  Sum_probs=7.9  Template_Neff=1.600
+
+Q <unknown        109 LFVTPKTAGA  118 (219)
+Q Consensus       109 l~iTpRT~gA  118 (219)
+                      +++.|||+|+
+T Consensus         3 ~FF~prTFG~   12 (44)
+T 3BEI_A            3 TFFNPRTFGS   12 (44)
+T ss_pred             cccCccccCC
+Confidence            5788898886
+
+
+No 11
+>2PGQ_A Prothrombin (EC 3.4.21.5) (Coagulation factor; serine protease, HYDROLASE-HYDROLASE INHIBITOR COMPLEX; HET: 0G6, NAG; 1.8A {Homo sapiens}
+Probab=20.15  E-value=90  Score=21.49  Aligned_cols=10  Identities=40%  Similarity=0.816  Sum_probs=8.0  Template_Neff=1.600
+
+Q <unknown        109 LFVTPKTAGA  118 (219)
+Q Consensus       109 l~iTpRT~gA  118 (219)
+                      +++.|||+|+
+T Consensus         4 ~FF~prTFG~   13 (45)
+T 2PGQ_A            4 TFFNPRTFGS   13 (45)
+T ss_pred             cccCccccCC
+Confidence            5788999886
+
+

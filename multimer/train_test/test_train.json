@@ -1,0 +1,6 @@
+[
+	{
+		"cif_file": "./train_test/cif/5fwy.cif",
+		"chains": ["A", "B", "C", "D"]
+	}
+]
