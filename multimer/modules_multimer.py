@@ -1102,7 +1102,7 @@ class DockerIteration(nn.Module):
         self.Distogram = Distogram(global_config).to('cuda:0')
         self.PredictedLddt = PredictedLddt(global_config).to('cuda:0')
         self.PredictedAlignedError = PredictedAlignedError(global_config).to('cuda:0')
-        #self.ExperimentallyResolvedHead = ExperimentallyResolvedHead(global_config).to('cuda:0')
+        self.ExperimentallyResolvedHead = ExperimentallyResolvedHead(global_config).to('cuda:0')
         self.MaskedMsaHead = MaskedMsaHead(global_config).to('cuda:0')
 
         self.global_config = global_config
@@ -1183,7 +1183,7 @@ class DockerIteration(nn.Module):
         distogram_logits, distogram_bin_edges = self.Distogram(out)
         pred_lddt = self.PredictedLddt(out)
         pae_logits, pae_breaks = self.PredictedAlignedError(out)
-        #resovled_logits = self.ExperimentallyResolvedHead(out)
+        resovled_logits = self.ExperimentallyResolvedHead(out)
         masked_msa_logits = self.MaskedMsaHead(out)
 
         out['distogram'] = {}
@@ -1194,18 +1194,18 @@ class DockerIteration(nn.Module):
         out['predicted_lddt']['logits'] = pred_lddt
         out['predicted_aligned_error']['logits'] = pae_logits
         out['predicted_aligned_error']['breaks'] = pae_breaks
-        #out['experimentally_resolved'] = resovled_logits
+        out['experimentally_resolved'] = resovled_logits
         out['msa_head'] = masked_msa_logits
-        #resolved_loss = loss_multimer.experimentally_resolved_loss(out, batch, self.global_config['model']['heads'])
-        #lddt_loss = loss_multimer.lddt_loss(out, batch, self.global_config['model']['heads'])
-        #distogram_loss = loss_multimer.distogram_loss(out, batch, self.global_config['model']['heads'])
-        #structure_loss, gt_rigid, gt_affine_mask = loss_multimer.structure_loss(out, batch, self.global_config['model']['heads'])
-        #pae_loss = loss_multimer.tm_loss(pae_logits[0], pae_breaks, out['struct_out']['frames'][-1][0], gt_rigid, gt_affine_mask, batch['resolution'][0], self.global_config['model']['heads'])
-        #masked_msa_loss = loss_multimer.masked_msa_loss(out, batch)
-        #loss = 0.01*lddt_loss + 0.01*resolved_loss + 0.3*distogram_loss + structure_loss + 0.01*pae_loss + 2*masked_msa_loss
+        resolved_loss = loss_multimer.experimentally_resolved_loss(out, batch, self.global_config['model']['heads'])
+        lddt_loss = loss_multimer.lddt_loss(out, batch, self.global_config['model']['heads'])
+        distogram_loss = loss_multimer.distogram_loss(out, batch, self.global_config['model']['heads'])
+        structure_loss, gt_rigid, gt_affine_mask = loss_multimer.structure_loss(out, batch, self.global_config['model']['heads'])
+        pae_loss = loss_multimer.tm_loss(pae_logits[0], pae_breaks, out['struct_out']['frames'][-1][0], gt_rigid, gt_affine_mask, batch['resolution'][0], self.global_config['model']['heads'])
+        masked_msa_loss = loss_multimer.masked_msa_loss(out, batch)
+        loss = 0.01*lddt_loss + 0.01*resolved_loss + 0.3*distogram_loss + structure_loss + 0.01*pae_loss + 2*masked_msa_loss
         #print(structure_loss, lddt_loss, resolved_loss, distogram_loss, pae_loss, masked_msa_loss)
         #del distogram_logits, distogram_bin_edges, resovled_logits, pred_lddt
-        return out#, loss
+        return out, loss
 
 
 
