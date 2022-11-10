@@ -1,9 +1,12 @@
 import sys
 sys.path.insert(1, '../')
 import argparse
-import torch
-import numpy as np
 import json
+import numpy as np
+import os
+import random
+import torch
+from torch import optim
 from torch.utils.data import Dataset
 from openbabel import pybel
 from Bio import PDB
@@ -240,8 +243,8 @@ if __name__ == '__main__':
     # load_param_multimer.import_jax_weights_(model)
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
     for ep in range(10):
-        print(ep)
-        print(torch.cuda.memory_allocated() / torch.cuda.max_memory_allocated())
+        print('EPOCH: ', ep)
+        print('USED MEMORY: ', torch.cuda.memory_allocated() / torch.cuda.max_memory_allocated())
         for item in mul_loader:
             item['msa_profile'] = modules_multimer.make_msa_profile(item)
             item = modules_multimer.sample_msa(item, config_multimer.config_multimer['model']['embeddings_and_evoformer']['num_msa'])
@@ -274,7 +277,7 @@ if __name__ == '__main__':
 
             optimizer.zero_grad()
             output, loss = model(item)
-            print(loss)
+            print('LOSS: ', loss)
             #loss = loss_multimer.lddt_loss(output, item, config_multimer.config_multimer['model']['heads'])
             loss.backward()
             optimizer.step()
@@ -310,7 +313,7 @@ if __name__ == '__main__':
             del item
             torch.cuda.empty_cache()
             torch.cuda.synchronize()
-            print('00', torch.cuda.memory_allocated(0) / 1024 / 1024)
+            print('ALLOCATED MEMORY: ', torch.cuda.memory_allocated(0) / 1024 / 1024)
 
 
 
