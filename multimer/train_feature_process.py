@@ -1,5 +1,6 @@
 import sys
 sys.path.insert(1, '../')
+import argparse
 import torch
 import numpy as np
 import json
@@ -177,12 +178,17 @@ class MultimerDataset(Dataset):
 
 from multimer import loss_multimer, all_atom_multimer
 if __name__ == '__main__':
-    with open('./train_test/test_train.json') as f:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--json-path', type=str)
+    parser.add_argument('--pre-alignment-path', type=str)
+    args = parser.parse_args()
+
+    with open(args.json_path) as f:
         json_data = json.load(f)
-    mul_dataset = MultimerDataset(json_data, './train_test')
+    mul_dataset = MultimerDataset(json_data, args.pre_alignment_path)
     mul_loader = torch.utils.data.DataLoader(mul_dataset, batch_size=1)
     model = modules_multimer.DockerIteration(config_multimer.config_multimer)
-    load_param_multimer.import_jax_weights_(model)
+    # load_param_multimer.import_jax_weights_(model)
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
     for ep in range(10):
         print(ep)

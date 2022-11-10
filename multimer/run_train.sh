@@ -1,0 +1,1 @@
+python -m train_feature_process --json-path './test/7epe/7epe.json' --pre-alignment-path './test/7epe'
