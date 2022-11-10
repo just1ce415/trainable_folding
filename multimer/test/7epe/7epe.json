@@ -1,0 +1,10 @@
+[
+  {
+    "cif_file": "./test/7epe/7epe.cif",
+    "chains": [
+            "A",
+            "B"
+        ]
+
+  }
+]
