@@ -60,6 +60,7 @@ chi_angles_atoms = {
     'TRP': [['N', 'CA', 'CB', 'CG'], ['CA', 'CB', 'CG', 'CD1']],
     'TYR': [['N', 'CA', 'CB', 'CG'], ['CA', 'CB', 'CG', 'CD1']],
     'VAL': [['N', 'CA', 'CB', 'CG1']],
+    'NEW': [],  # small molecule
 }
 
 # If chi angles given in fixed-length array, this matrix determines how to mask
@@ -85,6 +86,7 @@ chi_angles_mask = [
     [1.0, 1.0, 0.0, 0.0],  # TRP
     [1.0, 1.0, 0.0, 0.0],  # TYR
     [1.0, 0.0, 0.0, 0.0],  # VAL
+    [0.0, 0.0, 0.0, 0.0],  # NEW
 ]
 
 # The following chi angles are pi periodic: they can be rotated by a multiple
@@ -111,6 +113,7 @@ chi_pi_periodic = [
     [0.0, 1.0, 0.0, 0.0],  # TYR
     [0.0, 0.0, 0.0, 0.0],  # VAL
     [0.0, 0.0, 0.0, 0.0],  # UNK
+    [0.0, 0.0, 0.0, 0.0],  # NEW
 ]
 
 # Atoms positions relative to the 8 rigid groups, defined by the pre-omega, phi,
@@ -334,6 +337,11 @@ rigid_group_atom_positions = {
         ['CG1', 4, (0.540, 1.429, -0.000)],
         ['CG2', 4, (0.533, -0.776, 1.203)],
     ],
+    'NEW': [
+        ['N', 0, (-0.525, 1.363, 0.000)],
+        ['CA', 0, (0.000, 0.000, 0.000)],
+        ['C', 0, (1.526, -0.000, -0.000)],
+    ],
 }
 
 # A list of atoms (excluding hydrogen) for each AA type. PDB naming convention.
@@ -359,7 +367,8 @@ residue_atoms = {
             'CH2', 'N', 'NE1', 'O'],
     'TYR': ['C', 'CA', 'CB', 'CG', 'CD1', 'CD2', 'CE1', 'CE2', 'CZ', 'N', 'O',
             'OH'],
-    'VAL': ['C', 'CA', 'CB', 'CG1', 'CG2', 'N', 'O']
+    'VAL': ['C', 'CA', 'CB', 'CG1', 'CG2', 'N', 'O'],
+    'NEW': ['C', 'CA', 'CB'],  # small molecule
 }
 
 # Naming swaps for ambiguous atom names.
@@ -523,6 +532,7 @@ restype_name_to_atom14_names = {
     'TYR': ['N', 'CA', 'C', 'O', 'CB', 'CG',  'CD1', 'CD2', 'CE1', 'CE2', 'CZ',  'OH',  '',    ''],
     'VAL': ['N', 'CA', 'C', 'O', 'CB', 'CG1', 'CG2', '',    '',    '',    '',    '',    '',    ''],
     'UNK': ['',  '',   '',  '',  '',   '',    '',    '',    '',    '',    '',    '',    '',    ''],
+    'NEW': ['N', 'CA', 'C', '', '', '',    '',    '',    '',    '',    '',    '',    '',    ''],  # small molecule
 
 }
 
@@ -535,7 +545,7 @@ restype_name_to_atom14_atom_radius = {k: [van_der_waals_radius[name[0]] if name 
 # Reproduce it by taking 3-letter AA codes and sorting them alphabetically.
 restypes = [
     'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P',
-    'S', 'T', 'W', 'Y', 'V'
+    'S', 'T', 'W', 'Y', 'V', '~'
 ]
 restype_order = {restype: i for i, restype in enumerate(restypes)}
 restype_num = len(restypes)  # := 20.
@@ -609,6 +619,7 @@ restype_1to3 = {
     'W': 'TRP',
     'Y': 'TYR',
     'V': 'VAL',
+    '~': 'NEW',
 }
 
 
@@ -686,6 +697,7 @@ HHBLITS_AA_TO_ID = {
     'Y': 19,
     'Z': 3,
     '-': 21,
+    '~': 22,
 }
 
 # Partial inversion of HHBLITS_AA_TO_ID.
@@ -712,6 +724,7 @@ ID_TO_HHBLITS_AA = {
     19: 'Y',
     20: 'X',  # Includes J and O.
     21: '-',
+    22: '~',
 }
 
 restypes_with_x_and_gap = restypes + ['X', '-']
