@@ -5,12 +5,19 @@ import torch
 import numpy as np
 import json
 from torch.utils.data import Dataset
+from openbabel import pybel
 from Bio import PDB
 from multimer import mmcif_parsing, pipeline_multimer, feature_processing
-import os
-from multimer import msa_pairing, modules_multimer, config_multimer, load_param_multimer
-from torch import optim
-import random
+from alphadock import residue_constants
+
+from multimer import (
+    msa_pairing,
+    modules_multimer,
+    config_multimer,
+    load_param_multimer,
+    pdb_to_template,
+    test_multimer
+)
 
 
 def process_unmerged_features(all_chain_features):
@@ -133,7 +140,8 @@ def process_single_chain(mmcif_object, chain_id, a3m_file, is_homomer_or_monomer
 
 def crop_feature(features, crop_size):
     seq_len = features['seq_length']
-    start_crop = random.randint(0, seq_len - crop_size)
+    # start_crop = random.randint(0, seq_len - crop_size)
+    start_crop = seq_len - crop_size
     feat_skip = {'seq_length', 'resolution', 'num_alignments', 'assembly_num_chains', 'num_templates', 'cluster_bias_mask'}
     feat_1 = {'aatype', 'residue_index', 'all_atom_positions', 'all_atom_mask', 'asym_id', 'sym_id', 'entity_id', 'deletion_mean', 'entity_mask', 'seq_mask'}
     for k in features.keys():
@@ -166,6 +174,8 @@ class MultimerDataset(Dataset):
         for chain in chains:
             a3m_file = os.path.join(self.pre_align, f'{file_id}_{chain}', 'mmseqs/uniref.a3m')
             hhr_file = os.path.join(self.pre_align, f'{file_id}_{chain}', 'mmseqs/uniref.hhr')
+            if not os.path.isfile(hhr_file):
+                hhr_file = None
             chain_features = process_single_chain(mmcif_obj, chain, a3m_file, is_homomer, hhr_file=hhr_file)
             chain_features = pipeline_multimer.convert_monomer_features(chain_features,
                                                 chain_id=chain)
@@ -173,6 +183,39 @@ class MultimerDataset(Dataset):
         all_chain_features = pipeline_multimer.add_assembly_features(all_chain_features)
         np_example = pair_and_merge(all_chain_features, is_homomer)
         np_example = pipeline_multimer.pad_msa(np_example, 512)
+        ######## Template##################
+        # TODO: change hard-coded names
+        with open('./test/7epe/7epe_A.pdb', "r") as fp:
+            pdb_string = fp.read()
+        protein_object_A = pdb_to_template.from_pdb_string(pdb_string, 'A')
+        atomtype_B = []
+        coordinate_B = []
+        for mol in pybel.readfile('sdf', './test/7epe/7epe_B.sdf'):
+            for atom in mol:
+                coordinate_B.append(atom.coords)
+                atomtype_B.append(atom.type)
+        atomtype_B[10] = 'N'
+        atomtype_B[9] = 'CA'
+        atomtype_B[7] = 'C'
+        temp_coor_B = np.zeros((1, 37, 3))
+        temp_mask_B = np.zeros((1, 37))
+        for i in range(len(coordinate_B)):
+            if (atomtype_B[i] in residue_constants.atom_types):
+                temp_coor_B[0][residue_constants.atom_order[atomtype_B[i]]][0] = coordinate_B[i][0]
+                temp_coor_B[0][residue_constants.atom_order[atomtype_B[i]]][1] = coordinate_B[i][1]
+                temp_coor_B[0][residue_constants.atom_order[atomtype_B[i]]][2] = coordinate_B[i][2]
+                temp_mask_B[0][residue_constants.atom_order[atomtype_B[i]]] = 1
+        np_example['all_atom_positions'][-1] = temp_coor_B[0]
+        np_example['all_atom_mask'][-1] = temp_mask_B[0]
+
+        # has_ca = protein_object_A.atom_mask[:, 0] == 1
+        #template_aatype = np.expand_dims(np_example['aatype'], axis=0, )
+        #template_all_atom_pos = np.expand_dims(np_example['all_atom_positions'], axis=0)
+        #template_all_atom_mask = np.expand_dims(np_example['all_atom_mask'], axis=0)
+        #np_example['template_aatype'] = template_aatype
+        #np_example['template_all_atom_mask'] = template_all_atom_mask
+        #np_example['template_all_atom_positions'] = template_all_atom_pos
+        ###################################
         np_example = crop_feature(np_example, 384)
         np_example = {k: torch.tensor(v, device='cuda:0') for k,v in np_example.items()}
 
@@ -235,6 +278,33 @@ if __name__ == '__main__':
             #loss = loss_multimer.lddt_loss(output, item, config_multimer.config_multimer['model']['heads'])
             loss.backward()
             optimizer.step()
+
+            if(ep == 0 or ep == 9):
+                output['predicted_aligned_error']['asym_id'] = item['asym_id'][0]
+                confidences = test_multimer.get_confidence_metrics(output, True)
+                out_converted = {}
+                for k, v in confidences.items():
+                    if (k != "plddt" and k != "aligned_confidence_probs" and k != "predicted_aligned_error"):
+                        out_converted[k] = confidences[k].detach().cpu().numpy().tolist()
+                out_json = out_converted
+                # torch.save(get_confidence_metrics(output, True), './6A77/confidence_score.txt')
+                # json.dump(out_json, codecs.open('confidence_score_model1.txt', 'w', encoding='utf-8'),
+                #           separators=(',', ':'), sort_keys=True, indent=4)
+
+                plddt = confidences['plddt'].detach().cpu().numpy()
+                plddt_b_factors = np.repeat(
+                    plddt[..., None], residue_constants.atom_type_num, axis=-1
+                )
+
+                # output['final_atom_mask'][-1] = torch.tensor(temp_mask_B[0], device=output['final_atom_mask'].device)
+                pdb_out = test_multimer.protein_to_pdb(item['aatype'][0].cpu().numpy(),
+                                         output['final_all_atom'].detach().cpu().numpy(),
+                                         item['residue_index'][0].cpu().numpy() + 1, item['asym_id'][0].cpu().numpy(),
+                                         output['final_atom_mask'].cpu().numpy(), plddt_b_factors[0])
+                file_out = "model_0.pdb" if ep == 0 else "model_9.pdb"
+                with open(file_out, 'w') as f:
+                    f.write(pdb_out)
+
             del output
             del loss
             del item
