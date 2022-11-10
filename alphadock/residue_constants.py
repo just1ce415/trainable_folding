@@ -587,7 +587,8 @@ def sequence_to_onehot(
 
     for aa_index, aa_type in enumerate(sequence):
         if map_unknown_to_x:
-            if aa_type.isalpha() and aa_type.isupper():
+            # if aa_type.isalpha() and aa_type.isupper():
+            if True: #  TODO: temp solution
                 aa_id = mapping.get(aa_type, mapping['X'])
             else:
                 raise ValueError(f'Invalid character in the sequence: {aa_type}')

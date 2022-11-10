@@ -68,8 +68,13 @@ def pair_and_merge(all_chain_features, is_homomer):
 
 
 def make_mmcif_features(
-    mmcif_object: mmcif_parsing.MmcifObject, chain_id: str):
-    input_sequence = mmcif_object.chain_to_seqres[chain_id]
+        mmcif_object: mmcif_parsing.MmcifObject,
+        chain_id: str
+):
+    if(chain_id not in mmcif_object.chain_to_seqres):
+        input_sequence = '~'  # TODO: remove it after we get a good cif file
+    else:
+        input_sequence = mmcif_object.chain_to_seqres[chain_id]
     description = "_".join([mmcif_object.file_id, chain_id])
     num_res = len(input_sequence)
 
@@ -149,6 +154,7 @@ class MultimerDataset(Dataset):
         cif_path = single_dataset['cif_file']
         file_id = os.path.basename(cif_path)[:-4]
         chains = single_dataset['chains']
+        # TODO: make good cif file with both chains
         with open(cif_path, 'r') as f:
             mmcif_string = f.read()
         mmcif_obj = mmcif_parsing.parse(file_id=file_id, mmcif_string=mmcif_string).mmcif_object

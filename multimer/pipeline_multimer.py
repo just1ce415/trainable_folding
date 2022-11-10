@@ -676,7 +676,15 @@ def _get_atom_positions(
     auth_chain_id: str,
     max_ca_ca_distance: float) -> Tuple[np.ndarray, np.ndarray]:
   """Gets atom positions and mask from a list of Biopython Residues."""
-  num_res = len(mmcif_object.chain_to_seqres[auth_chain_id])
+  # TODO: temp solution, make good cif file
+  if(not auth_chain_id in mmcif_object.chain_to_seqres):
+      num_res = 1
+      all_positions = np.zeros([num_res, residue_constants.atom_type_num, 3])
+      all_positions_mask = np.zeros([num_res, residue_constants.atom_type_num],
+                                    dtype=np.int64)
+      return all_positions, all_positions_mask
+  else:
+      num_res = len(mmcif_object.chain_to_seqres[auth_chain_id])
 
   relevant_chains = [c for c in mmcif_object.structure.get_chains()
                      if c.id == auth_chain_id]
