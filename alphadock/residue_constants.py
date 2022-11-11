@@ -368,7 +368,7 @@ residue_atoms = {
     'TYR': ['C', 'CA', 'CB', 'CG', 'CD1', 'CD2', 'CE1', 'CE2', 'CZ', 'N', 'O',
             'OH'],
     'VAL': ['C', 'CA', 'CB', 'CG1', 'CG2', 'N', 'O'],
-    'NEW': ['C', 'CA', 'CB'],  # small molecule
+    'NEW': ['C', 'CA', 'N'],  # small molecule
 }
 
 # Naming swaps for ambiguous atom names.
