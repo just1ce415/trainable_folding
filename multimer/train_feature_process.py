@@ -240,7 +240,7 @@ if __name__ == '__main__':
     mul_dataset = MultimerDataset(json_data, args.pre_alignment_path)
     mul_loader = torch.utils.data.DataLoader(mul_dataset, batch_size=1)
     model = modules_multimer.DockerIteration(config_multimer.config_multimer)
-    # load_param_multimer.import_jax_weights_(model)
+    load_param_multimer.import_jax_weights_(model)
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
     for ep in range(10):
         print('EPOCH: ', ep)

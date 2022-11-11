@@ -89,6 +89,16 @@ def stacked(param_dict_list, out=None):
 
     return out
 
+def _paste_slices(tup):
+    w, max_w = tup
+    wall_max = min(w, max_w)
+    return slice(0, wall_max)
+
+def _get_slices(wall, block):
+    loc_zip = zip(block.shape, wall.shape)
+    wall_slices = tuple(map(_paste_slices, loc_zip))
+    return wall_slices
+
 
 def assign(translation_dict, orig_weights):
     for k, param in translation_dict.items():
@@ -109,10 +119,15 @@ def assign(translation_dict, orig_weights):
                 for p, w in zip(ref, weights):
                     p.copy_(w)
             except:
-                print(k)
-                print(ref[0].shape)
-                print(weights[0].shape)
-                raise
+                # TODO: add check on update property
+                try:
+                    wall_slices = _get_slices(p, w)
+                    p[wall_slices].copy_(w)
+                except:
+                    print(k)
+                    print(ref[0].shape)
+                    print(weights[0].shape)
+                    raise
 
 
 def import_jax_weights_(model):
