@@ -36,7 +36,7 @@ def _make_restype_atom14_mask():
 def _make_restype_atom37_mask():
   """Mask of which atoms are present for which residue type in atom37."""
   # create the corresponding mask
-  restype_atom37_mask = np.zeros([21, 37], dtype=np.float32)
+  restype_atom37_mask = np.zeros([22, 37], dtype=np.float32)
   for restype, restype_letter in enumerate(residue_constants.restypes):
     restype_name = residue_constants.restype_1to3[restype_letter]
     atom_names = residue_constants.residue_atoms[restype_name]
@@ -114,7 +114,7 @@ def atom37_to_atom14(
 
 def atom_37_mask(aatype):
     restype_atom37_mask = torch.zeros(
-        [21, 37], dtype=torch.float32, device=aatype.device
+        [22, 37], dtype=torch.float32, device=aatype.device
     )
     for restype, restype_letter in enumerate(residue_constants.restypes):
         restype_name = residue_constants.restype_1to3[restype_letter]
@@ -282,7 +282,7 @@ def atom37_to_frames(aatype, all_atom_positions, all_atom_mask, eps=1e-8):
 
     batch_dims = len(aatype.shape[:-1])
 
-    restype_rigidgroup_base_atom_names = np.full([21, 8, 3], "", dtype=object)
+    restype_rigidgroup_base_atom_names = np.full([22, 8, 3], "", dtype=object)
     restype_rigidgroup_base_atom_names[:, 0, :] = ["C", "CA", "N"]
     restype_rigidgroup_base_atom_names[:, 3, :] = ["CA", "C", "O"]
 
@@ -296,11 +296,11 @@ def atom37_to_frames(aatype, all_atom_positions, all_atom_mask, eps=1e-8):
                 ] = names[1:]
 
     restype_rigidgroup_mask = all_atom_mask.new_zeros(
-        (*aatype.shape[:-1], 21, 8),
+        (*aatype.shape[:-1], 22, 8),
     )
     restype_rigidgroup_mask[..., 0] = 1
     restype_rigidgroup_mask[..., 3] = 1
-    restype_rigidgroup_mask[..., :20, 4:] = all_atom_mask.new_tensor(
+    restype_rigidgroup_mask[..., :21, 4:] = all_atom_mask.new_tensor(
         residue_constants.chi_angles_mask
     )
 
@@ -364,14 +364,14 @@ def atom37_to_frames(aatype, all_atom_positions, all_atom_mask, eps=1e-8):
     gt_frames = gt_frames.compose(Rigid(rots, None))
 
     restype_rigidgroup_is_ambiguous = all_atom_mask.new_zeros(
-        *((1,) * batch_dims), 21, 8
+        *((1,) * batch_dims), 22, 8
     )
     restype_rigidgroup_rots = torch.eye(
         3, dtype=all_atom_mask.dtype, device=aatype.device
     )
     restype_rigidgroup_rots = torch.tile(
         restype_rigidgroup_rots,
-        (*((1,) * batch_dims), 21, 8, 1, 1),
+        (*((1,) * batch_dims), 22, 8, 1, 1),
     )
 
     for resname, _ in residue_constants.residue_atom_renaming_swaps.items():

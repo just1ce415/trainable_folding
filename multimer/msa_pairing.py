@@ -117,7 +117,7 @@ def _make_msa_df(chain_features: FeatureDict) -> pd.DataFrame:
   query_seq = chain_msa[0]
   per_seq_similarity = np.sum(
       query_seq[None] == chain_msa, axis=-1) / float(len(query_seq))
-  per_seq_gap = np.sum(chain_msa == 21, axis=-1) / float(len(query_seq))
+  per_seq_gap = np.sum(chain_msa == 22, axis=-1) / float(len(query_seq))
   msa_df = pd.DataFrame({
       'msa_species_identifiers':
           chain_features['msa_species_identifiers_all_seq'],

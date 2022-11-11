@@ -230,7 +230,7 @@ def get_alt_atom14(aatype, residx_atom14_gt_positions, residx_atom14_gt_mask):
         "...ra,...rab->...rb", residx_atom14_gt_mask, renaming_transform
     )
     #protein["atom14_alt_gt_exists"] = alternative_gt_mask
-    restype_atom14_is_ambiguous = residx_atom14_gt_mask.new_zeros((21, 14))
+    restype_atom14_is_ambiguous = residx_atom14_gt_mask.new_zeros((22, 14))
     for resname, swap in residue_constants.residue_atom_renaming_swaps.items():
         for atom_name1, atom_name2 in swap.items():
             restype = residue_constants.restype_order[residue_constants.restype_3to1[resname]]
@@ -1079,7 +1079,7 @@ def structure_loss(out, batch, config):
 
 def masked_msa_loss(out, batch):
     errors = softmax_cross_entropy(
-        out['msa_head'], torch.nn.functional.one_hot(batch['true_msa'].long(), num_classes=22)
+        out['msa_head'], torch.nn.functional.one_hot(batch['true_msa'].long(), num_classes=23)
     )
     loss = errors * batch['bert_mask']
     loss = torch.sum(loss, dim=-1)

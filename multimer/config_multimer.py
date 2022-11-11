@@ -1,8 +1,8 @@
 config_multimer= {
-    'aatype': 21,
-    'msa': 49,
+    'aatype': 22,
+    'msa': 51,
     'rel_feat': 73,
-    'extra_msa_act': 25,
+    'extra_msa_act': 26,
     'recycle': True,
     'model': {
         'embeddings_and_evoformer': {
@@ -194,7 +194,7 @@ config_multimer= {
                     'min_bin': 3.25,
                     'num_bins': 39
                 },
-                'enabled': True,
+                'enabled': False,
                 'max_templates': 4,
                 'num_channels': 64,
                 'subbatch_size': 128,

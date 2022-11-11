@@ -42,7 +42,7 @@ def make_msa_profile(batch):
 
   # Compute the profile for every residue (over all MSA sequences).
   return masked_mean(
-      batch['msa_mask'][...,:, :, None], torch.nn.functional.one_hot(batch['msa'].long(), 22), dim=1)
+      batch['msa_mask'][...,:, :, None], torch.nn.functional.one_hot(batch['msa'].long(), 23), dim=1)
 
 def sample_msa(batch, max_seq):
     logits = (torch.clip(torch.sum(batch['msa_mask'], -1), 0., 1.) - 1.) * 1e6
@@ -82,12 +82,12 @@ def shaped_categorical(probs, epsilon=1e-10):
 def make_masked_msa(batch, config):
   """Create data for BERT on raw MSA."""
   # Add a random amino acid uniformly.
-  random_aa = torch.tensor([0.05] * 20 + [0., 0.], dtype=torch.float32, device=batch['aatype'].device)
+  random_aa = torch.tensor([0.05] * 21 + [0., 0.], dtype=torch.float32, device=batch['aatype'].device)
 
   categorical_probs = (
       config['uniform_prob'] * random_aa +
       config['profile_prob'] * batch['msa_profile'] +
-      config['same_prob'] * nn.functional.one_hot(batch['msa'].long(), 22))
+      config['same_prob'] * nn.functional.one_hot(batch['msa'].long(), 23))
 
   # Put all remaining probability on [MASK] which is a new column.
   pad_shapes = list(reduce(add, [(0, 0) for _ in range(len(categorical_probs.shape))]))
@@ -127,13 +127,13 @@ def nearest_neighbor_clusters(batch, gap_agreement_weight=0.):
   # Never put weight on agreeing on BERT mask.
 
   weights = torch.tensor(
-      [1.] * 21 + [gap_agreement_weight] + [0.], dtype=torch.float32, device='cuda:0')
+      [1.] * 22 + [gap_agreement_weight] + [0.], dtype=torch.float32, device='cuda:0')
 
   msa_mask = batch['msa_mask']
-  msa_one_hot = torch.nn.functional.one_hot(batch['msa'].long(), 23)
+  msa_one_hot = torch.nn.functional.one_hot(batch['msa'].long(), 24)
 
   extra_mask = batch['extra_msa_mask']
-  extra_one_hot = torch.nn.functional.one_hot(batch['extra_msa'].long(), 23)
+  extra_one_hot = torch.nn.functional.one_hot(batch['extra_msa'].long(), 24)
 
   msa_one_hot_masked = msa_mask[..., None] * msa_one_hot
   extra_one_hot_masked = extra_mask[..., None] * extra_one_hot
@@ -164,7 +164,7 @@ def nearest_neighbor_clusters(batch, gap_agreement_weight=0.):
 
 def create_msa_feat(batch):
   """Create and concatenate MSA features."""
-  msa_1hot = torch.nn.functional.one_hot(batch['msa'].long(), 23)
+  msa_1hot = torch.nn.functional.one_hot(batch['msa'].long(), 24)
   deletion_matrix = batch['deletion_matrix']
   has_deletion = torch.clip(deletion_matrix, 0., 1.)[..., None]
   deletion_value = (torch.arctan(deletion_matrix / 3.) * (2. / torch.pi))[..., None]
@@ -204,7 +204,7 @@ def pseudo_beta_fn(aatype, all_atom_positions, all_atom_mask):
 def create_extra_msa_feature(batch, num_extra_msa):
     extra_msa = batch['extra_msa'][:, :num_extra_msa]
     deletion_matrix = batch['extra_deletion_matrix'][:, :num_extra_msa]
-    msa_1hot = torch.nn.functional.one_hot(extra_msa.long(), 23)
+    msa_1hot = torch.nn.functional.one_hot(extra_msa.long(), 24)
     has_deletion = torch.clip(deletion_matrix, 0., 1.)[..., None]
     deletion_value = (torch.arctan(deletion_matrix / 3.) * (2. / torch.pi))[..., None]
     extra_msa_mask = batch['extra_msa_mask'][:, :num_extra_msa]
@@ -827,8 +827,8 @@ class SingleTemplateEmbedding(nn.Module):
         self.output_layer_norm = nn.LayerNorm(config['num_channels'])
         self.template_pair_emb_0 = nn.Linear(config['dgram_features']['num_bins'], config['num_channels'])
         self.template_pair_emb_1 = nn.Linear(1, config['num_channels'])
-        self.template_pair_emb_2 = nn.Linear(22, config['num_channels'])
-        self.template_pair_emb_3 = nn.Linear(22, config['num_channels'])
+        self.template_pair_emb_2 = nn.Linear(23, config['num_channels'])
+        self.template_pair_emb_3 = nn.Linear(23, config['num_channels'])
         self.template_pair_emb_4 = nn.Linear(1, config['num_channels'])
         self.template_pair_emb_5 = nn.Linear(1, config['num_channels'])
         self.template_pair_emb_6 = nn.Linear(1, config['num_channels'])
@@ -856,7 +856,7 @@ class SingleTemplateEmbedding(nn.Module):
         pseudo_beta_mask_2d = pseudo_beta_mask_2d.type(query_embedding.dtype)
         # to_concat = [template_dgram, pseudo_beta_mask_2d[...,None]]
 
-        aatype = nn.functional.one_hot(template_aatype,22).type(query_embedding.dtype)
+        aatype = nn.functional.one_hot(template_aatype,23).type(query_embedding.dtype)
         # to_concat.append(aatype[None, :, :])
         # to_concat.append(aatype[:, None, :])
 
@@ -929,7 +929,7 @@ class TemplateEmbedding1D(torch.nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, batch):
-        aatype_one_hot = nn.functional.one_hot(batch['template_aatype'], 22)
+        aatype_one_hot = nn.functional.one_hot(batch['template_aatype'], 23)
         
         num_templates = batch['template_aatype'].shape[1]
         all_chi_angles = []
@@ -976,7 +976,7 @@ class InputEmbedding(nn.Module):
     def forward(self, batch, recycle):
         num_batch, num_res = batch['aatype'].shape[0], batch['aatype'].shape[1]
         # batch_profile = torch.sum(batch['msa_mask'][...,None] * nn.functional.one_hot(batch['msa'].long(), 22), 1)/(torch.sum(batch['msa_mask'][...,None], 1)+ 1e-10)
-        target_feat = nn.functional.one_hot(batch['aatype'].long(), 21).float()
+        target_feat = nn.functional.one_hot(batch['aatype'].long(), 22).float()
         preprocessed_1d = self.preprocessing_1d(target_feat)
         left_single = self.left_single(target_feat)
         right_single = self.right_single(target_feat)
@@ -1032,7 +1032,7 @@ class InputEmbedding(nn.Module):
 class MaskedMsaHead(nn.Module):
     def __init__(self, global_config):
         super().__init__()
-        self.logits = nn.Linear(global_config['model']['embeddings_and_evoformer']['msa_channel'], 22)
+        self.logits = nn.Linear(global_config['model']['embeddings_and_evoformer']['msa_channel'], 23)
 
     def forward(self, representations):
         return self.logits(representations['msa'])

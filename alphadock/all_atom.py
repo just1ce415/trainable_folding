@@ -163,7 +163,7 @@ def atom37_to_frames(
 
     # Create an array with the atom names.
     # shape (num_restypes, num_rigidgroups, 3_atoms): (21, 8, 3)
-    restype_rigidgroup_base_atom_names = np.full([21, 8, 3], '', dtype=object)
+    restype_rigidgroup_base_atom_names = np.full([22, 8, 3], '', dtype=object)
 
     # 0: backbone frame
     restype_rigidgroup_base_atom_names[:, 0, :] = ['C', 'CA', 'N']
@@ -180,7 +180,7 @@ def atom37_to_frames(
                 restype_rigidgroup_base_atom_names[restype, chi_idx + 4, :] = atom_names[1:]
 
     # Create mask for existing rigid groups.
-    restype_rigidgroup_mask = np.zeros([21, 8], dtype=np.float32)
+    restype_rigidgroup_mask = np.zeros([22, 8], dtype=np.float32)
     restype_rigidgroup_mask[:, 0] = 1
     restype_rigidgroup_mask[:, 3] = 1
     restype_rigidgroup_mask[:20, 4:] = residue_constants.chi_angles_mask
@@ -231,8 +231,8 @@ def atom37_to_frames(
 
     # The frames for ambiguous rigid groups are just rotated by 180 degree around
     # the x-axis. The ambiguous group is always the last chi-group.
-    restype_rigidgroup_is_ambiguous = np.zeros([21, 8], dtype=np.float32)
-    restype_rigidgroup_rots = np.tile(np.eye(3, dtype=np.float32), [21, 8, 1, 1])
+    restype_rigidgroup_is_ambiguous = np.zeros([22, 8], dtype=np.float32)
+    restype_rigidgroup_rots = np.tile(np.eye(3, dtype=np.float32), [22, 8, 1, 1])
 
     for resname, _ in residue_constants.residue_atom_renaming_swaps.items():
         restype = residue_constants.restype_order[residue_constants.restype_3to1[resname]]
