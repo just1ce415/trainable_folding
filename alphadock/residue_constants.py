@@ -431,6 +431,7 @@ def load_stereo_chemical_props() -> Tuple[Mapping[str, List[Bond]],
         residue_bonds[resname].append(
             Bond(atom1, atom2, float(length), float(stddev)))
     residue_bonds['UNK'] = []
+    residue_bonds['NEW'] = []
 
     # Load bond angles.
     residue_bond_angles = {}
@@ -448,6 +449,7 @@ def load_stereo_chemical_props() -> Tuple[Mapping[str, List[Bond]],
                       float(angle_degree) / 180. * np.pi,
                       float(stddev_degree) / 180. * np.pi))
     residue_bond_angles['UNK'] = []
+    residue_bond_angles['NEW'] = []
 
     def make_bond_key(atom1_name, atom2_name):
         """Unique key to lookup bonds."""
