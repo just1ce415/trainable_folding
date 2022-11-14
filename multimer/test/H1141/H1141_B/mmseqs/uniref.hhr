@@ -1,0 +1,183 @@
+Query         <unknown
+Match_columns 127
+No_of_seqs    155 out of 8244
+Neff          7.46702
+Searched_HMMs 80799
+Date          Thu Aug 11 10:53:39 2022
+Command       hhsearch -i uniref.a3m -d /storage/thu/pdb70/pdb70 -cpu 4 -n 1 
+
+ No Hit                             Prob E-value P-value  Score    SS Cols Query HMM  Template HMM
+  1 5WTS_A Green fluorescent prote  99.4 5.3E-17 6.6E-22  130.8   0.0  108    6-126   244-352 (358)
+  2 6QD6_C Uncharacterized protein  99.4 1.8E-16 2.2E-21  133.8   0.0  117    8-127   414-532 (542)
+  3 6QD6_G Uncharacterized protein  99.4 1.8E-16 2.2E-21  133.8   0.0  117    8-127   414-532 (542)
+  4 1YJD_C Fab fragment of 5.11A1   99.3 8.3E-16   1E-20  107.0   0.0  113    4-126     7-120 (140)
+  5 5WB1_A Envelope protein US28,n  99.3 2.1E-15 2.6E-20  118.8   0.0  112    7-127   343-454 (458)
+  6 5LWY_H Adiponectin receptor pr  97.9 3.8E-08 4.7E-13   61.0   0.0   94    7-103     7-101 (119)
+  7 6H7J_D Thioredoxin 1, Beta-1 a  97.9 3.8E-08 4.8E-13   61.5   0.0   94    7-103     8-101 (121)
+
+No 1
+>5WTS_A Green fluorescent protein linked PMI; Complex, LIGASE-LIGASE INHIBITOR complex; HET: CRO, GOL, PG4, PO4; 3.004A {Aequorea victoria}
+Probab=99.44  E-value=5.3e-17  Score=130.83  Aligned_cols=108  Identities=69%  Similarity=1.122  Sum_probs=85.8  Template_Neff=7.400
+
+Q <unknown          6 ESGGGWVHPGGSLRLSCAASGNVFGVNTMAWYRQAPGKQREQRELVASITDY-GTTEYADSVKGRFTISGDNAKATVYLQ   84 (127)
+Q Consensus         6 Qs~~~~v~~G~sv~L~C~~s~~~~~~~~~~Wyrq~pG~~~e~l~~i~~~~~~-~~~~~~~~~~~Rf~is~d~s~~~~~L~   84 (127)
+                      .+..+.+.+|++++|+|.+.........+.|+++.++..+..+   ++.... ......+.+++|+++..+...+.++|+
+T Consensus       244 ~~~~v~v~~G~sVtL~C~~s~~~~~~~~v~W~rq~~~~~~~~l---~~~~~~~~~~~~~~~~~~R~si~~~~~~~~~sLt  320 (358)
+T 5WTS_A          244 ESGGALVQPGGSLRLSCAASGFPVNRYSMRWYRQAPGKEREWV---AGMSSAGDRSSYEDSVKGRFTISRDDARNTVYLQ  320 (358)
+T ss_dssp             CCCSEEECTTCCEEEEEECCSSCGGGSCEEEEEECTTSCCEEE---EEECSSSSCEEECTTTTTTEEEEEETTTTEEEEE
+T ss_pred             eCCcEEECCCCCEEEEEEecCCCCCccEEEEEECCCCCCeEEE---EEEecCCCccccccccCCCEEEEEeCCCCEEEEE
+Confidence            4557788999999999999875323568999999887655555   554443 223334556889998776556789999
+
+
+Q <unknown         85 MNSLKPEDTAVYYCNMDLTVMTATSSLYAYDYWGQGTQVTVS  126 (127)
+Q Consensus        85 I~~l~~eDsa~YyCa~~~tv~~~~~~l~~~~~~g~GT~ltVs  126 (127)
+                      |++++.+|+|.|+|.+..+          ++.||+||+|+|+
+T Consensus       321 I~nv~~eDsG~Y~C~v~~~----------~~~~g~gt~~~~~  352 (358)
+T 5WTS_A          321 MNSLKPEDTAVYYCNVNVG----------FEYWGQGTQVTVS  352 (358)
+T ss_dssp             ECSCCGGGCEEEEEEEESS----------SEEECCCCEEEEC
+T ss_pred             ECCCCHHHCEEEEEEEEeC----------CeeEecCeEEEec
+Confidence            9999999999999999998          8999999999986
+
+
+No 2
+>6QD6_C Uncharacterized protein,Uncharacterized protein,Mb-cHopQ-Nb207; Scaffold, STRUCTURAL PROTEIN; 2.84A {Helicobacter pylori}
+Probab=99.39  E-value=1.8e-16  Score=133.82  Aligned_cols=117  Identities=63%  Similarity=0.915  Sum_probs=94.7  Template_Neff=6.400
+
+Q <unknown          8 GGGWVHPGGSLRLSCAASGNVFGVNTMAWYRQAPGKQREQRELVASITDY-GTTEYADSVKGRFTISGDNAKATVYLQMN   86 (127)
+Q Consensus         8 ~~~~v~~G~sv~L~C~~s~~~~~~~~~~Wyrq~pG~~~e~l~~i~~~~~~-~~~~~~~~~~~Rf~is~d~s~~~~~L~I~   86 (127)
+                      ..+.+.+|++++|+|.+.........+.|+|+.+++.+..+   +++... ......+.+.+|+.+..+...+.++|+|+
+T Consensus       414 ~sVT~~~G~sVtL~Cs~s~~~~~~~~v~Wyrq~~gk~~~~I---l~~~~~~~~~~~~~~~~~Rfs~~~d~~~~~~sL~Is  490 (542)
+T 6QD6_C          414 AHVTTSKYGSLRLSCAASGRTFSTAAMGWFRQAPGKERDFV---AGIYWTVGSTYYADSAKGRFTISRDNAKNTVYLQMD  490 (542)
+T ss_dssp             EEEEEEEECCEEEEEEECSSCCTTSEEEEEEECSSSCCEEE---EEEETTTTEEEECTTTTTTEEEEEETTTTEEEEEEC
+T ss_pred             ccccccceecEEEEeeeeCCcCCCceEEEEEeCCCCCceEE---EEEEecCCcceeccccCCCEEEEEeCCCCEEEEEEC
+Confidence            46788999999999999875333568999999987766666   544332 22223345678998877665678999999
+
+
+Q <unknown         87 SLKPEDTAVYYCNMDLTVMT-ATSSLYAYDYWGQGTQVTVSS  127 (127)
+Q Consensus        87 ~l~~eDsa~YyCa~~~tv~~-~~~~l~~~~~~g~GT~ltVss  127 (127)
+                      +|+++|+|+|+|.+..+.++ |+++++.++.||+||+|+|++
+T Consensus       491 nV~~eDsGtY~CaV~~~~~~~~~~~~~~~~~fg~GT~l~V~~  532 (542)
+T 6QD6_C          491 SLKPEDTAVYYCAARRRGFTLAPTRANEYDYWGQGTQVTVSS  532 (542)
+T ss_dssp             SCCGGGCEEEEEEEECSCCSSCCCSGGGCCEECCCEEEECCC
+T ss_pred             CCCHHHCeEEEEEEEecCCCCCCCccceeEEecCCeEEEEee
+Confidence            99999999999999999888 999999999999999999974
+
+
+No 3
+>6QD6_G Uncharacterized protein,Uncharacterized protein,Mb-cHopQ-Nb207; Scaffold, STRUCTURAL PROTEIN; 2.84A {Helicobacter pylori}
+Probab=99.39  E-value=1.8e-16  Score=133.82  Aligned_cols=117  Identities=63%  Similarity=0.915  Sum_probs=94.7  Template_Neff=6.400
+
+Q <unknown          8 GGGWVHPGGSLRLSCAASGNVFGVNTMAWYRQAPGKQREQRELVASITDY-GTTEYADSVKGRFTISGDNAKATVYLQMN   86 (127)
+Q Consensus         8 ~~~~v~~G~sv~L~C~~s~~~~~~~~~~Wyrq~pG~~~e~l~~i~~~~~~-~~~~~~~~~~~Rf~is~d~s~~~~~L~I~   86 (127)
+                      ..+.+.+|++++|+|.+.........+.|+|+.+++.+..+   +++... ......+.+.+|+.+..+...+.++|+|+
+T Consensus       414 ~sVT~~~G~sVtL~Cs~s~~~~~~~~v~Wyrq~~gk~~~~I---l~~~~~~~~~~~~~~~~~Rfs~~~d~~~~~~sL~Is  490 (542)
+T 6QD6_G          414 AHVTTSKYGSLRLSCAASGRTFSTAAMGWFRQAPGKERDFV---AGIYWTVGSTYYADSAKGRFTISRDNAKNTVYLQMD  490 (542)
+T ss_dssp             EEEEEEEECCEEEEEEECSSCCTTSEEEEEEECTTSCEEEE---EEEETTTTEEEECTTTTTTEEEEEETTTTEEEEEEC
+T ss_pred             ccccccceecEEEEeeeeCCcCCCceEEEEEeCCCCCceEE---EEEEecCCcceeccccCCCEEEEEeCCCCEEEEEEC
+Confidence            46788999999999999875333568999999987766666   544332 22223345678998877665678999999
+
+
+Q <unknown         87 SLKPEDTAVYYCNMDLTVMT-ATSSLYAYDYWGQGTQVTVSS  127 (127)
+Q Consensus        87 ~l~~eDsa~YyCa~~~tv~~-~~~~l~~~~~~g~GT~ltVss  127 (127)
+                      +|+++|+|+|+|.+..+.++ |+++++.++.||+||+|+|++
+T Consensus       491 nV~~eDsGtY~CaV~~~~~~~~~~~~~~~~~fg~GT~l~V~~  532 (542)
+T 6QD6_G          491 SLKPEDTAVYYCAARRRGFTLAPTRANEYDYWGQGTQVTVSS  532 (542)
+T ss_dssp             SCCGGGCEEEEEEEECSCCSSCCCSGGGCCEECCCEEEECCC
+T ss_pred             CCCHHHCeEEEEEEEecCCCCCCCccceeEEecCCeEEEEee
+Confidence            99999999999999999888 999999999999999999974
+
+
+No 4
+>1YJD_C Fab fragment of 5.11A1 antibody; IgSF, CD28 homodimer, IMMUNE SYSTEM-SIGNALING; HET: NAG; 2.7A {Mus musculus} SCOP: b.1.1.1
+Probab=99.33  E-value=8.3e-16  Score=107.04  Aligned_cols=113  Identities=19%  Similarity=0.248  Sum_probs=72.4  Template_Neff=9.700
+
+Q <unknown          4 LEESGGGWVHPGGSLRLSCAASGNVF-GVNTMAWYRQAPGKQREQRELVASITDYGTTEYADSVKGRFTISGDNAKATVY   82 (127)
+Q Consensus         4 l~Qs~~~~v~~G~sv~L~C~~s~~~~-~~~~~~Wyrq~pG~~~e~l~~i~~~~~~~~~~~~~~~~~Rf~is~d~s~~~~~   82 (127)
+                      +.++..+.+. +++++|+|.+..... ....+.|+++.++ ....+   ....... ......+.+|+++..+...+.++
+T Consensus         7 v~q~~~~~~~-~~~vtl~C~~~~~~~~~~~~v~W~~~~~~-~~~~~---~~~~~~~-~~~~~~~~~r~~~~~~~~~~~~s   80 (140)
+T 1YJD_C            7 VKQSPMLVAY-DNAVNLSCKYSYNLFSREFRASLHKGLDS-AVEVC---VVYGNYS-QQLQVYSKTGFNCDGKLGNESVT   80 (140)
+T ss_dssp             EECCSEEECB-TTBEEEEEEESCCSSCSEEEEEEEESTTC-CCEEE---EEEEESS-SCCEEECSSSCEEEEEECSSEEE
+T ss_pred             eccCCEEEEe-CCcEEEEEEEecCCCcceEEEEEEeCCCC-CcEEE---EEECCCc-ceeeeeEeccEEecccccCCEEE
+Confidence            3333344444 677899999987532 2357999998764 22222   1111111 11123456788876555677899
+
+
+Q <unknown         83 LQMNSLKPEDTAVYYCNMDLTVMTATSSLYAYDYWGQGTQVTVS  126 (127)
+Q Consensus        83 L~I~~l~~eDsa~YyCa~~~tv~~~~~~l~~~~~~g~GT~ltVs  126 (127)
+                      |+|.+++.+|+|.|+|.+......    ......+++||+|.|.
+T Consensus        81 L~I~~l~~~Dsg~Y~C~~~~~~~~----~~~~~~~~~gt~l~V~  120 (140)
+T 1YJD_C           81 FYLQNLYVNQTDIYFCKIEVMYPP----PYLDNEKSNGTIIHVK  120 (140)
+T ss_dssp             EEEESCCGGGCEEEEEEEEEEESS----SCEEBCCCCCEEEECC
+T ss_pred             EEEcCCCHHHCEEEEEEEEecCCC----CceecccCCceEEEEc
+Confidence            999999999999999999876310    0011358999999986
+
+
+No 5
+>5WB1_A Envelope protein US28,nanobody 7; chemokine receptor, MEMBRANE PROTEIN; 3.508A {Human cytomegalovirus}
+Probab=99.28  E-value=2.1e-15  Score=118.82  Aligned_cols=112  Identities=76%  Similarity=1.158  Sum_probs=81.3  Template_Neff=11.900
+
+Q <unknown          7 SGGGWVHPGGSLRLSCAASGNVFGVNTMAWYRQAPGKQREQRELVASITDYGTTEYADSVKGRFTISGDNAKATVYLQMN   86 (127)
+Q Consensus         7 s~~~~v~~G~sv~L~C~~s~~~~~~~~~~Wyrq~pG~~~e~l~~i~~~~~~~~~~~~~~~~~Rf~is~d~s~~~~~L~I~   86 (127)
+                      +.......|+++.|+|...........+.|+++.++..+..+   .+..........+.+++|+.+..+...++++|+|+
+T Consensus       343 ~~~~~~~~g~~~~l~C~~~~~~~~~~~v~W~k~~~~~~~~~~---~~~~~~~~~~~~~~~~~r~~~~~~~~~~~~~L~i~  419 (458)
+T 5WB1_A          343 SGGGLVRPGGSLRLSCAASGSIFTIYAMGWYRQAPGKQRELV---ARITFGGDTNYADSVKGRFTISRDNAKNAVYLQMN  419 (458)
+T ss_dssp             ECCEECCTTCEEEEEEEESSCCCCEEEEEEEEECTTSCCEEE---EEEETTSCEEECTTTBTTEEEEEETTTTEEEEEEE
+T ss_pred             cCCccccCCCcEEEEEeEecceeeEEEEEEEEeCCCCCceEE---EEEecCCccccccccCCCEEEeecCcCCEEEEEEc
+Confidence            345567889999999999865323578999999876555555   44332222223345678998887666678999999
+
+
+Q <unknown         87 SLKPEDTAVYYCNMDLTVMTATSSLYAYDYWGQGTQVTVSS  127 (127)
+Q Consensus        87 ~l~~eDsa~YyCa~~~tv~~~~~~l~~~~~~g~GT~ltVss  127 (127)
+                      +++++|+|.|+|.+.....      ...+.++.|++|.|+.
+T Consensus       420 ~~~~~D~g~Y~C~~~~~~~------~~~~~~~~~~~l~v~~  454 (458)
+T 5WB1_A          420 SLKPEDTAVYYCNAEETIV------EEADYWGQGTQVTVSS  454 (458)
+T ss_dssp             SCCGGGCEEEEEEEEESSS------CCCCEEBCCEEEECSC
+T ss_pred             CCCHHHeEEEEEEEccEEE------cceeeecCCcEEEEee
+Confidence            9999999999999987731      1234589999999863
+
+
+No 6
+>5LWY_H Adiponectin receptor protein 2, V; PROGESTIN AND ADIPOQ RECEPTOR FAMILY; HET: OLA, OLB; 2.4A {Homo sapiens}
+Probab=97.89  E-value=3.8e-08  Score=60.98  Aligned_cols=94  Identities=38%  Similarity=0.657  Sum_probs=56.2  Template_Neff=13.700
+
+Q <unknown          7 SGGGWVHPGGSLRLSCAASGNVFGVNTMAWYRQAPGKQREQRELVASITDY-GTTEYADSVKGRFTISGDNAKATVYLQM   85 (127)
+Q Consensus         7 s~~~~v~~G~sv~L~C~~s~~~~~~~~~~Wyrq~pG~~~e~l~~i~~~~~~-~~~~~~~~~~~Rf~is~d~s~~~~~L~I   85 (127)
+                      ...+.+..|..+.|.|...........+.|++.........+   .+.... ..........+++.+..+.......|.|
+T Consensus         7 ~~~~~~~~g~~~~l~C~~~~~~~~~~~~~w~~~~~~~~~~~~---~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~l~i   83 (119)
+T 5LWY_H            7 SGPELVKPGASVRITCKASGYTFTDFNMDWVKQSPGKSLEWI---GDFNPNSGGSIYNQKFKDKATFTVDKSSSTAYMEL   83 (119)
+T ss_dssp             CCCEEECTTCCEEEEEEEESSCGGGSCEEEEEECTTSCEEEE---EEECTTTCCEEECGGGTTTEEEEEETTTTEEEEEE
+T ss_pred             CCCeEEcCCCeEEEEEEeeccccceeEEEEEEcCCCCCeEEE---EEEecCCCceeecccccceEEEEEeCCCCEEEEEE
+Confidence            345567789999999998754211456899988654333333   222211 1111111123344433322234568999
+
+
+Q <unknown         86 NSLKPEDTAVYYCNMDLT  103 (127)
+Q Consensus        86 ~~l~~eDsa~YyCa~~~t  103 (127)
+                      .+++.+|.|.|.|.+...
+T Consensus        84 ~~~~~~~~g~y~C~~~~~  101 (119)
+T 5LWY_H           84 RSLTFEDTAVYYCARETG  101 (119)
+T ss_dssp             CSCCGGGCEEEEEEECSS
+T ss_pred             ecCCHhhceEEEEEEecC
+Confidence            999999999999998765
+
+
+No 7
+>6H7J_D Thioredoxin 1, Beta-1 adrenergic receptor; Beta1 Adrenoceptor, Activated, Agonist, Nanobody; HET: 5FW, 2CV; 2.8A {Escherichia coli (strain K12)}
+Probab=97.89  E-value=3.8e-08  Score=61.50  Aligned_cols=94  Identities=74%  Similarity=1.153  Sum_probs=55.5  Template_Neff=13.500
+
+Q <unknown          7 SGGGWVHPGGSLRLSCAASGNVFGVNTMAWYRQAPGKQREQRELVASITDYGTTEYADSVKGRFTISGDNAKATVYLQMN   86 (127)
+Q Consensus         7 s~~~~v~~G~sv~L~C~~s~~~~~~~~~~Wyrq~pG~~~e~l~~i~~~~~~~~~~~~~~~~~Rf~is~d~s~~~~~L~I~   86 (127)
+                      ...+.+..|..+.|.|...........+.|++.........+   .................|+............|.|.
+T Consensus         8 ~~~~~~~~g~~~~l~C~~~~~~~~~~~~~w~~~~~~~~~~~~---~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~l~i~   84 (121)
+T 6H7J_D            8 SGGGLVQAGGSLRLSCAASGSIFSINTMGWYRQAPGKQRELV---AAIHSGGSTNYANSVKGRFTISRDNAANTVYLQMN   84 (121)
+T ss_pred             cCcEEEeCCCcEEEEEEEecCcccceEEEEEEeCCCCCceEE---EEEecCCceeccccccceEEEeeeCCCCEEEEEEC
+Confidence            345567788999999998764322467899987543222222   11111110111111233444333322345689999
+
+
+Q <unknown         87 SLKPEDTAVYYCNMDLT  103 (127)
+Q Consensus        87 ~l~~eDsa~YyCa~~~t  103 (127)
+                      ++..+|+|.|.|.+...
+T Consensus        85 ~~~~~d~g~y~c~~~~~  101 (121)
+T 6H7J_D           85 SLKPEDTAVYYCNVKDY  101 (121)
+T ss_pred             CCCHHhcEEEEEEEeec
+Confidence            99999999999998776
+
+

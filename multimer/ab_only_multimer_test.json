@@ -1,0 +1,4349 @@
+[
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4uu9.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6al0.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7k8n.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5th9.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4jzo.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7keo.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4nrx.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6dc3.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5u4r.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6nb3.cif",
+        "chains": [
+            "D",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3v0v.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4dn3.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6x1s.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6gv1.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1mfa.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5y2k.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4ncc.cif",
+        "chains": [
+            "2",
+            "1"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1fpt.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2z91.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6p7h.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6bpe.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4x8j.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7oo2.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5kn5.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5eoc.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6pe9.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7n3f.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4xtr.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2ybr.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6elu.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4hs8.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4j4p.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4nug.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5ikc.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6n16.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4odt.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5tkk.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1fsk.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1hys.cif",
+        "chains": [
+            "D",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6bpa.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4osu.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3jwd.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4xxd.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7v26.cif",
+        "chains": [
+            "a",
+            "b"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4jam.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4x4x.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2a6d.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2ntf.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5ijk.cif",
+        "chains": [
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5e94.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6fy0.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6cnr.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2fgw.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5vzr.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1ehl.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7d3l.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7lab.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5w5x.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7df9.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7lg6.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6o23.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3vw3.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7d85.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4at6.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4xny.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6vep.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1w72.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1oar.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6wn1.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5lqb.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6oel.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5b4m.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6xpq.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6xuk.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3v6f.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1b2w.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4cad.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2j88.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6vkn.cif",
+        "chains": [
+            "G",
+            "J"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1igt.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1mco.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5w08.cif",
+        "chains": [
+            "G",
+            "H"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3tt1.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4m6m.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1kno.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4nja.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3ojd.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6phb.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3tcl.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3pgf.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1dl7.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7mhy.cif",
+        "chains": [
+            "M",
+            "N"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6amj.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7arn.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1mrc.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6nb8.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6xkp.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6vry.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7rnj.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4k94.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5jz7.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3o41.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6vbp.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7eya.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5kte.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6z7w.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5vlp.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2ojz.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6bqb.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4h20.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6x58.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4ye4.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5ifh.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4n0y.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1bln.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5dr5.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3vrl.cif",
+        "chains": [
+            "E",
+            "F"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1kfa.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6wg8.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3q3g.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7rcs.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1fl5.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6p9h.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1jn6.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6xdg.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5h30.cif",
+        "chains": [
+            "G",
+            "H"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4ag4.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3bz4.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3liz.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4al8.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6wqo.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1sm3.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6n6b.cif",
+        "chains": [
+            "K",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6o39.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6xtg.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6qnk.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4hie.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5tih.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4ocx.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4gms.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1gaf.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1pg7.cif",
+        "chains": [
+            "X",
+            "W"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3bgf.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6u3z.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4r97.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1jnl.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4k3d.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7bxv.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2oz4.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5dd0.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6ii9.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1l7t.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5vjo.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1qnz.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6aq7.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7ra8.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4kvn.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6ddm.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4ki5.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7fab.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6dwa.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6xey.cif",
+        "chains": [
+            "F",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6nf2.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5gjs.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4n9g.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6meg.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3u0t.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6xzw.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1igm.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7oh1.cif",
+        "chains": [
+            "E",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5zs0.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4jm2.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3wih.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5vkk.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1mhh.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4ob5.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4ouu.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5uea.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5v2a.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1n7m.cif",
+        "chains": [
+            "L",
+            "H"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2ltq.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6jjp.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7lrs.cif",
+        "chains": [
+            "D",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2ltq.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1wt5.cif",
+        "chains": [
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1ahw.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2d7t.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7e5o.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1dsf.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6p3r.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6xr0.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6fg2.cif",
+        "chains": [
+            "D",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/15c8.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5vag.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6u8k.cif",
+        "chains": [
+            "D",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2gfb.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6oro.cif",
+        "chains": [
+            "D",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5u3j.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6s8i.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7nx2.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2i9l.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7cvz.cif",
+        "chains": [
+            "O",
+            "P"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5cil.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6wo4.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6vi1.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7jtg.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7m74.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7niu.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6xe1.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6x8p.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7k8p.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7lud.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5y9f.cif",
+        "chains": [
+            "L",
+            "K"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5vta.cif",
+        "chains": [
+            "F",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7cdj.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1q1j.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6k68.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6wtu.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3s96.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7c01.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6pzz.cif",
+        "chains": [
+            "F",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6dla.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5d1q.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4rwy.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6cyf.cif",
+        "chains": [
+            "D",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6cwt.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6iap.cif",
+        "chains": [
+            "E",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6orq.cif",
+        "chains": [
+            "D",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4uv7.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7lu9.cif",
+        "chains": [
+            "h",
+            "g"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6pis.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4v1d.cif",
+        "chains": [
+            "D",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4ydv.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4q2z.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4qci.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4dtg.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6pdx.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6dkj.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4np4.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7k8w.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2zck.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6nij.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4nry.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7ben.cif",
+        "chains": [
+            "D",
+            "F"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5n7w.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6ad0.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1yy8.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1mjj.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6p8m.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4zxb.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6eay.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1fns.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4oii.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4hfu.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3giz.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7elx.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1dlf.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1c12.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6lxi.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4qth.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6nuz.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4mxv.cif",
+        "chains": [
+            "F",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5f89.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5vn3.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6s8d.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4glr.cif",
+        "chains": [
+            "H",
+            "I"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6oz9.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6azz.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4r4b.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7n3c.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6bck.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5en2.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7dr4.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3bdy.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1uz6.cif",
+        "chains": [
+            "F",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3nz8.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5ukn.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4fab.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7l6m.cif",
+        "chains": [
+            "h",
+            "g"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3qct.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5d93.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6bit.cif",
+        "chains": [
+            "I",
+            "K"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6nyq.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6xq2.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3ivk.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5kem.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4d9q.cif",
+        "chains": [
+            "E",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5dsc.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6arp.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4rqq.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3j2x.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6pe7.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6pzy.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7mf1.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1nfd.cif",
+        "chains": [
+            "F",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4o58.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6j14.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6xrt.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3cfb.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3bky.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6wh9.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7k8o.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5g64.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6iec.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6n4q.cif",
+        "chains": [
+            "J",
+            "I"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7l2f.cif",
+        "chains": [
+            "G",
+            "J"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6cw2.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7dzx.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1egj.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2o5x.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1c5d.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6gku.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5gs0.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7czq.cif",
+        "chains": [
+            "H",
+            "K"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6i9i.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6gk7.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6obd.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1h0d.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6ot1.cif",
+        "chains": [
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7km6.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6wg0.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5c7x.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7bpk.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6n5e.cif",
+        "chains": [
+            "E",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6iw0.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3j42.cif",
+        "chains": [
+            "G",
+            "H"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7lkf.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5trp.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6wps.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1f4w.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6a4k.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1yuh.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4z0x.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6bb4.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7c81.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5anm.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3ley.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5t33.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3mlx.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4hg4.cif",
+        "chains": [
+            "J",
+            "K"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4mau.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6pci.cif",
+        "chains": [
+            "H",
+            "K"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4gag.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7k8r.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5cex.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3gi8.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6nuy.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3bsz.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5kan.cif",
+        "chains": [
+            "G",
+            "I"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5ock.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6fg1.cif",
+        "chains": [
+            "A",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3j8z.cif",
+        "chains": [
+            "F",
+            "J"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5t6p.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4jn1.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3qg6.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1ikf.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6cue.cif",
+        "chains": [
+            "3",
+            "4"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1aif.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6ewb.cif",
+        "chains": [
+            "E",
+            "F"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2dd8.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7ec5.cif",
+        "chains": [
+            "E",
+            "F"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6o1f.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7n4j.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6nf5.cif",
+        "chains": [
+            "E",
+            "F"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4oaw.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7rd9.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7beh.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6vy4.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4y5y.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3o6k.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6ii8.cif",
+        "chains": [
+            "G",
+            "I"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6nfc.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5v6l.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5w6g.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5mhs.cif",
+        "chains": [
+            "E",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5kvg.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2ltq.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7mjs.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6bsp.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6r2s.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2qqn.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7r8n.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6ztd.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4rnr.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6s3d.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7soc.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6wfx.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6x4t.cif",
+        "chains": [
+            "B",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7rdj.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2ai0.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1cz8.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1rhh.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5nuz.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2vl5.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6ogx.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6bgt.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2ypv.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6p65.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5eu7.cif",
+        "chains": [
+            "E",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5w0k.cif",
+        "chains": [
+            "E",
+            "F"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7m6d.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7nab.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7bei.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3utz.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7cwl.cif",
+        "chains": [
+            "G",
+            "J"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6xm2.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4s1d.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7ps6.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7mxl.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6c08.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3tje.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4fq1.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5mvz.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6nn3.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3hc0.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6dfh.cif",
+        "chains": [
+            "G",
+            "J"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4ods.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4nuj.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5gs1.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5ggq.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4yhp.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1dvf.cif",
+        "chains": [
+            "D",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7mzj.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6vpx.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5fha.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3uji.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4rzc.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1qkz.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1kcr.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7mhy.cif",
+        "chains": [
+            "O",
+            "P"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6c6z.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4od1.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4kph.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1d5i.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6u6u.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6df0.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3se8.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1mcp.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6vrq.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5eii.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5tpn.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3mck.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2fl5.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4j6r.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3hzk.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4hh9.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7r8l.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1fvc.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4uta.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6k65.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4m7k.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5y11.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6u8d.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1adq.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5jq6.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4qt5.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1mim.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5bk3.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7chp.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6vtu.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6vor.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6pyc.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7jv2.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1rjl.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2jb5.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6d11.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4hdi.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3zl4.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7mzl.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2r56.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5vig.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6ule.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6hkg.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7bq5.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7akd.cif",
+        "chains": [
+            "D",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7jxe.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2eh7.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4ocs.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6ii4.cif",
+        "chains": [
+            "E",
+            "F"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6uce.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6wiz.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1yjd.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5l7x.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4s2s.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5d6c.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6k7o.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4ywg.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5szf.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4hix.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7rco.cif",
+        "chains": [
+            "D",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7czr.cif",
+        "chains": [
+            "H",
+            "K"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4f37.cif",
+        "chains": [
+            "F",
+            "K"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4qnp.cif",
+        "chains": [
+            "E",
+            "F"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4hzl.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7e3k.cif",
+        "chains": [
+            "D",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7n8h.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7n4i.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6ivz.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6j5d.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1ynt.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5esv.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6zcz.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6bla.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7lq7.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3twc.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6osv.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7luc.cif",
+        "chains": [
+            "J",
+            "K"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6okp.cif",
+        "chains": [
+            "M",
+            "N"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6e62.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5xmh.cif",
+        "chains": [
+            "D",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7m42.cif",
+        "chains": [
+            "D",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2aab.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7s13.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6vn1.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4lss.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5zv3.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6x78.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5otj.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4r90.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5tbd.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6bkc.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4pb9.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6nm6.cif",
+        "chains": [
+            "U",
+            "V"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5f3b.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6nv0.cif",
+        "chains": [
+            "D",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1orq.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1xgp.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7byr.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6ba5.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3tt3.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6fab.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4uim.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3r06.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2nr6.cif",
+        "chains": [
+            "D",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7m42.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6n81.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7jhg.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7kra.cif",
+        "chains": [
+            "I",
+            "J"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3eo0.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5nbi.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5yy5.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6z2l.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4ffz.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7l7r.cif",
+        "chains": [
+            "D",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6h0e.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3nn8.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5d70.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1dfb.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4rgm.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5o4g.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6y1n.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6v4p.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1a14.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6u6o.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6lgw.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5ywf.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4kq4.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1y0l.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7rd3.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7bu8.cif",
+        "chains": [
+            "G",
+            "I"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6mtr.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4qex.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1v7m.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6ko5.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7dfp.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6rps.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6wno.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/2fd6.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4web.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3csy.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7ntc.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7rdl.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6avn.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3s88.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7n5h.cif",
+        "chains": [
+            "E",
+            "F"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4uok.cif",
+        "chains": [
+            "A",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4lsu.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4hxb.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7b0b.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1yed.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4xvs.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1f11.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6wfz.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7n62.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6u59.cif",
+        "chains": [
+            "F",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4k3j.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1uz8.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7r7n.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5tlk.cif",
+        "chains": [
+            "D",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5cma.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3dgg.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6bzy.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7lf7.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7l7d.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6oe4.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4rfe.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5grv.cif",
+        "chains": [
+            "L",
+            "K"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4ybl.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4hpo.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6ck9.cif",
+        "chains": [
+            "D",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5xcu.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5kvd.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7kn3.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6mid.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3u2s.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7n3d.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4fql.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6mqs.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5drx.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4nwt.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/7k7h.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3ls4.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3idx.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/1eo8.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6nnf.cif",
+        "chains": [
+            "U",
+            "V"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6ol7.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/3p0v.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4ps4.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/6t3f.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/4od2.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/antibodies_cif/5ukq.cif",
+        "chains": [
+            "H",
+            "L"
+        ]
+    }
+]

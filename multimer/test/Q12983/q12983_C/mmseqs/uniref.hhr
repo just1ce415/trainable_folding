@@ -1,0 +1,857 @@
+Query         <unknown
+Match_columns 25
+No_of_seqs    20 out of 97
+Neff          1.70064
+Searched_HMMs 80799
+Date          Thu Jul 21 13:10:48 2022
+Command       hhsearch -i uniref.a3m -d /storage/thu/pdb70/pdb70 -cpu 4 -n 1 
+
+ No Hit                             Prob E-value P-value  Score    SS Cols Query HMM  Template HMM
+  1 3BV8_A Tetrahydrodipicolinate   42.6      21 0.00026   20.0   0.0   17    8-24     55-71  (87)
+  2 4PND_E CC-Pent_Variant; De nov  39.5      25 0.00031   17.5   0.0   15    8-22      6-20  (31)
+  3 4DEY_B Voltage-dependent L-typ  38.7      26 0.00032   18.1   0.0   18    5-22     22-39  (106)
+  4 6NU2_q 39S ribosomal protein L  37.3      28 0.00035   20.5   0.0   21    4-24     91-111 (128)
+  5 5E6O_A Protein lgg-2, TRP-GLU-  36.1      30 0.00038   18.8   0.0   19    3-21     11-29  (118)
+  6 5E6O_B Protein lgg-2, TRP-GLU-  36.1      30 0.00038   18.8   0.0   19    3-21     11-29  (118)
+  7 6EJN_C Kinesin light chain 2,   34.5      34 0.00042   18.9   0.0   13    8-20      8-20  (75)
+  8 6EJN_D Kinesin light chain 2,   34.5      34 0.00042   18.9   0.0   13    8-20      8-20  (75)
+  9 1CSN_A CASEIN KINASE-1, ADENOS  33.9      35 0.00043   17.7   0.0   17    9-25    280-296 (298)
+ 10 1QP6_B ALPHA 2D, A DE NOVO; DE  33.3      36 0.00045   17.3   0.0   16    6-21     18-33  (35)
+ 11 2CSN_A CASEIN KINASE-1, N-(2-A  33.1      37 0.00045   17.6   0.0   17    9-25    279-295 (297)
+ 12 3C3G_A alpha/beta peptide with  32.9      37 0.00046   16.8   0.0   11    9-19      8-18  (33)
+ 13 2OXK_A hybrid alpha/beta pepti  32.1      39 0.00048   16.8   0.0   11    9-19      9-19  (34)
+ 14 2W83_C ADP-RIBOSYLATION FACTOR  31.6      40  0.0005   18.7   0.0   14    7-20      8-21  (77)
+ 15 2W83_D ADP-RIBOSYLATION FACTOR  31.6      40  0.0005   18.7   0.0   14    7-20      8-21  (77)
+ 16 3H9D_B Microtubule-associated   29.2      47 0.00058   18.1   0.0   19    3-21     14-32  (119)
+ 17 2HY6_E General control protein  29.1      47 0.00059   16.5   0.0   11    9-19      9-19  (34)
+ 18 4HJB_B GCN4pLI(alpha/beta/cycl  28.9      48 0.00059   16.5   0.0   11    9-19      9-19  (33)
+ 19 3VTW_A Optineurin, microtubule  28.8      48  0.0006   19.4   0.0   19    3-21     43-61  (149)
+ 20 2WQ1_A GENERAL CONTROL PROTEIN  28.5      49 0.00061   16.3   0.0   11    9-19      8-18  (33)
+ 21 2WQ3_A GENERAL CONTROL PROTEIN  28.5      49 0.00061   16.3   0.0   11    9-19      8-18  (33)
+ 22 3MC1_A Predicted phosphatase,   27.8      52 0.00064   16.2   0.0   17    8-24    208-224 (226)
+ 23 1EO6_B CRYSTAL STRUCTURE OF GA  27.5      53 0.00065   17.8   0.0   19    3-21     11-29  (117)
+ 24 5XAD_B Microtubule-associated   27.4      53 0.00066   17.9   0.0   19    3-21     12-30  (119)
+ 25 2XSE_A THYMINE DIOXYGENASE JBP  26.5      56  0.0007   20.9   0.0   16    3-18    154-169 (170)
+ 26 3W1Y_A Microtubule-associated   26.5      57  0.0007   18.7   0.0   19    3-21     16-34  (137)
+ 27 3W1Y_B Microtubule-associated   26.5      57  0.0007   18.7   0.0   19    3-21     16-34  (137)
+ 28 1EH4_A CASEIN KINASE-1 (E.C.2.  26.3      57 0.00071   16.9   0.0   16   10-25    281-296 (298)
+ 29 5UYO_A HEEH_rd4_0097; de novo   25.7      60 0.00074   18.3   0.0   20    4-23     24-43  (64)
+ 30 2G9J_A Tropomyosin 1 alpha cha  25.5      60 0.00075   16.0   0.0   11    9-19      8-18  (33)
+ 31 4BOJ_C ALPHA-1,6-MANNANASE; HY  24.5      65  0.0008   18.2   0.0   18    6-23    291-308 (344)
+ 32 4WJW_A Chitin biosynthesis pro  24.0      67 0.00083   16.6   0.0   13    4-16     57-69  (77)
+ 33 3KOZ_E ORNITHINE 4,5 AMINOMUTA  23.8      68 0.00084   19.0   0.0   15    1-15      5-19  (121)
+ 34 3KP1_H D-ornithine aminomutase  23.8      68 0.00084   19.0   0.0   15    1-15      5-19  (121)
+ 35 6GAW_Bv Mitochondrial ribosoma  23.3      71 0.00088   20.7   0.0   21    4-24    115-135 (222)
+ 36 6AAG_G Transmembrane protein 1  23.2      71 0.00088   18.5   0.0   19    3-21     35-53  (140)
+ 37 2DIT_A HIV TAT specific factor  23.1      72 0.00089   14.2   0.0   15    2-16     35-49  (112)
+ 38 2R2V_A GCN4 leucine zipper; Co  23.0      72 0.00089   15.8   0.0   11    9-19      9-19  (34)
+ 39 4EOY_A Microtubule-associated   23.0      72 0.00089   17.7   0.0   19    3-21     14-32  (128)
+ 40 4CO7_B GAMMA-AMINOBUTYRIC ACID  22.3      76 0.00094   17.3   0.0   19    3-21     13-31  (119)
+ 41 5MS5_A Microtubule-associated   22.2      77 0.00095   18.1   0.0   19    3-21     31-49  (137)
+ 42 2V6Y_B AAA FAMILY ATPASE, P60   22.1      78 0.00096   14.9   0.0   15    3-17     64-78  (83)
+ 43 6JMF_A Tyrosine-protein kinase  21.9      79 0.00098   17.6   0.0   15    7-21     20-34  (375)
+ 44 5FVK_A VACUOLAR PROTEIN SORTIN  21.3      82   0.001   14.5   0.0   16    2-17     62-77  (82)
+ 45 4FXX_B Splicing factor 1; spli  21.3      82   0.001   17.9   0.0   17    4-20     87-103 (112)
+ 46 6NKC_B Lipase Lip_vut1; Lipase  21.2      83   0.001   15.0   0.0   21    5-25    158-178 (181)
+ 47 5YIR_A Gamma-aminobutyric acid  20.6      87  0.0011   17.0   0.0   17    3-19     11-27  (117)
+ 48 1FAV_A HIV-1 ENVELOPE PROTEIN   20.6      87  0.0011   17.6   0.0   11    9-19      5-15  (79)
+ 49 5D94_A Microtubule-associated   20.5      88  0.0011   17.6   0.0   19    3-21     18-36  (130)
+ 50 6JHO_A Cag pathogenicity islan  20.3      89  0.0011   20.8   0.0   17    1-17     55-71  (208)
+ 51 6SWS_A Phosphoinositide 3-kina  20.3      89  0.0011   18.0   0.0   17    3-19     87-103 (113)
+ 52 6SWS_D Phosphoinositide 3-kina  20.3      89  0.0011   18.0   0.0   17    3-19     87-103 (113)
+ 53 4IN3_A Chitin biosynthesis pro  20.2      90  0.0011   16.4   0.0   12    5-16     63-74  (82)
+ 54 3IG4_B Xaa-pro aminopeptidase;  20.1      91  0.0011   19.2   0.0   17    1-17      4-20  (427)
+ 55 3VW4_A Rep/DNA; helix-turn-hel  20.1      91  0.0011   18.1   0.0   16    8-23     57-72  (128)
+ 56 3VW4_B Rep/DNA; helix-turn-hel  20.1      91  0.0011   18.1   0.0   16    8-23     57-72  (128)
+ 57 5L83_A ASP-TRP-GLU-ILE-VAL, Au  20.0      91  0.0011   16.9   0.0   19    3-21     10-28  (112)
+
+No 1
+>3BV8_A Tetrahydrodipicolinate acetyltransferase; acetyltransferase, pfam08503, Structural Genomics, PSI-2; 1.75A {Staphylococcus aureus subsp. aureus}
+Probab=42.56  E-value=21  Score=20.03  Aligned_cols=17  Identities=6%  Similarity=0.011  Sum_probs=14.0  Template_Neff=4.700
+
+Q <unknown          8 KEVESILKKNSDWIWDW   24 (25)
+Q Consensus         8 ~Eve~llkknadWiwDW   24 (25)
+                      ++|+.+|+.|.++|-|.
+T Consensus        55 ~~i~~~L~~n~~~I~dy   71 (87)
+T 3BV8_A           55 DDWKPFYEAYGSQFEDI   71 (87)
+T ss_dssp             HHHHHHHHHHGGGEEEE
+T ss_pred             HHHHHHHHHhHhhcceE
+Confidence            57889999999998763
+
+
+No 2
+>4PND_E CC-Pent_Variant; De novo protein, artificially designed; 1.75A {N/A}
+Probab=39.47  E-value=25  Score=17.48  Aligned_cols=15  Identities=40%  Similarity=0.877  Sum_probs=10.4  Template_Neff=1.000
+
+Q <unknown          8 KEVESILKKNSDWIW   22 (25)
+Q Consensus         8 ~Eve~llkknadWiw   22 (25)
+                      +.+|++|||-..-.|
+T Consensus         6 qkienilkkienilw   20 (31)
+T 4PND_E            6 QKIENILKKIENILW   20 (31)
+T ss_dssp             HHHHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHHHHHH
+Confidence            567888888665544
+
+
+No 3
+>4DEY_B Voltage-dependent L-type calcium channel subunit; MAGUK, Voltage Dependent Calcium Channel; HET: BR; 1.95A {Oryctolagus cuniculus}
+Probab=38.67  E-value=26  Score=18.06  Aligned_cols=18  Identities=33%  Similarity=0.566  Sum_probs=13.7  Template_Neff=8.200
+
+Q <unknown          5 ERRKEVESILKKNSDWIW   22 (25)
+Q Consensus         5 ERr~Eve~llkknadWiw   22 (25)
+                      .+++.+|.-|....+||-
+T Consensus        22 r~~qq~e~~l~gy~~Wi~   39 (106)
+T 4DEY_B           22 REKQQLEEDLKGYLDWIT   39 (106)
+T ss_pred             HHHHHHHHHHhhHHHHHH
+Confidence            355678888888888883
+
+
+No 4
+>6NU2_q 39S ribosomal protein L2, mitochondrial; mitochondrial ribosome recycling Factor, mtRRF; HET: MG; 3.9A {Homo sapiens}
+Probab=37.28  E-value=28  Score=20.53  Aligned_cols=21  Identities=24%  Similarity=0.507  Sum_probs=17.8  Template_Neff=5.000
+
+Q <unknown          4 IERRKEVESILKKNSDWIWDW   24 (25)
+Q Consensus         4 lERr~Eve~llkknadWiwDW   24 (25)
+                      .+|-++|+.-|+|-..||-+|
+T Consensus        91 ~~Re~~Ia~nm~Km~q~i~~~  111 (128)
+T 6NU2_q           91 REREQHIAECMAKMPQMIVNW  111 (128)
+T ss_pred             HHHHHHHHHHHHhhHHHHHHH
+Confidence            467788999999999999887
+
+
+No 5
+>5E6O_A Protein lgg-2, TRP-GLU-GLU-LEU; ubiquitin-like protein, Atg8 protein family; 1.8A {Caenorhabditis elegans}
+Probab=36.08  E-value=30  Score=18.82  Aligned_cols=19  Identities=32%  Similarity=0.396  Sum_probs=15.2  Template_Neff=7.200
+
+Q <unknown          3 DIERRKEVESILKKNSDWI   21 (25)
+Q Consensus         3 ~lERr~Eve~llkknadWi   21 (25)
+                      +-+|..|.+++.++..+.|
+T Consensus        11 ~~~R~~e~~~~~~k~p~kV   29 (118)
+T 5E6O_A           11 FHERQKDVEEIRSQQPNKV   29 (118)
+T ss_dssp             HHHHHHHHHHHHHHCTTEE
+T ss_pred             HHHHHHHHHHHHhhCCCce
+Confidence            4578899999998877754
+
+
+No 6
+>5E6O_B Protein lgg-2, TRP-GLU-GLU-LEU; ubiquitin-like protein, Atg8 protein family; 1.8A {Caenorhabditis elegans}
+Probab=36.08  E-value=30  Score=18.82  Aligned_cols=19  Identities=32%  Similarity=0.396  Sum_probs=15.2  Template_Neff=7.200
+
+Q <unknown          3 DIERRKEVESILKKNSDWI   21 (25)
+Q Consensus         3 ~lERr~Eve~llkknadWi   21 (25)
+                      +-+|..|.+++.++..+.|
+T Consensus        11 ~~~R~~e~~~~~~k~p~kV   29 (118)
+T 5E6O_B           11 FHERQKDVEEIRSQQPNKV   29 (118)
+T ss_dssp             HHHHHHHHHHHHHHCTTEE
+T ss_pred             HHHHHHHHHHHHhhCCCce
+Confidence            4578899999998877754
+
+
+No 7
+>6EJN_C Kinesin light chain 2, C-Jun-amino-terminal; kinesin JIP3 transport cargo molecular; 3.2A {Mus musculus}
+Probab=34.50  E-value=34  Score=18.86  Aligned_cols=13  Identities=46%  Similarity=0.575  Sum_probs=10.4  Template_Neff=4.500
+
+Q <unknown          8 KEVESILKKNSDW   20 (25)
+Q Consensus         8 ~Eve~llkknadW   20 (25)
+                      +|||+||+.|..-
+T Consensus         8 keve~Li~EN~eL   20 (75)
+T 6EJN_C            8 KEVGNLLLENSQL   20 (75)
+T ss_dssp             HHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHhHHH
+Confidence            6899999888753
+
+
+No 8
+>6EJN_D Kinesin light chain 2, C-Jun-amino-terminal; kinesin JIP3 transport cargo molecular; 3.2A {Mus musculus}
+Probab=34.50  E-value=34  Score=18.86  Aligned_cols=13  Identities=46%  Similarity=0.575  Sum_probs=10.4  Template_Neff=4.500
+
+Q <unknown          8 KEVESILKKNSDW   20 (25)
+Q Consensus         8 ~Eve~llkknadW   20 (25)
+                      +|||+||+.|..-
+T Consensus         8 keve~Li~EN~eL   20 (75)
+T 6EJN_D            8 KEVGNLLLENSQL   20 (75)
+T ss_dssp             HHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHhHHH
+Confidence            6899999888753
+
+
+No 9
+>1CSN_A CASEIN KINASE-1, ADENOSINE-5'-TRIPHOSPHATE; PHOSPHOTRANSFERASE; HET: SO4, ATP; 2.0A {Schizosaccharomyces pombe} SCOP: d.144.1.7
+Probab=33.86  E-value=35  Score=17.65  Aligned_cols=17  Identities=29%  Similarity=0.515  Sum_probs=9.7  Template_Neff=12.100
+
+Q <unknown          9 EVESILKKNSDWIWDWS   25 (25)
+Q Consensus         9 Eve~llkknadWiwDWS   25 (25)
+                      ++..-++...+.-+||+
+T Consensus       280 ~~~~~~~~~~~~~~~~~  296 (298)
+T 1CSN_A          280 KVLERLNTTEDENFDWN  296 (298)
+T ss_pred             HHHHHhcCCccccCCcc
+Confidence            33444445566777775
+
+
+No 10
+>1QP6_B ALPHA 2D, A DE NOVO; DE NOVO DESIGN, PROTEIN DESIGN; NMR {N/A} SCOP: k.16.1.1
+Probab=33.29  E-value=36  Score=17.28  Aligned_cols=16  Identities=44%  Similarity=0.601  Sum_probs=11.9  Template_Neff=1.000
+
+Q <unknown          6 RRKEVESILKKNSDWI   21 (25)
+Q Consensus         6 Rr~Eve~llkknadWi   21 (25)
+                      ||-|||.|-||-..-|
+T Consensus        18 rrgeieelhkkfheli   33 (35)
+T 1QP6_B           18 RRGEIEELHKKFHELI   33 (35)
+T ss_dssp             CSHHHHHHHHHHHHHH
+T ss_pred             cchHHHHHHHHHHHHh
+Confidence            7889999888765443
+
+
+No 11
+>2CSN_A CASEIN KINASE-1, N-(2-AMINOETHYL)-5-CHLOROISOQUINOLINE-8-SULFONAMIDE; CASEIN KINASE-1, PROTEIN KINASE; HET: SO4, CKI; 2.5A {Schizosaccharomyces pombe} SCOP: d.144.1.7
+Probab=33.05  E-value=37  Score=17.57  Aligned_cols=17  Identities=29%  Similarity=0.515  Sum_probs=8.2  Template_Neff=12.100
+
+Q <unknown          9 EVESILKKNSDWIWDWS   25 (25)
+Q Consensus         9 Eve~llkknadWiwDWS   25 (25)
+                      ++..-+....+..+||+
+T Consensus       279 ~~~~~~~~~~~~~~~~~  295 (297)
+T 2CSN_A          279 KVLERLNTTEDENFDWN  295 (297)
+T ss_dssp             ---HHTTCCSCSCCGGG
+T ss_pred             HHHHHhcCCccccCCcc
+Confidence            33334444566777775
+
+
+No 12
+>3C3G_A alpha/beta peptide with the GCN4-pLI; helix bundle, foldamer, alpha/beta-peptide, UNKNOWN; HET: GOL; 1.8A {N/A}
+Probab=32.86  E-value=37  Score=16.81  Aligned_cols=11  Identities=18%  Similarity=0.274  Sum_probs=8.6  Template_Neff=2.900
+
+Q <unknown          9 EVESILKKNSD   19 (25)
+Q Consensus         9 Eve~llkknad   19 (25)
+                      .||.||.+|++
+T Consensus         8 KVEeLl~~N~~   18 (33)
+T 3C3G_A            8 KLXEIXSKXYH   18 (33)
+T ss_dssp             HHHHHHHHHHH
+T ss_pred             hhHhhhcCccC
+Confidence            47888888875
+
+
+No 13
+>2OXK_A hybrid alpha/beta peptide based on; helix bundle, foldamer, UNKNOWN FUNCTION; HET: FMT; 2.0A {N/A}
+Probab=32.13  E-value=39  Score=16.83  Aligned_cols=11  Identities=27%  Similarity=0.358  Sum_probs=8.6  Template_Neff=2.900
+
+Q <unknown          9 EVESILKKNSD   19 (25)
+Q Consensus         9 Eve~llkknad   19 (25)
+                      .||.||++|++
+T Consensus         9 KVeeLl~~n~~   19 (34)
+T 2OXK_A            9 KLXEILXKLXH   19 (34)
+T ss_dssp             HHHHHHHHHHH
+T ss_pred             hHHHHhHhCCC
+Confidence            47888888875
+
+
+No 14
+>2W83_C ADP-RIBOSYLATION FACTOR 6, C-JUN-AMINO-TERMINAL KINASE-INTERACTING; GOLGI APPARATUS, PROTEIN TRANSPORT, ER-GOLGI; HET: DIO, GTP; 1.93A {HOMO SAPIENS}
+Probab=31.57  E-value=40  Score=18.68  Aligned_cols=14  Identities=29%  Similarity=0.558  Sum_probs=10.9  Template_Neff=4.400
+
+Q <unknown          7 RKEVESILKKNSDW   20 (25)
+Q Consensus         7 r~Eve~llkknadW   20 (25)
+                      -+|||+||+.|..-
+T Consensus         8 gkeve~Li~EN~eL   21 (77)
+T 2W83_C            8 GREVENLILENTQL   21 (77)
+T ss_dssp             HHHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHhHHH
+Confidence            47899999888753
+
+
+No 15
+>2W83_D ADP-RIBOSYLATION FACTOR 6, C-JUN-AMINO-TERMINAL KINASE-INTERACTING; GOLGI APPARATUS, PROTEIN TRANSPORT, ER-GOLGI; HET: GTP, DIO; 1.93A {HOMO SAPIENS}
+Probab=31.57  E-value=40  Score=18.68  Aligned_cols=14  Identities=29%  Similarity=0.558  Sum_probs=10.9  Template_Neff=4.400
+
+Q <unknown          7 RKEVESILKKNSDW   20 (25)
+Q Consensus         7 r~Eve~llkknadW   20 (25)
+                      -+|||+||+.|..-
+T Consensus         8 gkeve~Li~EN~eL   21 (77)
+T 2W83_D            8 GREVENLILENTQL   21 (77)
+T ss_dssp             HHHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHhHHH
+Confidence            47899999888753
+
+
+No 16
+>3H9D_B Microtubule-associated protein 1A/1B, light chain; autophagy, lipidation, ubiquitin-like, Trypanosoma brucei; 2.3A {Trypanosoma brucei}
+Probab=29.18  E-value=47  Score=18.13  Aligned_cols=19  Identities=11%  Similarity=0.256  Sum_probs=15.0  Template_Neff=7.200
+
+Q <unknown          3 DIERRKEVESILKKNSDWI   21 (25)
+Q Consensus         3 ~lERr~Eve~llkknadWi   21 (25)
+                      +-+|..|.+++++|..+.|
+T Consensus        14 ~~~R~~e~~~~~~k~p~~I   32 (119)
+T 3H9D_B           14 FESRQSDAAKVRERHPDRL   32 (119)
+T ss_dssp             HHHHHHHHHHHHHHCTTEE
+T ss_pred             HHHHHHHHHHHHHHCCCce
+Confidence            4578899999998877654
+
+
+No 17
+>2HY6_E General control protein GCN4; protein design, parallel heptamer, protein; HET: HEZ; 1.25A {Saccharomyces cerevisiae} SCOP: h.1.3.1
+Probab=29.11  E-value=47  Score=16.50  Aligned_cols=11  Identities=27%  Similarity=0.329  Sum_probs=8.6  Template_Neff=3.000
+
+Q <unknown          9 EVESILKKNSD   19 (25)
+Q Consensus         9 Eve~llkknad   19 (25)
+                      .||.|+.+|++
+T Consensus         9 kVEeLl~~N~~   19 (34)
+T 2HY6_E            9 AVEELASANYH   19 (34)
+T ss_dssp             HHHHHHHHHHH
+T ss_pred             HHHHHHHHhHH
+Confidence            47888888875
+
+
+No 18
+>4HJB_B GCN4pLI(alpha/beta/cyclic-gamma); alpha/beta/gamma amino acid, UNKNOWN FUNCTION; HET: ACE, XPC, GM8; 1.25A {N/A}
+Probab=28.95  E-value=48  Score=16.46  Aligned_cols=11  Identities=36%  Similarity=0.413  Sum_probs=8.5  Template_Neff=2.800
+
+Q <unknown          9 EVESILKKNSD   19 (25)
+Q Consensus         9 Eve~llkknad   19 (25)
+                      .||.||.+|++
+T Consensus         9 KvEeLl~~n~~   19 (33)
+T 4HJB_B            9 KLEEILSKLYH   19 (33)
+T ss_dssp             HHHHHHHHHHH
+T ss_pred             HHHHHHHHHhh
+Confidence            47888888875
+
+
+No 19
+>3VTW_A Optineurin, microtubule-associated proteins 1A/1B light; ubiquitin-like fold, Autophagy, PROTEIN BINDING; HET: SO4; 2.52A {Homo sapiens}
+Probab=28.77  E-value=48  Score=19.36  Aligned_cols=19  Identities=21%  Similarity=0.167  Sum_probs=15.2  Template_Neff=6.200
+
+Q <unknown          3 DIERRKEVESILKKNSDWI   21 (25)
+Q Consensus         3 ~lERr~Eve~llkknadWi   21 (25)
+                      +-+|..|.++++++..+.|
+T Consensus        43 ~e~R~~e~~~i~~k~P~kI   61 (149)
+T 3VTW_A           43 FEQRVEDVRLIREQHPTKI   61 (149)
+T ss_dssp             HHHHHHHHHHHHHHCTTEE
+T ss_pred             HHHHHHHHHHHHHHCCCce
+Confidence            4478899999998887765
+
+
+No 20
+>2WQ1_A GENERAL CONTROL PROTEIN GCN4; TAA, NUCLEUS, DNA-BINDING, PROTEIN EXPORT; 1.08A {N/A}
+Probab=28.49  E-value=49  Score=16.35  Aligned_cols=11  Identities=18%  Similarity=0.093  Sum_probs=8.5  Template_Neff=3.000
+
+Q <unknown          9 EVESILKKNSD   19 (25)
+Q Consensus         9 Eve~llkknad   19 (25)
+                      .||.|+.+|++
+T Consensus         8 KVEeLl~~n~~   18 (33)
+T 2WQ1_A            8 KIEENTSKIYH   18 (33)
+T ss_dssp             HHHHHHHHHHH
+T ss_pred             HHHHHHHHHHH
+Confidence            47888888875
+
+
+No 21
+>2WQ3_A GENERAL CONTROL PROTEIN GCN4; TAA, NUCLEUS, COILED COIL, DNA-BINDING; 1.22A {N/A}
+Probab=28.49  E-value=49  Score=16.35  Aligned_cols=11  Identities=18%  Similarity=0.093  Sum_probs=8.5  Template_Neff=3.000
+
+Q <unknown          9 EVESILKKNSD   19 (25)
+Q Consensus         9 Eve~llkknad   19 (25)
+                      .||.|+.+|++
+T Consensus         8 KVEeLl~~n~~   18 (33)
+T 2WQ3_A            8 KIEENTSKIYH   18 (33)
+T ss_dssp             HHHHHHHHHHH
+T ss_pred             HHHHHHHHHHH
+Confidence            47888888875
+
+
+No 22
+>3MC1_A Predicted phosphatase, HAD family; PSI2, NYSGXRC, Structural Genomics, Protein; HET: GOL; 1.93A {Clostridium acetobutylicum}
+Probab=27.77  E-value=52  Score=16.19  Aligned_cols=17  Identities=6%  Similarity=-0.031  Sum_probs=7.6  Template_Neff=12.200
+
+Q <unknown          8 KEVESILKKNSDWIWDW   24 (25)
+Q Consensus         8 ~Eve~llkknadWiwDW   24 (25)
+                      .|+..+|++...|.|-|
+T Consensus       208 ~el~~~~~~~~~~~~~~  224 (226)
+T 3MC1_A          208 DELHKKILELREGHHHH  224 (226)
+T ss_dssp             HHHHHHHHTC-------
+T ss_pred             HHHHHHHHHHhccCCCC
+Confidence            56777888888887765
+
+
+No 23
+>1EO6_B CRYSTAL STRUCTURE OF GATE-16; ubiquitin fold, PROTEIN BINDING; 1.8A {Bos taurus} SCOP: d.15.1.3
+Probab=27.52  E-value=53  Score=17.77  Aligned_cols=19  Identities=26%  Similarity=0.125  Sum_probs=14.3  Template_Neff=7.400
+
+Q <unknown          3 DIERRKEVESILKKNSDWI   21 (25)
+Q Consensus         3 ~lERr~Eve~llkknadWi   21 (25)
+                      +-+|..|.+.+.++..+.|
+T Consensus        11 ~~~R~~e~~~~~~k~p~ki   29 (117)
+T 1EO6_B           11 LEHRCVESAKIRAKYPDRV   29 (117)
+T ss_dssp             HHHHHHHHHHHHHHCTTEE
+T ss_pred             HHHHHHHHHHHHHHCCCce
+Confidence            4578888888888876654
+
+
+No 24
+>5XAD_B Microtubule-associated proteins 1A/1B light chain; Autophagy, LC3, Atg8, fusion protein; 1.88A {Homo sapiens}
+Probab=27.36  E-value=53  Score=17.92  Aligned_cols=19  Identities=21%  Similarity=0.167  Sum_probs=14.5  Template_Neff=7.200
+
+Q <unknown          3 DIERRKEVESILKKNSDWI   21 (25)
+Q Consensus         3 ~lERr~Eve~llkknadWi   21 (25)
+                      +-+|..|.++++++..+.|
+T Consensus        12 ~~~R~~e~~~~~~k~p~~i   30 (119)
+T 5XAD_B           12 FEQRVEDVRLIREQHPTKI   30 (119)
+T ss_dssp             HHHHHHHHHHHHHHCTTEE
+T ss_pred             HHHHHHHHHHHHHHCCCCe
+Confidence            4578889998888877654
+
+
+No 25
+>2XSE_A THYMINE DIOXYGENASE JBP1 (E.C.1.14.11.6); OXIDOREDUCTASE, DNA-BINDING; 1.9A {LEISHMANIA TARENTOLAE}
+Probab=26.49  E-value=56  Score=20.94  Aligned_cols=16  Identities=19%  Similarity=0.445  Sum_probs=12.5  Template_Neff=3.200
+
+Q <unknown          3 DIERRKEVESILKKNS   18 (25)
+Q Consensus         3 ~lERr~Eve~llkkna   18 (25)
+                      -++||..||..++..+
+T Consensus       154 r~eRr~~IE~arR~g~  169 (170)
+T 2XSE_A          154 RMERKQRIEEARRHGM  169 (170)
+T ss_dssp             HHHHHHHHHHHHTTTC
+T ss_pred             HHHHHHHHHHHHHhCC
+Confidence            3689999999887643
+
+
+No 26
+>3W1Y_A Microtubule-associated protein 1A/1B, light chain; Autophage protein 8, Autophage protein; 2.3A {Trypanosoma brucei brucei}
+Probab=26.46  E-value=57  Score=18.67  Aligned_cols=19  Identities=37%  Similarity=0.270  Sum_probs=14.6  Template_Neff=6.500
+
+Q <unknown          3 DIERRKEVESILKKNSDWI   21 (25)
+Q Consensus         3 ~lERr~Eve~llkknadWi   21 (25)
+                      +-+|..|++++.++..+-|
+T Consensus        16 ~e~R~~e~~~ir~k~P~~I   34 (137)
+T 3W1Y_A           16 FAERAKETESARLRYPKHI   34 (137)
+T ss_dssp             HHHHHHHHHHHHHHCTTEE
+T ss_pred             HHHHHHHHHHHHHHCCCcc
+Confidence            4578899999888877654
+
+
+No 27
+>3W1Y_B Microtubule-associated protein 1A/1B, light chain; Autophage protein 8, Autophage protein; 2.3A {Trypanosoma brucei brucei}
+Probab=26.46  E-value=57  Score=18.67  Aligned_cols=19  Identities=37%  Similarity=0.270  Sum_probs=14.6  Template_Neff=6.500
+
+Q <unknown          3 DIERRKEVESILKKNSDWI   21 (25)
+Q Consensus         3 ~lERr~Eve~llkknadWi   21 (25)
+                      +-+|..|++++.++..+-|
+T Consensus        16 ~e~R~~e~~~ir~k~P~~I   34 (137)
+T 3W1Y_B           16 FAERAKETESARLRYPKHI   34 (137)
+T ss_dssp             HHHHHHHHHHHHHHCTTEE
+T ss_pred             HHHHHHHHHHHHHHCCCcc
+Confidence            4578899999888877654
+
+
+No 28
+>1EH4_A CASEIN KINASE-1 (E.C.2.7.1.-); PROTEIN KINASE, CASEIN KINASE-1, PROTEIN-INHIBITOR; HET: SO4, IC1; 2.8A {Schizosaccharomyces pombe} SCOP: d.144.1.7
+Probab=26.32  E-value=57  Score=16.89  Aligned_cols=16  Identities=31%  Similarity=0.522  Sum_probs=8.5  Template_Neff=12.100
+
+Q <unknown         10 VESILKKNSDWIWDWS   25 (25)
+Q Consensus        10 ve~llkknadWiwDWS   25 (25)
+                      +..-++...+.-+||+
+T Consensus       281 ~~~~~~~~~~~~~~~~  296 (298)
+T 1EH4_A          281 VLERLNTTEDENFDWN  296 (298)
+T ss_dssp             HHHHTTCCSSCCCTTS
+T ss_pred             HHHHcCCCCCccCCcc
+Confidence            3333444566666764
+
+
+No 29
+>5UYO_A HEEH_rd4_0097; de novo design, helix-strand-strand-helix, mini; NMR {Escherichia}
+Probab=25.69  E-value=60  Score=18.26  Aligned_cols=20  Identities=35%  Similarity=0.645  Sum_probs=14.4  Template_Neff=1.000
+
+Q <unknown          4 IERRKEVESILKKNSDWIWD   23 (25)
+Q Consensus         4 lERr~Eve~llkknadWiwD   23 (25)
+                      -|.-+.+|..||||..-.|.
+T Consensus        24 eeqirrleevlkknqpvtwn   43 (64)
+T 5UYO_A           24 EEQIRRLEEVLKKNQPVTWN   43 (64)
+T ss_dssp             HHHHHHHHHHHHHTCCEECS
+T ss_pred             HHHHHHHHHHHHhCCCCccC
+Confidence            35556678889999876663
+
+
+No 30
+>2G9J_A Tropomyosin 1 alpha chain, General; TROPOMYOSIN, PEPTIDE COMPLEX, OVERLAP COMPLEX; NMR {Rattus norvegicus} SCOP: h.1.3.1
+Probab=25.52  E-value=60  Score=16.04  Aligned_cols=11  Identities=9%  Similarity=0.139  Sum_probs=8.6  Template_Neff=3.000
+
+Q <unknown          9 EVESILKKNSD   19 (25)
+Q Consensus         9 Eve~llkknad   19 (25)
+                      .||.||.+|++
+T Consensus         8 KVEeLl~~N~~   18 (33)
+T 2G9J_A            8 KMQMLKLDNYH   18 (33)
+T ss_pred             HHHHHHHhhHH
+Confidence            47888888875
+
+
+No 31
+>4BOJ_C ALPHA-1,6-MANNANASE; HYDROLASE, OXIDOREDUCTASE; HET: MAN; 1.379A {BACILLUS CIRCULANS}
+Probab=24.54  E-value=65  Score=18.16  Aligned_cols=18  Identities=22%  Similarity=0.351  Sum_probs=14.6  Template_Neff=10.700
+
+Q <unknown          6 RRKEVESILKKNSDWIWD   23 (25)
+Q Consensus         6 Rr~Eve~llkknadWiwD   23 (25)
+                      .+..+...++++++|+|+
+T Consensus       291 ~~~~~~~~~~~~~~~~~~  308 (344)
+T 4BOJ_C          291 FSAEFDEWLAFNIEMAWS  308 (344)
+T ss_dssp             HHHHHHHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHHHHHHHHH
+Confidence            356788899999999885
+
+
+No 32
+>4WJW_A Chitin biosynthesis protein CHS5, Chitin; Adaptor protein, cargo binding, vesicular; 2.59A {Saccharomyces cerevisiae}
+Probab=24.00  E-value=67  Score=16.59  Aligned_cols=13  Identities=31%  Similarity=0.391  Sum_probs=9.2  Template_Neff=6.700
+
+Q <unknown          4 IERRKEVESILKK   16 (25)
+Q Consensus         4 lERr~Eve~llkk   16 (25)
+                      .+||++++++|+.
+T Consensus        57 ~~r~~~~~~ll~~   69 (77)
+T 4WJW_A           57 KKQRNHFKSIQAK   69 (77)
+T ss_dssp             HHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHHHH
+Confidence            3678888877754
+
+
+No 33
+>3KOZ_E ORNITHINE 4,5 AMINOMUTASE OraE, ORNITHINE; D-ornithine 4, 5 aminomutase (OAM); HET: B12, 5AD, Z97; 2.8A {Clostridium sticklandii}
+Probab=23.81  E-value=68  Score=19.03  Aligned_cols=15  Identities=20%  Similarity=0.357  Sum_probs=11.1  Template_Neff=4.600
+
+Q <unknown          1 EDDIERRKEVESILK   15 (25)
+Q Consensus         1 eD~lERr~Eve~llk   15 (25)
+                      .||.+||+.+.+|-.
+T Consensus         5 ~df~~rr~~l~~l~D   19 (121)
+T 3KOZ_E            5 DDFQQRRAHLANLSD   19 (121)
+T ss_pred             HHHHHHHHHHhcCCC
+Confidence            378899988877643
+
+
+No 34
+>3KP1_H D-ornithine aminomutase E component, D-ornithine; D-ornithine 4, 5 aminomutase (OAM); HET: B12, 5AD, PLP; 2.01A {Clostridium sticklandii}
+Probab=23.81  E-value=68  Score=19.03  Aligned_cols=15  Identities=20%  Similarity=0.357  Sum_probs=10.8  Template_Neff=4.600
+
+Q <unknown          1 EDDIERRKEVESILK   15 (25)
+Q Consensus         1 eD~lERr~Eve~llk   15 (25)
+                      .||.+||+.+.+|-.
+T Consensus         5 ~df~~rr~~l~~l~D   19 (121)
+T 3KP1_H            5 DDFQQRRAHLANLSD   19 (121)
+T ss_dssp             -CHHHHTGGGTTCCH
+T ss_pred             HHHHHHHHHHhcCCC
+Confidence            378899988877643
+
+
+No 35
+>6GAW_Bv Mitochondrial ribosomal protein L12, Mitochondrial; translation initiation, initiation factor IF2; HET: GTP, MG, SPM, GSP, FME, 5GP; 3.2A {Sus scrofa}
+Probab=23.27  E-value=71  Score=20.73  Aligned_cols=21  Identities=24%  Similarity=0.438  Sum_probs=17.3  Template_Neff=4.500
+
+Q <unknown          4 IERRKEVESILKKNSDWIWDW   24 (25)
+Q Consensus         4 lERr~Eve~llkknadWiwDW   24 (25)
+                      .+|-++|+.-|+|-..||-+|
+T Consensus       115 ~~Re~~Ia~nmaKmpk~i~~~  135 (222)
+T 6GAW_Bv         115 QAREQLIEECMAKMPQMIENW  135 (222)
+T ss_pred             HHHHHHHHHHHHhhHHHHHHH
+Confidence            467788888899998888877
+
+
+No 36
+>6AAG_G Transmembrane protein 184 homolog YKR051W,Autophagy-related; VACUOLE AUTOPHAGY, MEMBRANE PROTEIN; 2.445A {Saccharomyces cerevisiae (strain ATCC 204508 / S288c)}
+Probab=23.24  E-value=71  Score=18.45  Aligned_cols=19  Identities=26%  Similarity=0.263  Sum_probs=14.6  Template_Neff=6.300
+
+Q <unknown          3 DIERRKEVESILKKNSDWI   21 (25)
+Q Consensus         3 ~lERr~Eve~llkknadWi   21 (25)
+                      +-+|..|.+.+++|..+.|
+T Consensus        35 ~e~R~~e~~~i~~k~P~kI   53 (140)
+T 6AAG_G           35 FEKRKAESERIADRFPNRI   53 (140)
+T ss_dssp             HHHHHHHHHHHHHHSTTEE
+T ss_pred             HHHHHHHHHHHHHHCCCcc
+Confidence            4578899999988876654
+
+
+No 37
+>2DIT_A HIV TAT specific factor 1; structural genomics, RRM_1 domain, HIV; NMR {Homo sapiens} SCOP: d.58.7.1
+Probab=23.12  E-value=72  Score=14.21  Aligned_cols=15  Identities=20%  Similarity=0.011  Sum_probs=8.7  Template_Neff=11.600
+
+Q <unknown          2 DDIERRKEVESILKK   16 (25)
+Q Consensus         2 D~lERr~Eve~llkk   16 (25)
+                      ||.+...++..++.+
+T Consensus        35 ~~~~~~~~l~~~f~~   49 (112)
+T 2DIT_A           35 VLNEIREDLRVECSK   49 (112)
+T ss_pred             HHHHHHHHHHHHHHh
+Confidence            556666666655543
+
+
+No 38
+>2R2V_A GCN4 leucine zipper; Coiled coils, anti-parallel tetramer, protein; HET: ACT, CIT; 1.9A {SACCHAROMYCES CEREVISIAE} SCOP: h.1.3.1
+Probab=23.04  E-value=72  Score=15.80  Aligned_cols=11  Identities=18%  Similarity=0.229  Sum_probs=8.3  Template_Neff=3.200
+
+Q <unknown          9 EVESILKKNSD   19 (25)
+Q Consensus         9 Eve~llkknad   19 (25)
+                      .||.++.+|++
+T Consensus         9 KvEeLl~~n~~   19 (34)
+T 2R2V_A            9 KLEEVASKLYH   19 (34)
+T ss_dssp             HHHHHHHHHHH
+T ss_pred             HHHHHHHHHHH
+Confidence            47788888875
+
+
+No 39
+>4EOY_A Microtubule-associated protein 1 light chain; Ubiquitin fold, TRANSPORT PROTEIN; HET: ACT; 2.22A {Plasmodium falciparum}
+Probab=23.04  E-value=72  Score=17.75  Aligned_cols=19  Identities=26%  Similarity=0.157  Sum_probs=14.5  Template_Neff=7.000
+
+Q <unknown          3 DIERRKEVESILKKNSDWI   21 (25)
+Q Consensus         3 ~lERr~Eve~llkknadWi   21 (25)
+                      +-+|..|...++++..+.|
+T Consensus        14 ~e~R~~e~~~~~~k~p~kI   32 (128)
+T 4EOY_A           14 FENRVAETHKIRSKYPNRI   32 (128)
+T ss_dssp             HHHHHHHHHHHHHHCTTEE
+T ss_pred             HHHHHHHHHHHHHhCCCce
+Confidence            4578889998888877654
+
+
+No 40
+>4CO7_B GAMMA-AMINOBUTYRIC ACID RECEPTOR-ASSOCIATED PROTEIN-LIKE 2; PROTEIN TRANSPORT, AUTOPHAGY, BETA-GRASP FOLD; 2.0A {HOMO SAPIENS}
+Probab=22.32  E-value=76  Score=17.27  Aligned_cols=19  Identities=26%  Similarity=0.125  Sum_probs=14.2  Template_Neff=7.300
+
+Q <unknown          3 DIERRKEVESILKKNSDWI   21 (25)
+Q Consensus         3 ~lERr~Eve~llkknadWi   21 (25)
+                      +-+|..|.+.++++..+.|
+T Consensus        13 ~~~R~~e~~~~~~k~p~~i   31 (119)
+T 4CO7_B           13 LEHRCVESAKIRAKYPDRV   31 (119)
+T ss_dssp             HHHHHHHHHHHHHHCTTEE
+T ss_pred             HHHHHHHHHHHHHHCCCce
+Confidence            4578888888888876654
+
+
+No 41
+>5MS5_A Microtubule-associated proteins 1A/1B light chain; Autophagy / Host-pathogen interaction /; HET: SO4; 1.53A {Legionella pneumophila}
+Probab=22.23  E-value=77  Score=18.14  Aligned_cols=19  Identities=21%  Similarity=0.167  Sum_probs=14.3  Template_Neff=6.500
+
+Q <unknown          3 DIERRKEVESILKKNSDWI   21 (25)
+Q Consensus         3 ~lERr~Eve~llkknadWi   21 (25)
+                      +-+|..|+++++.+..+.|
+T Consensus        31 ~e~R~~e~~~i~~k~p~kI   49 (137)
+T 5MS5_A           31 FEQRVEDVRLIREQHPTKI   49 (137)
+T ss_dssp             HHHHHHHHHHHHHHCTTEE
+T ss_pred             HHHHHHHHHHHHHHCCCce
+Confidence            4568889999888876654
+
+
+No 42
+>2V6Y_B AAA FAMILY ATPASE, P60 KATANIN; MIT, VPS4, ARCHAEA, AAA-ATPASE, ATP-BINDING; HET: SRT; 2.4A {SULFOLOBUS SOLFATARICUS}
+Probab=22.06  E-value=78  Score=14.91  Aligned_cols=15  Identities=20%  Similarity=0.191  Sum_probs=6.2  Template_Neff=9.300
+
+Q <unknown          3 DIERRKEVESILKKN   17 (25)
+Q Consensus         3 ~lERr~Eve~llkkn   17 (25)
+                      |++|-..+...++..
+T Consensus        64 ~~~Rae~Lk~~~~~~   78 (83)
+T 2V6Y_B           64 YKKRISYLEKVLPAS   78 (83)
+T ss_dssp             HHHHHHHHTTCC---
+T ss_pred             HHHHHHHHHHHhhhc
+Confidence            455555555554443
+
+
+No 43
+>6JMF_A Tyrosine-protein kinase Fes/Fps (E.C.2.7.10.2); FES, c-Fes, tyrosine protein kinase; HET: SO4, 9FC; 2.0A {Homo sapiens}
+Probab=21.88  E-value=79  Score=17.62  Aligned_cols=15  Identities=33%  Similarity=0.658  Sum_probs=11.1  Template_Neff=11.300
+
+Q <unknown          7 RKEVESILKKNSDWI   21 (25)
+Q Consensus         7 r~Eve~llkknadWi   21 (25)
+                      |+|+|.+|.++.++.
+T Consensus        20 ~~~~~~~l~~~g~fl   34 (375)
+T 6JMF_A           20 RAEVAELLVHSGDFL   34 (375)
+T ss_pred             HHHHHHHhCCCCeEE
+Confidence            678888888766654
+
+
+No 44
+>5FVK_A VACUOLAR PROTEIN SORTING-ASSOCIATED PROTEIN 4; HYDROLASE, VPS4, VFA1, MIT DOMAIN; 1.658A {SACCHAROMYCES CEREVISIAE}
+Probab=21.33  E-value=82  Score=14.51  Aligned_cols=16  Identities=13%  Similarity=0.370  Sum_probs=8.2  Template_Neff=9.700
+
+Q <unknown          2 DDIERRKEVESILKKN   17 (25)
+Q Consensus         2 D~lERr~Eve~llkkn   17 (25)
+                      .|++|-+++...++.+
+T Consensus        62 ~~~~Rae~Lk~~~~~~   77 (82)
+T 5FVK_A           62 EYLNRAEQLKKHLESE   77 (82)
+T ss_dssp             HHHHHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHHHHHHH
+Confidence            3555555555555443
+
+
+No 45
+>4FXX_B Splicing factor 1; splicing factor 1, coiled-coil, pre-mRNA; HET: MLI, IMD; 2.4801A {Homo sapiens}
+Probab=21.31  E-value=82  Score=17.85  Aligned_cols=17  Identities=24%  Similarity=0.427  Sum_probs=13.5  Template_Neff=5.800
+
+Q <unknown          4 IERRKEVESILKKNSDW   20 (25)
+Q Consensus         4 lERr~Eve~llkknadW   20 (25)
+                      .||++-|+.++|.|..+
+T Consensus        87 ~ER~~lI~~~~k~~P~f  103 (112)
+T 4FXX_B           87 EERHNLITEMVALNPDF  103 (112)
+T ss_dssp             HHHHHHHHHHHHHCTTC
+T ss_pred             HHHHHHHHHHHHHCCCC
+Confidence            47888899999988764
+
+
+No 46
+>6NKC_B Lipase Lip_vut1; Lipase, goat rumen metagenomics, HYDROLASE; HET: MSE; 1.631A {metagenome}
+Probab=21.20  E-value=83  Score=15.02  Aligned_cols=21  Identities=10%  Similarity=-0.309  Sum_probs=9.6  Template_Neff=12.000
+
+Q <unknown          5 ERRKEVESILKKNSDWIWDWS   25 (25)
+Q Consensus         5 ERr~Eve~llkknadWiwDWS   25 (25)
+                      +....+..+++.-..|.|+|+
+T Consensus       158 ~~~~~~~~~~~~~~~~~~~~~  178 (181)
+T 6NKC_B          158 FSSKVNALIKDGLTASGKHHH  178 (181)
+T ss_dssp             SCHHHHHHHHHHHTCC-----
+T ss_pred             cCHHHHHHHHHHHhhcCCCCC
+Confidence            344555666666666666653
+
+
+No 47
+>5YIR_A Gamma-aminobutyric acid receptor-associated protein, Ankyrin-2; Autophagy, PROTEIN BINDING; HET: NI; 2.75A {Mus musculus}
+Probab=20.58  E-value=87  Score=16.99  Aligned_cols=17  Identities=47%  Similarity=0.382  Sum_probs=12.9  Template_Neff=7.300
+
+Q <unknown          3 DIERRKEVESILKKNSD   19 (25)
+Q Consensus         3 ~lERr~Eve~llkknad   19 (25)
+                      +-+|..|.+.++++..+
+T Consensus        11 ~~~R~~e~~~~~~k~p~   27 (117)
+T 5YIR_A           11 FEKRRSEGEKIRKKYPD   27 (117)
+T ss_dssp             HHHHHHHHHHHHHHCTT
+T ss_pred             HHHHHHHHHHHHHHCCC
+Confidence            45788888888877655
+
+
+No 48
+>1FAV_A HIV-1 ENVELOPE PROTEIN CHIMERA/TRANSMEMBRANE GLYCOPROTEIN; HIV-1, gp41, inhibitor, Viral protein; 3.0A {Human immunodeficiency virus 1} SCOP: h.3.2.1
+Probab=20.58  E-value=87  Score=17.56  Aligned_cols=11  Identities=36%  Similarity=0.459  Sum_probs=8.3  Template_Neff=4.200
+
+Q <unknown          9 EVESILKKNSD   19 (25)
+Q Consensus         9 Eve~llkknad   19 (25)
+                      .||.||.+|++
+T Consensus         5 kve~l~~~~~~   15 (79)
+T 1FAV_A            5 KIEEILSKIYH   15 (79)
+T ss_dssp             HHHHHHHHHHH
+T ss_pred             HHHHHHHhcHH
+Confidence            47888888765
+
+
+No 49
+>5D94_A Microtubule-associated proteins 1A/1B light chain; FYCO1, autophagy, LC3, LIR, PROTEIN; 1.53A {Homo sapiens}
+Probab=20.45  E-value=88  Score=17.58  Aligned_cols=19  Identities=21%  Similarity=0.167  Sum_probs=14.0  Template_Neff=6.800
+
+Q <unknown          3 DIERRKEVESILKKNSDWI   21 (25)
+Q Consensus         3 ~lERr~Eve~llkknadWi   21 (25)
+                      +-+|..|.+++.++..+.|
+T Consensus        18 ~e~R~~e~~~i~~k~p~kV   36 (130)
+T 5D94_A           18 FEQRVEDVRLIREQHPTKI   36 (130)
+T ss_dssp             HHHHHHHHHHHHHHCTTEE
+T ss_pred             HHHHHHHHHHHHHHCCCCe
+Confidence            4578888888888776654
+
+
+No 50
+>6JHO_A Cag pathogenicity island protein (Cag6); Complex crystal structure  CagZ; 2.1A {Helicobacter pylori 26695}
+Probab=20.32  E-value=89  Score=20.83  Aligned_cols=17  Identities=29%  Similarity=0.429  Sum_probs=14.0  Template_Neff=1.400
+
+Q <unknown          1 EDDIERRKEVESILKKN   17 (25)
+Q Consensus         1 eD~lERr~Eve~llkkn   17 (25)
+                      +|||+|-+|+..-|.+|
+T Consensus        55 qdFLr~VQeLrInm~kn   71 (208)
+T 6JHO_A           55 QDFLRRVQELRINMQKN   71 (208)
+T ss_dssp             HHHHHHHHHHHHHHHHT
+T ss_pred             HHHHHHHHHHHHHchhc
+Confidence            58999999988877776
+
+
+No 51
+>6SWS_A Phosphoinositide 3-kinase adapter protein 1; DBB, TIG/IPT, transcription factor, transcription; 3.0A {Homo sapiens}
+Probab=20.31  E-value=89  Score=17.96  Aligned_cols=17  Identities=12%  Similarity=0.259  Sum_probs=12.9  Template_Neff=5.400
+
+Q <unknown          3 DIERRKEVESILKKNSD   19 (25)
+Q Consensus         3 ~lERr~Eve~llkknad   19 (25)
+                      |--+-+|+++||++-+|
+T Consensus        87 yyt~m~el~~lL~~~~~  103 (113)
+T 6SWS_A           87 YYTDMEEIGNLLSNAAN  103 (113)
+T ss_dssp             EECHHHHHHHHHTTSSS
+T ss_pred             EECCHHHHHHHHHhcCC
+Confidence            44567899999997665
+
+
+No 52
+>6SWS_D Phosphoinositide 3-kinase adapter protein 1; DBB, TIG/IPT, transcription factor, transcription; 3.0A {Homo sapiens}
+Probab=20.31  E-value=89  Score=17.96  Aligned_cols=17  Identities=12%  Similarity=0.259  Sum_probs=12.9  Template_Neff=5.400
+
+Q <unknown          3 DIERRKEVESILKKNSD   19 (25)
+Q Consensus         3 ~lERr~Eve~llkknad   19 (25)
+                      |--+-+|+++||++-+|
+T Consensus        87 yyt~m~el~~lL~~~~~  103 (113)
+T 6SWS_D           87 YYTDMEEIGNLLSNAAN  103 (113)
+T ss_dssp             EECHHHHHHHHHHTCSC
+T ss_pred             EECCHHHHHHHHHhcCC
+Confidence            44567899999997665
+
+
+No 53
+>4IN3_A Chitin biosynthesis protein CHS5, Protein; OB fold, TPR domain, Trans-Golgi; 2.936A {Saccharomyces cerevisiae}
+Probab=20.22  E-value=90  Score=16.42  Aligned_cols=12  Identities=33%  Similarity=0.482  Sum_probs=8.8  Template_Neff=6.500
+
+Q <unknown          5 ERRKEVESILKK   16 (25)
+Q Consensus         5 ERr~Eve~llkk   16 (25)
+                      +|++++.++|++
+T Consensus        63 ~r~~~i~~ll~~   74 (82)
+T 4IN3_A           63 KQRNHFKSIQAK   74 (82)
+T ss_dssp             HHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHHH
+Confidence            577888877764
+
+
+No 54
+>3IG4_B Xaa-pro aminopeptidase; aminopeptidase, bacillus anthracis, CSGID, Hydrolase; HET: MN, SO4, MSE; 2.89A {Bacillus anthracis}
+Probab=20.10  E-value=91  Score=19.19  Aligned_cols=17  Identities=12%  Similarity=0.094  Sum_probs=12.7  Template_Neff=9.300
+
+Q <unknown          1 EDDIERRKEVESILKKN   17 (25)
+Q Consensus         1 eD~lERr~Eve~llkkn   17 (25)
+                      +.|.+||+.+-+.|+++
+T Consensus         4 ~~~~~rr~~l~~~~~~~   20 (427)
+T 3IG4_B            4 KFFAQNRERLVNTLPDE   20 (427)
+T ss_dssp             HHHHHHHHHHHTTSCSS
+T ss_pred             HHHHHHHHHHHhhCCCC
+Confidence            35788999888877643
+
+
+No 55
+>3VW4_A Rep/DNA; helix-turn-helix, specific DNA-binding and unwinding; HET: SO4; 2.7A {Escherichia coli}
+Probab=20.08  E-value=91  Score=18.11  Aligned_cols=16  Identities=19%  Similarity=0.185  Sum_probs=13.3  Template_Neff=5.700
+
+Q <unknown          8 KEVESILKKNSDWIWD   23 (25)
+Q Consensus         8 ~Eve~llkknadWiwD   23 (25)
+                      .||..+-|.-+.|+|.
+T Consensus        57 ~EVk~iAKSIakWtW~   72 (128)
+T 3VW4_A           57 AECRAIGKSIAKYTHR   72 (128)
+T ss_dssp             HHHHHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHHHHHhh
+Confidence            5888888999999884
+
+
+No 56
+>3VW4_B Rep/DNA; helix-turn-helix, specific DNA-binding and unwinding; HET: SO4; 2.7A {Escherichia coli}
+Probab=20.08  E-value=91  Score=18.11  Aligned_cols=16  Identities=19%  Similarity=0.185  Sum_probs=13.3  Template_Neff=5.700
+
+Q <unknown          8 KEVESILKKNSDWIWD   23 (25)
+Q Consensus         8 ~Eve~llkknadWiwD   23 (25)
+                      .||..+-|.-+.|+|.
+T Consensus        57 ~EVk~iAKSIakWtW~   72 (128)
+T 3VW4_B           57 AECRAIGKSIAKYTHR   72 (128)
+T ss_dssp             HHHHHHHHHHHHHHHH
+T ss_pred             HHHHHHHHHHHHHHhh
+Confidence            5888888999999884
+
+
+No 57
+>5L83_A ASP-TRP-GLU-ILE-VAL, Autophagy-related protein; Autophagy-related protein 8, ATG8 interacting; HET: SO4, EDO; 1.9A {Solanum tuberosum}
+Probab=20.05  E-value=91  Score=16.86  Aligned_cols=19  Identities=32%  Similarity=0.270  Sum_probs=14.1  Template_Neff=7.200
+
+Q <unknown          3 DIERRKEVESILKKNSDWI   21 (25)
+Q Consensus         3 ~lERr~Eve~llkknadWi   21 (25)
+                      +-+|..|.++++++..+.|
+T Consensus        10 ~e~R~~e~~~~~~k~p~kI   28 (112)
+T 5L83_A           10 LERRQAEAARIREKYPDRI   28 (112)
+T ss_dssp             HHHHHHHHHHHHHHSTTEE
+T ss_pred             HHHHHHHHHHHHHHCCCce
+Confidence            4578888888888777654
+
+

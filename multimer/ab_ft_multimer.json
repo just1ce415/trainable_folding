@@ -1,0 +1,6774 @@
+[
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6fe4.cif",
+        "chains": [
+            "F",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ch9.cif",
+        "chains": [
+            "Q",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7a17.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1nca.cif",
+        "chains": [
+            "H",
+            "L",
+            "N"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7mxl.cif",
+        "chains": [
+            "J",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6hga.cif",
+        "chains": [
+            "H",
+            "L",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6oor.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6bdz.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7dc8.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6mto.cif",
+        "chains": [
+            "H",
+            "L",
+            "T"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3x3f.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4w2o.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6x08.cif",
+        "chains": [
+            "K",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5fhc.cif",
+        "chains": [
+            "A",
+            "B",
+            "J"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3ulu.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4ypg.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6vel.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5lbs.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3vi3.cif",
+        "chains": [
+            "F",
+            "E",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5x0t.cif",
+        "chains": [
+            "A",
+            "B",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3ks0.cif",
+        "chains": [
+            "J",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2vwe.cif",
+        "chains": [
+            "E",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4ers.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2vc2.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2x89.cif",
+        "chains": [
+            "A",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6z2m.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4orz.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1sy6.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6uye.cif",
+        "chains": [
+            "G",
+            "J",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7vux.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6bf4.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4dn4.cif",
+        "chains": [
+            "H",
+            "M"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6o3c.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ur5.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5ebw.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7c88.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3rvw.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6oq5.cif",
+        "chains": [
+            "F",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4uao.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4k2u.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6mvl.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4xph.cif",
+        "chains": [
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5kov.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5u8q.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6urh.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1ezv.cif",
+        "chains": [
+            "X",
+            "Y",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1j5o.cif",
+        "chains": [
+            "L",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7eow.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6yye.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4jhw.cif",
+        "chains": [
+            "H",
+            "F"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4yqx.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5fb8.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6wzk.cif",
+        "chains": [
+            "A",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ywc.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4xmn.cif",
+        "chains": [
+            "H",
+            "L",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5dmi.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4yga.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6vi0.cif",
+        "chains": [
+            "E",
+            "D",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7dm1.cif",
+        "chains": [
+            "D",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1jhl.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5lsp.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6att.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3sob.cif",
+        "chains": [
+            "H",
+            "L",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6x07.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7e9g.cif",
+        "chains": [
+            "E",
+            "R"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6kyz.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7jn5.cif",
+        "chains": [
+            "H",
+            "F"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2ltq.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2nyy.cif",
+        "chains": [
+            "D",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4ij3.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3pnw.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6jep.cif",
+        "chains": [
+            "H",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5n88.cif",
+        "chains": [
+            "A",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6cde.cif",
+        "chains": [
+            "7",
+            "2"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5d1x.cif",
+        "chains": [
+            "B",
+            "A",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5xku.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4lhj.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4qo1.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5gxb.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4aei.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4lde.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1ob1.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5ies.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6xdg.cif",
+        "chains": [
+            "B",
+            "D",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2h3n.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7czd.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1ncb.cif",
+        "chains": [
+            "H",
+            "N"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6p8n.cif",
+        "chains": [
+            "B",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6iut.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5d1q.cif",
+        "chains": [
+            "B",
+            "A",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1afv.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6cuf.cif",
+        "chains": [
+            "8",
+            "2"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6djp.cif",
+        "chains": [
+            "C",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4yjz.cif",
+        "chains": [
+            "L",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4lvn.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4yzf.cif",
+        "chains": [
+            "E",
+            "F",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5d9q.cif",
+        "chains": [
+            "F",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4ki5.cif",
+        "chains": [
+            "E",
+            "F",
+            "M"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7kq7.cif",
+        "chains": [
+            "H",
+            "L",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5umi.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4o02.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5l0q.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5c0r.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5ja9.cif",
+        "chains": [
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7m6d.cif",
+        "chains": [
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3ezj.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5xwd.cif",
+        "chains": [
+            "H",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4dag.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4wgv.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6fxn.cif",
+        "chains": [
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7lqv.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ibb.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7neg.cif",
+        "chains": [
+            "H",
+            "L",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5jyl.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5tz2.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6nfj.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6j6y.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5jhl.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6k3m.cif",
+        "chains": [
+            "A",
+            "H"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7cgw.cif",
+        "chains": [
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6t3j.cif",
+        "chains": [
+            "C",
+            "D",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5hbt.cif",
+        "chains": [
+            "D",
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5dhv.cif",
+        "chains": [
+            "H",
+            "M"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5ggt.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5gru.cif",
+        "chains": [
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6cmg.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7epu.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7mwx.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5cez.cif",
+        "chains": [
+            "H",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6rpj.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6i8g.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1tpx.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5mwn.cif",
+        "chains": [
+            "N",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6fax.cif",
+        "chains": [
+            "H",
+            "L",
+            "R"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7oan.cif",
+        "chains": [
+            "F",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5tqq.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4yk4.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5yy5.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7lbe.cif",
+        "chains": [
+            "H",
+            "G",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5vxj.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6xsw.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4kml.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5c2u.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3t2n.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6xq0.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3jwo.cif",
+        "chains": [
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4c57.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5esz.cif",
+        "chains": [
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5my6.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1e6j.cif",
+        "chains": [
+            "H",
+            "L",
+            "P"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4u6h.cif",
+        "chains": [
+            "A",
+            "B",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4leo.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6vy5.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4wv1.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1fbi.cif",
+        "chains": [
+            "H",
+            "L",
+            "X"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7lse.cif",
+        "chains": [
+            "H",
+            "L",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2vyr.cif",
+        "chains": [
+            "E",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7sht.cif",
+        "chains": [
+            "H",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4xt1.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3g9a.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5tjw.cif",
+        "chains": [
+            "K",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6r0x.cif",
+        "chains": [
+            "A",
+            "B",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1mhp.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6pi7.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5hdq.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6e63.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3j5m.cif",
+        "chains": [
+            "D",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5u4l.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ktr.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1ots.cif",
+        "chains": [
+            "C",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3wlw.cif",
+        "chains": [
+            "C",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2r4r.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6oy4.cif",
+        "chains": [
+            "D",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6o3a.cif",
+        "chains": [
+            "B",
+            "A",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2aep.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7e5r.cif",
+        "chains": [
+            "Q",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5ku2.cif",
+        "chains": [
+            "7",
+            "3"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7bsc.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6o3b.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4bz2.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7php.cif",
+        "chains": [
+            "N",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5m94.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5lx9.cif",
+        "chains": [
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4i77.cif",
+        "chains": [
+            "H",
+            "L",
+            "Z"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5ldn.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4u6v.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2cmr.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5b8c.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7e8c.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7chy.cif",
+        "chains": [
+            "H",
+            "L",
+            "I"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ukt.cif",
+        "chains": [
+            "F",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5dum.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7cah.cif",
+        "chains": [
+            "E",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7e86.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6raf.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5uqy.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7c6a.cif",
+        "chains": [
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4idj.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6umx.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5vl7.cif",
+        "chains": [
+            "H",
+            "L",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7dkj.cif",
+        "chains": [
+            "C",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6xlq.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6cxy.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3p30.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6awn.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7dwt.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6nmr.cif",
+        "chains": [
+            "A",
+            "B",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5mp2.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7mkl.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3iyw.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6iap.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6h7j.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7mww.cif",
+        "chains": [
+            "H",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6dzv.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5cba.cif",
+        "chains": [
+            "A",
+            "B",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6lz9.cif",
+        "chains": [
+            "H",
+            "L",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6djp.cif",
+        "chains": [
+            "E",
+            "F",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6cvk.cif",
+        "chains": [
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2zjs.cif",
+        "chains": [
+            "H",
+            "L",
+            "Y"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6snh.cif",
+        "chains": [
+            "H",
+            "L",
+            "X"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4hkx.cif",
+        "chains": [
+            "A",
+            "B",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7lbe.cif",
+        "chains": [
+            "F",
+            "E",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ck9.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6idi.cif",
+        "chains": [
+            "H",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2xqy.cif",
+        "chains": [
+            "G",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4uif.cif",
+        "chains": [
+            "G",
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4rrp.cif",
+        "chains": [
+            "G",
+            "A",
+            "M"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6tou.cif",
+        "chains": [
+            "A",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1ar1.cif",
+        "chains": [
+            "C",
+            "D",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7sob.cif",
+        "chains": [
+            "G",
+            "I",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4ala.cif",
+        "chains": [
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4g3y.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6rlo.cif",
+        "chains": [
+            "A",
+            "B",
+            "I"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6obe.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7apj.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4lhq.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5fv1.cif",
+        "chains": [
+            "L",
+            "V"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7azb.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7p40.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4s10.cif",
+        "chains": [
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1a2y.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4dgi.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6x87.cif",
+        "chains": [
+            "A",
+            "B",
+            "X"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3o2d.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5grj.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5igx.cif",
+        "chains": [
+            "H",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7kpg.cif",
+        "chains": [
+            "H",
+            "L",
+            "S"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5mje.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3ngb.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7l5b.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1g9m.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6xxv.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6vy2.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4ut9.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6mlm.cif",
+        "chains": [
+            "E",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1fe8.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4jpv.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4nc0.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4p9h.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7kqg.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6i07.cif",
+        "chains": [
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7d4g.cif",
+        "chains": [
+            "N",
+            "G",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6hhd.cif",
+        "chains": [
+            "D",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5dfz.cif",
+        "chains": [
+            "E",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6oq5.cif",
+        "chains": [
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6gs1.cif",
+        "chains": [
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1n8z.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4krp.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2xqb.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5toj.cif",
+        "chains": [
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5wt9.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5ja8.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6n5d.cif",
+        "chains": [
+            "C",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ogx.cif",
+        "chains": [
+            "C",
+            "D",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6t3j.cif",
+        "chains": [
+            "A",
+            "B",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7c61.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7ej4.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5ush.cif",
+        "chains": [
+            "D",
+            "E",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ywd.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7ce2.cif",
+        "chains": [
+            "Z",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3uyp.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7jgj.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6w41.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4y5v.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5uhy.cif",
+        "chains": [
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3ld8.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4m48.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7e9b.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5k9o.cif",
+        "chains": [
+            "A",
+            "B",
+            "F"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6c9u.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7k9z.cif",
+        "chains": [
+            "H",
+            "L",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7e7x.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4d3c.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1hez.cif",
+        "chains": [
+            "B",
+            "A",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5xxy.cif",
+        "chains": [
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3p0g.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5d1z.cif",
+        "chains": [
+            "D",
+            "C",
+            "I"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5t1d.cif",
+        "chains": [
+            "H",
+            "L",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6waq.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6wjl.cif",
+        "chains": [
+            "F",
+            "J",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4nc2.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ccb.cif",
+        "chains": [
+            "D",
+            "E",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2ltq.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6w16.cif",
+        "chains": [
+            "H",
+            "L",
+            "F"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6h5n.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5w4l.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6whk.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7dst.cif",
+        "chains": [
+            "E",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7lr3.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5w1k.cif",
+        "chains": [
+            "D",
+            "C",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5mo9.cif",
+        "chains": [
+            "H",
+            "L",
+            "X"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2ltq.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6oan.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6qup.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7bnv.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6lz2.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7d3k.cif",
+        "chains": [
+            "H",
+            "L",
+            "2"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2w9e.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7cvy.cif",
+        "chains": [
+            "D",
+            "E",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6z06.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6cse.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3thm.cif",
+        "chains": [
+            "H",
+            "L",
+            "F"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4g7v.cif",
+        "chains": [
+            "H",
+            "L",
+            "S"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6u54.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5occ.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2h32.cif",
+        "chains": [
+            "H",
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6w4s.cif",
+        "chains": [
+            "H",
+            "L",
+            "F"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6rqm.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2b2x.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5kel.cif",
+        "chains": [
+            "C",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7a25.cif",
+        "chains": [
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3v6o.cif",
+        "chains": [
+            "C",
+            "E",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4hjj.cif",
+        "chains": [
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1k4c.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7dha.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6obg.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6uqr.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5ec1.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7rah.cif",
+        "chains": [
+            "D",
+            "C",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3k7u.cif",
+        "chains": [
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1jrh.cif",
+        "chains": [
+            "H",
+            "L",
+            "I"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6xzf.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5tud.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6xw4.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7klg.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6xw7.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7lx5.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7d5p.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5lwy.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ye3.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7mxl.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3w11.cif",
+        "chains": [
+            "C",
+            "D",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6do1.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6v8z.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7rks.cif",
+        "chains": [
+            "H",
+            "L",
+            "R"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4ut6.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6o9h.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7mzf.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7d5z.cif",
+        "chains": [
+            "D",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ui1.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4dk3.cif",
+        "chains": [
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6otc.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6zbv.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7c2l.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1nsn.cif",
+        "chains": [
+            "H",
+            "L",
+            "S"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3tyg.cif",
+        "chains": [
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2r0l.cif",
+        "chains": [
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6tyl.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7k8m.cif",
+        "chains": [
+            "A",
+            "B",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5da0.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5ob5.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4p59.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4oqt.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5xj3.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3vg9.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4fqj.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6v8z.cif",
+        "chains": [
+            "D",
+            "E",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3ma9.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6vyh.cif",
+        "chains": [
+            "D",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6weq.cif",
+        "chains": [
+            "E",
+            "F",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3stb.cif",
+        "chains": [
+            "A",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6mft.cif",
+        "chains": [
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1uj3.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6aod.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6txz.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7vnb.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7kew.cif",
+        "chains": [
+            "G",
+            "J",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1ndg.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2xtj.cif",
+        "chains": [
+            "D",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7lx5.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4rx4.cif",
+        "chains": [
+            "A",
+            "D",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5dfv.cif",
+        "chains": [
+            "C",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5y7z.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1lk3.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6z43.cif",
+        "chains": [
+            "X",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5veb.cif",
+        "chains": [
+            "A",
+            "B",
+            "X"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6wo5.cif",
+        "chains": [
+            "B",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6bkb.cif",
+        "chains": [
+            "H",
+            "L",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6uda.cif",
+        "chains": [
+            "C",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6sc5.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4wen.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1s78.cif",
+        "chains": [
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7bxa.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4k8r.cif",
+        "chains": [
+            "D",
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5vak.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7r98.cif",
+        "chains": [
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7jvb.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4kfz.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7kdd.cif",
+        "chains": [
+            "D",
+            "E",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6gci.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3j70.cif",
+        "chains": [
+            "A",
+            "B",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6mi2.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2qqk.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7sob.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5jds.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4tvp.cif",
+        "chains": [
+            "D",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7nqk.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2xra.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5gs0.cif",
+        "chains": [
+            "D",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1gc1.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7cr5.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5boz.cif",
+        "chains": [
+            "G",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6qgw.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7b17.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1ztx.cif",
+        "chains": [
+            "H",
+            "L",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5u68.cif",
+        "chains": [
+            "E",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7c8v.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4hcr.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2a0l.cif",
+        "chains": [
+            "D",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6q20.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7myz.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6was.cif",
+        "chains": [
+            "A",
+            "B",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5d1x.cif",
+        "chains": [
+            "D",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1bql.cif",
+        "chains": [
+            "H",
+            "L",
+            "Y"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7dw9.cif",
+        "chains": [
+            "S",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5vyf.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7rah.cif",
+        "chains": [
+            "B",
+            "A",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6w7s.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7cm4.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ui1.cif",
+        "chains": [
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6zcz.cif",
+        "chains": [
+            "F",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7now.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4gft.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6fla.cif",
+        "chains": [
+            "A",
+            "B",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2ltq.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6v4n.cif",
+        "chains": [
+            "A",
+            "B",
+            "I"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4grw.cif",
+        "chains": [
+            "H",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7kmg.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6vc9.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4ht1.cif",
+        "chains": [
+            "H",
+            "L",
+            "T"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3d85.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2vxt.cif",
+        "chains": [
+            "H",
+            "L",
+            "I"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6q0e.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6h1f.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4bz1.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3jcb.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5tl5.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4lgr.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6z1v.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5gmq.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7kbb.cif",
+        "chains": [
+            "H",
+            "L",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5kel.cif",
+        "chains": [
+            "H",
+            "L",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4liq.cif",
+        "chains": [
+            "H",
+            "L",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6xpx.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6u9s.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7epb.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5wdu.cif",
+        "chains": [
+            "H",
+            "I",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5nj6.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6xcj.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6uig.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7deo.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5ogi.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6h2y.cif",
+        "chains": [
+            "H",
+            "L",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5hhv.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6d6t.cif",
+        "chains": [
+            "J",
+            "I",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5x8l.cif",
+        "chains": [
+            "F",
+            "K",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7bwj.cif",
+        "chains": [
+            "H",
+            "L",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4f2m.cif",
+        "chains": [
+            "A",
+            "B",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7d6i.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7kqi.cif",
+        "chains": [
+            "A",
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7laa.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7a5r.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6k0y.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7n65.cif",
+        "chains": [
+            "C",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7a17.cif",
+        "chains": [
+            "D",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5x2m.cif",
+        "chains": [
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5g5r.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5sx4.cif",
+        "chains": [
+            "I",
+            "M"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4cdg.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7d4b.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5ken.cif",
+        "chains": [
+            "C",
+            "D",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4zxb.cif",
+        "chains": [
+            "C",
+            "D",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2ltq.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4jlr.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6xkr.cif",
+        "chains": [
+            "H",
+            "L",
+            "P"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5w9h.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7rxd.cif",
+        "chains": [
+            "N",
+            "R"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7np1.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ukj.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3ux9.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3u30.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5c1m.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5d8j.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2zch.cif",
+        "chains": [
+            "H",
+            "L",
+            "P"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7kyl.cif",
+        "chains": [
+            "H",
+            "L",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7jx3.cif",
+        "chains": [
+            "C",
+            "D",
+            "R"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ir1.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7e72.cif",
+        "chains": [
+            "A",
+            "B",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2j6e.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7joo.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4ffy.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2r29.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3v0a.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5dfw.cif",
+        "chains": [
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3raj.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1ors.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5d1z.cif",
+        "chains": [
+            "B",
+            "A",
+            "I"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6l62.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7rxc.cif",
+        "chains": [
+            "H",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5ugy.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2r6p.cif",
+        "chains": [
+            "E",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5e1h.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6apd.cif",
+        "chains": [
+            "D",
+            "E",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7jks.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6d2p.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5ucb.cif",
+        "chains": [
+            "H",
+            "L",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7bc6.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6xy2.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6j15.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7mlz.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4hwb.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5vic.cif",
+        "chains": [
+            "H",
+            "L",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6kn9.cif",
+        "chains": [
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1nma.cif",
+        "chains": [
+            "H",
+            "L",
+            "N"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7llk.cif",
+        "chains": [
+            "C",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6lyn.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4xwg.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7b3o.cif",
+        "chains": [
+            "H",
+            "L",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5te4.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5jqh.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6cde.cif",
+        "chains": [
+            "5",
+            "6",
+            "2"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6tyl.cif",
+        "chains": [
+            "E",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7jr7.cif",
+        "chains": [
+            "E",
+            "F",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3s35.cif",
+        "chains": [
+            "H",
+            "L",
+            "X"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6gjq.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4jr9.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2wub.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6b70.cif",
+        "chains": [
+            "C",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6x04.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7so9.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7vmu.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6h3t.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5f9o.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ssi.cif",
+        "chains": [
+            "F",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ddv.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6oq5.cif",
+        "chains": [
+            "E",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7b14.cif",
+        "chains": [
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3r1g.cif",
+        "chains": [
+            "H",
+            "L",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5tru.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5c8j.cif",
+        "chains": [
+            "A",
+            "B",
+            "I"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6tyb.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4nzr.cif",
+        "chains": [
+            "H",
+            "M"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1iqd.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5w42.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7a0v.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4m62.cif",
+        "chains": [
+            "H",
+            "L",
+            "S"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4f15.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1bj1.cif",
+        "chains": [
+            "J",
+            "V"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5c6t.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4g6m.cif",
+        "chains": [
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7ly3.cif",
+        "chains": [
+            "D",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6cwd.cif",
+        "chains": [
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5a3i.cif",
+        "chains": [
+            "C",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7kzb.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7kyo.cif",
+        "chains": [
+            "H",
+            "L",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6jbt.cif",
+        "chains": [
+            "H",
+            "L",
+            "F"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5ug0.cif",
+        "chains": [
+            "D",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6xpz.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2ltq.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7s11.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7shu.cif",
+        "chains": [
+            "C",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4xp5.cif",
+        "chains": [
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4ot1.cif",
+        "chains": [
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4nbx.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ir2.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5bv7.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7rnn.cif",
+        "chains": [
+            "C",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7anq.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4lqf.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6b0s.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6utk.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6iea.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1oak.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7kqh.cif",
+        "chains": [
+            "C",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5hvf.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6j71.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4zso.cif",
+        "chains": [
+            "B",
+            "A",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ln2.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6yla.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6wit.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7k9z.cif",
+        "chains": [
+            "B",
+            "A",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6qig.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5nmv.cif",
+        "chains": [
+            "H",
+            "L",
+            "K"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1qle.cif",
+        "chains": [
+            "H",
+            "L",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7k65.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5xjm.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4fp8.cif",
+        "chains": [
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3cfi.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5o2u.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6wio.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6hjx.cif",
+        "chains": [
+            "F",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4yxl.cif",
+        "chains": [
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5ngv.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7p14.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5cus.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5lhn.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3fmg.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3l95.cif",
+        "chains": [
+            "B",
+            "A",
+            "X"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7a3n.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6fn1.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7e53.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ohg.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6mb3.cif",
+        "chains": [
+            "A",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6wzj.cif",
+        "chains": [
+            "A",
+            "B",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6x06.cif",
+        "chains": [
+            "K",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5fhx.cif",
+        "chains": [
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7n0r.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6osy.cif",
+        "chains": [
+            "8",
+            "2"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6hf1.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7kej.cif",
+        "chains": [
+            "G",
+            "J",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6osh.cif",
+        "chains": [
+            "H",
+            "L",
+            "K"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5f7k.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5b71.cif",
+        "chains": [
+            "B",
+            "A",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2ltq.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2xwt.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6yio.cif",
+        "chains": [
+            "H",
+            "L",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7e3o.cif",
+        "chains": [
+            "H",
+            "L",
+            "R"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6hjy.cif",
+        "chains": [
+            "G",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3i50.cif",
+        "chains": [
+            "H",
+            "L",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5h35.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6yz5.cif",
+        "chains": [
+            "F",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6xw6.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6cuf.cif",
+        "chains": [
+            "6",
+            "2"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6n5b.cif",
+        "chains": [
+            "H",
+            "L",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ey6.cif",
+        "chains": [
+            "I",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6her.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4xp1.cif",
+        "chains": [
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5w0d.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7m8j.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4zpt.cif",
+        "chains": [
+            "A",
+            "B",
+            "R"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4uu9.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6obc.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6nb3.cif",
+        "chains": [
+            "D",
+            "E",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6gv1.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2ybr.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6elu.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5ikc.cif",
+        "chains": [
+            "B",
+            "A",
+            "M"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2iff.cif",
+        "chains": [
+            "H",
+            "Y"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1hys.cif",
+        "chains": [
+            "D",
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7c4s.cif",
+        "chains": [
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3jwd.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4wem.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6hhu.cif",
+        "chains": [
+            "G",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5w5x.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6tej.cif",
+        "chains": [
+            "C",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4tvp.cif",
+        "chains": [
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7d85.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7rxc.cif",
+        "chains": [
+            "N",
+            "K"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6rtw.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5lqb.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5gs2.cif",
+        "chains": [
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5o0w.cif",
+        "chains": [
+            "E",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5f1o.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4cad.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5w08.cif",
+        "chains": [
+            "G",
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6phb.cif",
+        "chains": [
+            "B",
+            "A",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3pgf.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7mhy.cif",
+        "chains": [
+            "M",
+            "N",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5imk.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5jz7.cif",
+        "chains": [
+            "C",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5kte.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7jx3.cif",
+        "chains": [
+            "H",
+            "R"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5nh3.cif",
+        "chains": [
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5vlp.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6x58.cif",
+        "chains": [
+            "A",
+            "B",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ejg.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3v7a.cif",
+        "chains": [
+            "E",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4ye4.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6obm.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3q3g.cif",
+        "chains": [
+            "B",
+            "A",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6xdg.cif",
+        "chains": [
+            "C",
+            "A",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4ag4.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3liz.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6z2m.cif",
+        "chains": [
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4al8.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6p4a.cif",
+        "chains": [
+            "H",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6n6b.cif",
+        "chains": [
+            "K",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6o39.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5tih.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4gms.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4lgs.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6oej.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3bgf.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6hhu.cif",
+        "chains": [
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2oz4.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6fuz.cif",
+        "chains": [
+            "N",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3p9w.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5vjo.cif",
+        "chains": [
+            "A",
+            "B",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6aq7.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4kvn.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ddm.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4ki5.cif",
+        "chains": [
+            "C",
+            "D",
+            "M"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6xzw.cif",
+        "chains": [
+            "H",
+            "L",
+            "D"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7oh1.cif",
+        "chains": [
+            "E",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4jm2.cif",
+        "chains": [
+            "A",
+            "B",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3wih.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7sl8.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4w2q.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2ltq.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6jjp.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7lrs.cif",
+        "chains": [
+            "D",
+            "E",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2ltq.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1ahw.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7niu.cif",
+        "chains": [
+            "E",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7e5o.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1nmb.cif",
+        "chains": [
+            "H",
+            "N"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6xr0.cif",
+        "chains": [
+            "H",
+            "L",
+            "M"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4r0l.cif",
+        "chains": [
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6lr7.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3ulu.cif",
+        "chains": [
+            "F",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5vag.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5sv3.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7niu.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6xe1.cif",
+        "chains": [
+            "H",
+            "L",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6h15.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4xp9.cif",
+        "chains": [
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5d1q.cif",
+        "chains": [
+            "C",
+            "D",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6cyf.cif",
+        "chains": [
+            "D",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6iap.cif",
+        "chains": [
+            "E",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4nik.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6orq.cif",
+        "chains": [
+            "D",
+            "E",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4uv7.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6vlw.cif",
+        "chains": [
+            "H",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4dtg.cif",
+        "chains": [
+            "H",
+            "L",
+            "K"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6pdx.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4np4.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ui1.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6p8m.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4zxb.cif",
+        "chains": [
+            "A",
+            "B",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1fns.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4oii.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4hfu.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3j8d.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5vn3.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5ukb.cif",
+        "chains": [
+            "a",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6s8d.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6azz.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7n3c.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5en2.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7klc.cif",
+        "chains": [
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7bu6.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6h16.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5d93.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6nyq.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4y7m.cif",
+        "chains": [
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5kem.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1nfd.cif",
+        "chains": [
+            "F",
+            "E",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4o58.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6j14.cif",
+        "chains": [
+            "A",
+            "B",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5gru.cif",
+        "chains": [
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4nbz.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1egj.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4xnu.cif",
+        "chains": [
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6gku.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6i9i.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7bpk.cif",
+        "chains": [
+            "C",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6iw0.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7lkf.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6a4k.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5t33.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6pci.cif",
+        "chains": [
+            "H",
+            "K",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3grw.cif",
+        "chains": [
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3gi8.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5gs2.cif",
+        "chains": [
+            "D",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5f1k.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7e8m.cif",
+        "chains": [
+            "L",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5o8f.cif",
+        "chains": [
+            "K",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ewb.cif",
+        "chains": [
+            "E",
+            "F",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5e0q.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2dd8.cif",
+        "chains": [
+            "H",
+            "L",
+            "S"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7a6o.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4y5y.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ii8.cif",
+        "chains": [
+            "G",
+            "I",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5uty.cif",
+        "chains": [
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5w6g.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6qx4.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2ltq.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7mjs.cif",
+        "chains": [
+            "H",
+            "L",
+            "X"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6r2s.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2qqn.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5nuz.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6v8x.cif",
+        "chains": [
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ogx.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6bgt.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2ypv.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5eu7.cif",
+        "chains": [
+            "E",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7m6d.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7mxl.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6v7y.cif",
+        "chains": [
+            "F",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6c08.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6nn3.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3ogo.cif",
+        "chains": [
+            "E",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7rk1.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7mhy.cif",
+        "chains": [
+            "O",
+            "P",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6c6z.cif",
+        "chains": [
+            "C",
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6suz.cif",
+        "chains": [
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6u6u.cif",
+        "chains": [
+            "H",
+            "L",
+            "R"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6h6y.cif",
+        "chains": [
+            "E",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5tpn.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4j6r.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6xzu.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6k65.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1adq.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1rjl.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6tyl.cif",
+        "chains": [
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5o4o.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1yjd.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6yu8.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7l0n.cif",
+        "chains": [
+            "L",
+            "R"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6rvc.cif",
+        "chains": [
+            "D",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4ywg.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7e3k.cif",
+        "chains": [
+            "D",
+            "E",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7jtr.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7n8h.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ivz.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6j5d.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5esv.cif",
+        "chains": [
+            "A",
+            "B",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6zcz.cif",
+        "chains": [
+            "H",
+            "L",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6osv.cif",
+        "chains": [
+            "H",
+            "L",
+            "K"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7luc.cif",
+        "chains": [
+            "J",
+            "K",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6e62.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4lgp.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6vn1.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4lss.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4jpk.cif",
+        "chains": [
+            "H",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6mxt.cif",
+        "chains": [
+            "N",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7sl9.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1orq.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ba5.cif",
+        "chains": [
+            "B",
+            "A",
+            "M"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3tt3.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4lf3.cif",
+        "chains": [
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6f2g.cif",
+        "chains": [
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7jhg.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6z2l.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4ffz.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7l7r.cif",
+        "chains": [
+            "D",
+            "C",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4rgm.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5o4g.cif",
+        "chains": [
+            "B",
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1a14.cif",
+        "chains": [
+            "H",
+            "L",
+            "N"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7duo.cif",
+        "chains": [
+            "L",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6lgw.cif",
+        "chains": [
+            "A",
+            "B",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1v7m.cif",
+        "chains": [
+            "H",
+            "L",
+            "V"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ko5.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7dfp.cif",
+        "chains": [
+            "C",
+            "B",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6rps.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6r7t.cif",
+        "chains": [
+            "A",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4tvs.cif",
+        "chains": [
+            "a",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/2fd6.cif",
+        "chains": [
+            "H",
+            "L",
+            "U"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4web.cif",
+        "chains": [
+            "H",
+            "L",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5aam.cif",
+        "chains": [
+            "A",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4xvs.cif",
+        "chains": [
+            "H",
+            "L",
+            "G"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4k3j.cif",
+        "chains": [
+            "H",
+            "L",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6i6j.cif",
+        "chains": [
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7l7d.cif",
+        "chains": [
+            "H",
+            "L",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6oe4.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6mei.cif",
+        "chains": [
+            "H",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4ybl.cif",
+        "chains": [
+            "B",
+            "C",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6ck9.cif",
+        "chains": [
+            "D",
+            "E",
+            "B"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5kvd.cif",
+        "chains": [
+            "H",
+            "L",
+            "E"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3u2s.cif",
+        "chains": [
+            "A",
+            "B",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7n3d.cif",
+        "chains": [
+            "H",
+            "L",
+            "C"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/3q1s.cif",
+        "chains": [
+            "H",
+            "I"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/7kh0.cif",
+        "chains": [
+            "S",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/5sy8.cif",
+        "chains": [
+            "L",
+            "O"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/1eo8.cif",
+        "chains": [
+            "H",
+            "L",
+            "A"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/6t3f.cif",
+        "chains": [
+            "H",
+            "L",
+            "F"
+        ]
+    },
+    {
+        "cif_file": "/home/thunguyen/data/mmcif_files/4od2.cif",
+        "chains": [
+            "B",
+            "A",
+            "S"
+        ]
+    }
+]
