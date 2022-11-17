@@ -157,9 +157,10 @@ def crop_feature(features, crop_size):
     return features
 
 class MultimerDataset(Dataset):
-    def __init__(self, json_data, pre_alignment_path):
+    def __init__(self, json_data, pre_alignment_path, new_res_a3m):
         self.data = json_data
         self.pre_align = pre_alignment_path
+        self.new_a3m = new_res_a3m
     def process(self, idx):
         single_dataset = self.data[idx]
         cif_path = single_dataset['cif_file']
@@ -175,10 +176,12 @@ class MultimerDataset(Dataset):
         is_homomer = len(set(sequences))==1
         all_chain_features={}
         for chain in chains:
-            a3m_file = os.path.join(self.pre_align, f'{file_id}_{chain}', 'mmseqs/uniref.a3m')
-            hhr_file = os.path.join(self.pre_align, f'{file_id}_{chain}', 'mmseqs/uniref.hhr')
-            if not os.path.isfile(hhr_file):
-                hhr_file = None
+            if (chain in mmcif_obj.chain_to_seqres):
+                a3m_file = os.path.join(self.pre_align, f'{file_id}_{chain}', 'mmseqs/uniref.a3m')
+                # hhr_file = os.path.join(self.pre_align, f'{file_id}_{chain}', 'mmseqs/uniref.hhr')
+            else :
+                a3m_file = self.new_a3m
+            hhr_file = None
             chain_features = process_single_chain(mmcif_obj, chain, a3m_file, is_homomer, hhr_file=hhr_file)
             chain_features = pipeline_multimer.convert_monomer_features(chain_features,
                                                 chain_id=chain)
@@ -188,12 +191,12 @@ class MultimerDataset(Dataset):
         np_example = pipeline_multimer.pad_msa(np_example, 512)
         ######## Template##################
         # TODO: change hard-coded names
-        with open('./test/7epe/7epe_A.pdb', "r") as fp:
-            pdb_string = fp.read()
-        protein_object_A = pdb_to_template.from_pdb_string(pdb_string, 'A')
+        # with open('./test/7epe/7epe_A.pdb', "r") as fp:
+        #     pdb_string = fp.read()
+        # protein_object_A = pdb_to_template.from_pdb_string(pdb_string, 'A')
         atomtype_B = []
         coordinate_B = []
-        for mol in pybel.readfile('sdf', './test/7epe/7epe_B.sdf'):
+        for mol in pybel.readfile('sdf', single_dataset['sdf']):
             for atom in mol:
                 coordinate_B.append(atom.coords)
                 atomtype_B.append(atom.type)
@@ -233,11 +236,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--json-path', type=str)
     parser.add_argument('--pre-alignment-path', type=str)
+    parser.add_argument('--new_res_a3m', type=str)
     args = parser.parse_args()
 
     with open(args.json_path) as f:
         json_data = json.load(f)
-    mul_dataset = MultimerDataset(json_data, args.pre_alignment_path)
+    mul_dataset = MultimerDataset(json_data, args.pre_alignment_path, args.new_res_a3m)
     mul_loader = torch.utils.data.DataLoader(mul_dataset, batch_size=1)
     model = modules_multimer.DockerIteration(config_multimer.config_multimer)
     load_param_multimer.import_jax_weights_(model)

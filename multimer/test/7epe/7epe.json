@@ -4,7 +4,7 @@
     "chains": [
             "A",
             "B"
-        ]
-
+        ],
+    "sdf": "./test/7epe/7epe_B.sdf"
   }
 ]
