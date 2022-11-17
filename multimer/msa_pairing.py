@@ -265,7 +265,8 @@ def block_diag(*arrs: np.ndarray, pad_value: float = 0.0) -> np.ndarray:
 def _correct_post_merged_feats(
     np_example: FeatureDict,
     np_chains_list: Sequence[FeatureDict],
-    pair_msa_sequences: bool) -> FeatureDict:
+    pair_msa_sequences: bool,
+    concat_msa: bool) -> FeatureDict:
   """Adds features that need to be computed/recomputed post merging."""
 
   np_example['seq_length'] = np.asarray(np_example['aatype'].shape[0],
@@ -300,8 +301,10 @@ def _correct_post_merged_feats(
                  x in np_chains_list]
     msa_masks_all_seq = [np.ones(x['msa_all_seq'].shape, dtype=np.float32) for
                          x in np_chains_list]
-
-    msa_mask_block_diag = block_diag(
+    if(concat_msa):
+      msa_mask_block_diag = np.concatenate(msa_masks, axis=1)
+    else:
+      msa_mask_block_diag = block_diag(
         *msa_masks, pad_value=0)
     msa_mask_all_seq = np.concatenate(msa_masks_all_seq, axis=1)
     np_example['bert_mask'] = np.concatenate(
@@ -409,7 +412,8 @@ def _concatenate_paired_and_unpaired_features(
 
 def merge_chain_features(np_chains_list: List[FeatureDict],
                          pair_msa_sequences: bool,
-                         max_templates: int) -> FeatureDict:
+                         max_templates: int,
+                         concat_msa:bool) -> FeatureDict:
   """Merges features for multiple chains to single FeatureDict.
 
   Args:
@@ -425,14 +429,19 @@ def merge_chain_features(np_chains_list: List[FeatureDict],
   np_chains_list = _merge_homomers_dense_msa(np_chains_list)
   # Unpaired MSA features will be always block-diagonalised; paired MSA
   # features will be concatenated.
-  np_example = _merge_features_from_multiple_chains(
+  if concat_msa:
+    np_example = _merge_features_from_multiple_chains(
+              np_chains_list, pair_msa_sequences=True)
+  else:
+    np_example = _merge_features_from_multiple_chains(
       np_chains_list, pair_msa_sequences=False)
   if pair_msa_sequences:
     np_example = _concatenate_paired_and_unpaired_features(np_example)
   np_example = _correct_post_merged_feats(
       np_example=np_example,
       np_chains_list=np_chains_list,
-      pair_msa_sequences=pair_msa_sequences)
+      pair_msa_sequences=pair_msa_sequences,
+      concat_msa=concat_msa)
 
   return np_example
 

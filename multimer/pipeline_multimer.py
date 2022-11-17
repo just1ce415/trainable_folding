@@ -1085,7 +1085,7 @@ def get_templates(
     return TemplateSearchResult(
         features=template_features, errors=errors, warnings=warnings)
 
-def process(input_file, config_multimer):
+def process(input_file, config_multimer, concat_msa):
     f = open(input_file)
     inputs = json.load(f)
     sequences = []
@@ -1112,7 +1112,7 @@ def process(input_file, config_multimer):
         sequence_features[inputs[chain]['sequence']] = chain_features
     
     all_chain_features = add_assembly_features(all_chain_features)
-    np_example = feature_processing.pair_and_merge(all_chain_features=all_chain_features)
+    np_example = feature_processing.pair_and_merge(all_chain_features=all_chain_features, concat_msa=concat_msa)
     np_example = pad_msa(np_example, 512)
 
     return np_example

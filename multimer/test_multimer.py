@@ -280,28 +280,7 @@ def from_pdb_string(pdb_str: str) :
 #     feats['template_all_atom_positions'] =  torch.unsqueeze(torch.tensor(template_all_atom_pos, device='cuda:0'),0)
 
 if __name__ == '__main__':
-    #with open('../../af2_wrapper/multimer_feat_6A77.pkl', 'rb') as f:
-    #    processed_feature_dict = pickle.load(f)
-    #for k, v in processed_feature_dict.items():
-    #    print(k, v)
-    # for k, v in processed_feature_dict.items():
-    #     print(k, v.shape)
-    # print(processed_feature_dict['entity_id'])
-    # print(processed_feature_dict['asym_id'])
-    # print(processed_feature_dict['sym_id'])
-
-    #with open('/home/thu/Downloads/5FWY_with_features/features.pkl', 'rb') as f:
-    #   heteromer = pickle.load(f)
-    #with open('./H1137_V6_v1/H1137_V6_v1_model_1_multimer_v2_0.pdb') as f:
-    #    atom_pos = from_pdb_string(f.read())
-    #atom_pos = torch.tensor(np.asarray(atom_pos), dtype=torch.double, device='cuda:0')
-    #print(atom_pos.shape)
-    #orig_rigids = rigid.Rigid.make_transform_from_reference(
-    #    n_xyz=atom_pos[..., 0, :],
-    #    ca_xyz=atom_pos[..., 1, :],
-    #    c_xyz=atom_pos[..., 2, :],
-    #)
-    processed_feature_dict = pipeline_multimer.process('./test/6n31/6n31.json', config_multimer)
+    processed_feature_dict = pipeline_multimer.process('./test/H1141/H1141.json', config_multimer, concat_msa=True)
     #with open('6A77/model.000.07.pdb', "r") as fp:
     #    pdb_string = fp.read()
     #protein_object_A = pdb_to_template.from_pdb_string(pdb_string, 'A')
@@ -331,9 +310,6 @@ if __name__ == '__main__':
     for k, v in processed_feature_dict.items():
         print(k, v.shape)
 
-    #features_output_path = 'multimer_feat.pkl'
-    #with open(features_output_path, 'wb') as f:
-    #    pickle.dump(processed_feature_dict, f, protocol=4)
     feats = {k: torch.unsqueeze(torch.tensor(v, device='cuda:0'),0) for k,v in processed_feature_dict.items()}
     feats['msa_profile'] = modules_multimer.make_msa_profile(feats)
     feats = modules_multimer.sample_msa(feats, config_multimer.config_multimer['model']['embeddings_and_evoformer']['num_msa'])
@@ -344,12 +320,6 @@ if __name__ == '__main__':
 
     model = modules_multimer.DockerIteration(config_multimer.config_multimer)
     load_param_multimer.import_jax_weights_(model)
-    # add_template_feature(feats, './test/6n31/6n31.pdb', 'A', 10)
-    #for name, param in model.named_parameters():
-    #    print(name)
-    #num_recycle = 4
-    #with torch.no_grad():
-    #    for recycle_iter in range(num_recycle):
     output = model(feats)
     #feats['asym_id'] = torch.unsqueeze(torch.tensor(origin_asym_id, device='cuda:0'),0)
     #feats['residue_index'] = torch.unsqueeze(torch.tensor(origin_res_index, device='cuda:0'),0)
@@ -360,7 +330,6 @@ if __name__ == '__main__':
         if(k!="plddt" and k!="aligned_confidence_probs" and k!="predicted_aligned_error"):
             out_converted[k] = confidences[k].detach().cpu().numpy().tolist()
     out_json = out_converted
-    #torch.save(get_confidence_metrics(output, True), './6A77/confidence_score.txt')
     json.dump(out_json, codecs.open('confidence_score_model1.txt', 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True, indent=4)
     
     plddt = confidences['plddt'].detach().cpu().numpy()

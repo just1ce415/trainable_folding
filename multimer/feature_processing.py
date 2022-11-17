@@ -30,8 +30,8 @@ def _is_homomer_or_monomer(chains: Iterable[FeatureDict]) -> bool:
 
 
 def pair_and_merge(
-    all_chain_features: MutableMapping[str, FeatureDict]
-    ) -> FeatureDict:
+    all_chain_features: MutableMapping[str, FeatureDict],
+    concat_msa: bool) -> FeatureDict:
   """Runs processing on features to augment, pair and merge.
 
   Args:
@@ -51,14 +51,25 @@ def pair_and_merge(
     np_chains_list = msa_pairing.create_paired_features(
         chains=np_chains_list)
     np_chains_list = msa_pairing.deduplicate_unpaired_sequences(np_chains_list)
-  np_chains_list = crop_chains(
+  if(concat_msa):
+    msa_crop = MSA_CROP_SIZE
+    for c in np_chains_list:
+      msa_crop = min(msa_crop, c['msa'].shape[0])
+    np_chains_list = crop_chains(
+      np_chains_list,
+      msa_crop_size=msa_crop,
+      pair_msa_sequences=pair_msa_sequences,
+      max_templates=MAX_TEMPLATES)
+  else:
+    np_chains_list = crop_chains(
       np_chains_list,
       msa_crop_size=MSA_CROP_SIZE,
       pair_msa_sequences=pair_msa_sequences,
       max_templates=MAX_TEMPLATES)
   np_example = msa_pairing.merge_chain_features(
       np_chains_list=np_chains_list, pair_msa_sequences=pair_msa_sequences,
-      max_templates=MAX_TEMPLATES)
+      max_templates=MAX_TEMPLATES,
+      concat_msa=concat_msa)
   np_example = process_final(np_example)
   return np_example
 
