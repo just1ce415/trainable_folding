@@ -1040,7 +1040,7 @@ def _process_single_hit(
 def get_templates(
       query_sequence: str,
       hits: Sequence[TemplateHit],
-      mmcif_dir='/home/thunguyen/data/mmcif_files/',
+      mmcif_dir: str,
       max_hits=20,
       max_template_dates='2021-11-01',
       release_dates={},

@@ -115,7 +115,7 @@ def assign(translation_dict, orig_weights):
                 raise
 
 
-def import_jax_weights_(model):
+def import_jax_weights_(model, model_weights_path):
     LinearWeight = lambda l: (Param(l, param_type=ParamType.LinearWeight))
 
     LinearBias = lambda l: (Param(l))
@@ -453,7 +453,7 @@ def import_jax_weights_(model):
 
     }
     flat = _process_translations_dict(translations)
-    data = np.load('/data1/thunguyen/params/params_model_1_multimer_v2.npz')
+    data = np.load(model_weights_path)
     assign(flat, data)
 
 

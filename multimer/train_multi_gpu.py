@@ -5,12 +5,12 @@ import numpy as np
 import json
 from torch.utils.data import Dataset
 from Bio import PDB
-from multimer import mmcif_parsing, pipeline_multimer, feature_processing
 import os
-from multimer import msa_pairing, modules_multimer, config_multimer, load_param_multimer, pdb_to_template
-from torch import optim
+from multimer import modules_multimer, config_multimer, load_param_multimer, pdb_to_template
 import random
 import argparse
+import re
+from collections import defaultdict
 
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks.lr_monitor import LearningRateMonitor
@@ -18,146 +18,11 @@ from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.plugins.training_type import DeepSpeedPlugin, DDPPlugin
 from pytorch_lightning.plugins.environments import SLURMEnvironment
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 from multimer.lr_schedulers import AlphaFoldLRScheduler
 
-def process_unmerged_features(all_chain_features):
-  """Postprocessing stage for per-chain features before merging."""
-  num_chains = len(all_chain_features)
-  for chain_features in all_chain_features.values():
-    # Convert deletion matrices to float.
-    chain_features['deletion_matrix'] = np.asarray(
-        chain_features.pop('deletion_matrix_int'), dtype=np.float32)
-    if 'deletion_matrix_int_all_seq' in chain_features:
-      chain_features['deletion_matrix_all_seq'] = np.asarray(
-          chain_features.pop('deletion_matrix_int_all_seq'), dtype=np.float32)
+import warnings
+warnings.filterwarnings("ignore", "None of the inputs have requires_grad=True. Gradients will be None")
 
-    chain_features['deletion_mean'] = np.mean(
-        chain_features['deletion_matrix'], axis=0)
-
-    # Add assembly_num_chains.
-    chain_features['assembly_num_chains'] = np.asarray(num_chains)
-
-  # Add entity_mask.
-  for chain_features in all_chain_features.values():
-    chain_features['entity_mask'] = (
-        chain_features['entity_id'] != 0).astype(np.int32)
-
-def pair_and_merge(all_chain_features, is_homomer):
-  """Runs processing on features to augment, pair and merge.
-
-  Args:
-    all_chain_features: A MutableMap of dictionaries of features for each chain.
-
-  Returns:
-    A dictionary of features.
-  """
-
-  process_unmerged_features(all_chain_features)
-
-  np_chains_list = list(all_chain_features.values())
-
-  pair_msa_sequences = not is_homomer
-
-  if pair_msa_sequences:
-    np_chains_list = msa_pairing.create_paired_features(
-        chains=np_chains_list)
-    np_chains_list = msa_pairing.deduplicate_unpaired_sequences(np_chains_list)
-  np_chains_list = feature_processing.crop_chains(
-      np_chains_list,
-      msa_crop_size=feature_processing.MSA_CROP_SIZE,
-      pair_msa_sequences=pair_msa_sequences,
-      max_templates=feature_processing.MAX_TEMPLATES)
-  np_example = msa_pairing.merge_chain_features(
-      np_chains_list=np_chains_list, pair_msa_sequences=pair_msa_sequences,
-      max_templates=feature_processing.MAX_TEMPLATES)
-  np_example = feature_processing.process_final(np_example)
-  return np_example
-
-
-def make_mmcif_features(
-    mmcif_object: mmcif_parsing.MmcifObject, chain_id: str):
-    input_sequence = mmcif_object.chain_to_seqres[chain_id]
-    description = "_".join([mmcif_object.file_id, chain_id])
-    num_res = len(input_sequence)
-
-    mmcif_feats = {}
-
-    mmcif_feats.update(
-        pipeline_multimer.make_sequence_features(
-            sequence=input_sequence,
-            description=description,
-            num_res=num_res,
-        )
-    )
-
-    all_atom_positions, all_atom_mask = pipeline_multimer._get_atom_positions(
-        mmcif_object, chain_id, max_ca_ca_distance=15000.0
-    )
-    mmcif_feats["all_atom_positions"] = all_atom_positions
-    mmcif_feats["all_atom_mask"] = all_atom_mask
-
-    mmcif_feats["resolution"] = np.array(
-        [mmcif_object.header["resolution"]], dtype=np.float32
-    )
-
-    mmcif_feats["release_date"] = np.array(
-        [mmcif_object.header["release_date"].encode("utf-8")], dtype=np.object_
-    )
-
-    mmcif_feats["is_distillation"] = np.array(0., dtype=np.float32)
-
-    return mmcif_feats
-
-def process_single_chain(mmcif_object, chain_id, a3m_file, is_homomer_or_monomer, hhr_file=None):
-    mmcif_feat = make_mmcif_features(mmcif_object, chain_id)
-    chain_feat = mmcif_feat
-    with open(a3m_file, "r") as fp:
-        msa = pipeline_multimer.parse_a3m(fp.read())
-    msa_feat = pipeline_multimer.make_msa_features((msa,))
-    chain_feat.update(msa_feat)
-    if hhr_file is not None:
-        with open (hhr_file) as f:
-            hhr = f.read()
-        pdb_temp = pipeline_multimer.get_template_hits(output_string=hhr)
-        templates_result = pipeline_multimer.get_templates(query_sequence=mmcif_object.chain_to_seqres[chain_id], hits=pdb_temp)
-        temp_feat = templates_result.features
-        chain_feat.update(temp_feat)
-
-    if not is_homomer_or_monomer:
-        all_seq_features = pipeline_multimer.make_msa_features([msa])
-        valid_feats = ('msa', 'msa_mask', 'deletion_matrix', 'deletion_matrix_int',
-                        'msa_uniprot_accession_identifiers','msa_species_identifiers',)
-        feats = {f'{k}_all_seq': v for k, v in all_seq_features.items()
-             if k in valid_feats}
-
-        chain_feat.update(feats)
-    return chain_feat
-
-def process_single_chain_pdb(all_position, all_mask, renum_mask, resolution, description, sequence, a3m_file, is_homomer_or_monomer, hhr_file=None):
-    pdb_feat = pdb_to_template.make_pdb_features(all_position, all_mask, renum_mask, sequence, description, resolution)
-    chain_feat = pdb_feat
-    with open(a3m_file, "r") as fp:
-        msa = pipeline_multimer.parse_a3m(fp.read())
-    msa_feat = pipeline_multimer.make_msa_features((msa,))
-    chain_feat.update(msa_feat)
-    if hhr_file is not None:
-        with open (hhr_file) as f:
-            hhr = f.read()
-        pdb_temp = pipeline_multimer.get_template_hits(output_string=hhr)
-        templates_result = pipeline_multimer.get_templates(query_sequence=sequence, hits=pdb_temp)
-        temp_feat = templates_result.features
-        chain_feat.update(temp_feat)
-
-    if not is_homomer_or_monomer:
-        all_seq_features = pipeline_multimer.make_msa_features([msa])
-        valid_feats = ('msa', 'msa_mask', 'deletion_matrix', 'deletion_matrix_int',
-                        'msa_uniprot_accession_identifiers','msa_species_identifiers',)
-        feats = {f'{k}_all_seq': v for k, v in all_seq_features.items()
-             if k in valid_feats}
-
-        chain_feat.update(feats)
-    return chain_feat
 
 def crop_feature(features, crop_size):
     seq_len = features['seq_length']
@@ -175,44 +40,25 @@ def crop_feature(features, crop_size):
     return features
 
 class MultimerDataset(Dataset):
-    def __init__(self, json_data, pre_alignment_path, device):
+    def __init__(self, json_data, device, preprocessed_data_dir):
         self.data = json_data
-        self.pre_align = pre_alignment_path
-        self.device = device
+        self.device = device  # TODO: not sure if we need it.
+        self.preprocessed_data_dir = preprocessed_data_dir
+        self._preprocess_all()
+
+    def _preprocess_all(self):
+        self.processed_data = {}
+        for i, single_dataset in enumerate(self.data):
+            cif_path = single_dataset['cif_file']
+            file_id = os.path.basename(cif_path)[:-4]
+            file_path = f'{self.preprocessed_data_dir}/{file_id}.npz'
+            assert os.path.exists(file_path), f'File not found: {file_path}'
+            self.processed_data[i] = file_id
+
     def process(self, idx):
-        single_dataset = self.data[idx]
-        cif_path = single_dataset['cif_file']
-        file_id = os.path.basename(cif_path)[:-4]
-        chains = single_dataset['chains']
-        resolution = single_dataset['resolution']
-        #with open(cif_path, 'r') as f:
-        #    mmcif_string = f.read()
-        #mmcif_obj = mmcif_parsing.parse(file_id=file_id, mmcif_string=mmcif_string).mmcif_object
-        sequences = []
-        #for c in mmcif_obj.chain_to_seqres.keys():
-        #    sequences.append(mmcif_obj.chain_to_seqres[c])
-        ############
-        for chain in chains:
-            sequences.append(single_dataset['sequences'][chain])
-        #############
-        is_homomer = len(set(sequences))==1
-        all_chain_features={}
-        for chain in chains:
-            #################
-            all_atom_positions, all_atom_mask, renum_mask = pdb_to_template.align_seq_pdb(single_dataset['renum_seq'][chain], single_dataset['cif_file'], chain)
-            description = '_'.join([file_id, chain])
-            sequence = single_dataset['sequences'][chain]
-            #################
-            a3m_file = os.path.join(self.pre_align, f'{file_id}_{chain}', 'mmseqs/aggregated.a3m')
-            hhr_file = os.path.join(self.pre_align, f'{file_id}_{chain}', 'mmseqs/aggregated.hhr')
-            chain_features = process_single_chain_pdb(all_atom_positions, all_atom_mask, renum_mask, resolution, description, sequence, a3m_file, is_homomer, hhr_file=hhr_file)
-            chain_features = pipeline_multimer.convert_monomer_features(chain_features,
-                                                chain_id=chain)
-            all_chain_features[chain] = chain_features
-        all_chain_features = pipeline_multimer.add_assembly_features(all_chain_features)
-        np_example = pair_and_merge(all_chain_features, is_homomer)
-        np_example = pipeline_multimer.pad_msa(np_example, 512)
+        np_example = dict(np.load(f'{self.preprocessed_data_dir}/{self.processed_data[idx]}.npz'))
         np_example = crop_feature(np_example, 384)
+        # TODO: not sure if we need to specify device.
         np_example = {k: torch.tensor(v, device=self.device) for k,v in np_example.items()}
 
         return np_example
@@ -220,24 +66,32 @@ class MultimerDataset(Dataset):
     def __len__(self):
         return len(self.data)
     def __getitem__(self, idx):
-        #try:
         exp = self.process(idx)
-        #except:
-        #    print('+++++', idx)
-        #    return {}
         return exp
 
 class TrainableFolding(pl.LightningModule):
-    def __init__(self, config_multimer, json_data, batch_size):
+    def __init__(
+            self,
+            config_multimer,
+            json_data,
+            batch_size,
+            preprocessed_data_dir,
+            model_weights_path
+    ):
         super(TrainableFolding, self).__init__()
         self.config_multimer = config_multimer.config_multimer
         self.model = modules_multimer.DockerIteration(config_multimer.config_multimer)
-        load_param_multimer.import_jax_weights_(self.model)
+        load_param_multimer.import_jax_weights_(self.model, model_weights_path)
         self.json_data = json_data
         self.batch_size = batch_size
+        self.preprocessed_data_dir = preprocessed_data_dir
    
     def train_dataloader(self):
-        mul_dataset = MultimerDataset(self.json_data, '/data1/thunguyen/antibody_MSAs/', self.device)
+        mul_dataset = MultimerDataset(
+            json_data=self.json_data,
+            device=self.device,
+            preprocessed_data_dir=self.preprocessed_data_dir
+        )
         return torch.utils.data.DataLoader(mul_dataset, batch_size=self.batch_size, shuffle=True, drop_last=True)
 
     def forward(self, batch):
@@ -285,14 +139,20 @@ class TrainableFolding(pl.LightningModule):
     
 
 def main(args):
-    with open('./ab_loop_multimer_test.json') as f:
+    with open(args.json_data_path) as f:
         json_data = json.load(f)
     callbacks = []
-    checkpoint_callback = ModelCheckpoint(dirpath='/data1/thunguyen/checkpoints', every_n_train_steps=5)
+    checkpoint_callback = ModelCheckpoint(dirpath=args.model_checkpoint_path, every_n_train_steps=5)
     callbacks.append(checkpoint_callback)
     lr_monitor = LearningRateMonitor(logging_interval="step")
     callbacks.append(lr_monitor)
-    model_module = TrainableFolding(config_multimer, json_data, 1)
+    model_module = TrainableFolding(
+        config_multimer=config_multimer,
+        json_data=json_data,
+        batch_size=1,
+        preprocessed_data_dir=args.preprocessed_data_dir,
+        model_weights_path=args.model_weights_path,
+    )
     if(args.deepspeed_config_path is not None):
         if "SLURM_JOB_ID" in os.environ:
             cluster_environment = SLURMEnvironment()
@@ -323,7 +183,7 @@ def main(args):
         callbacks=callbacks,
         logger=loggers,
         max_epochs=200,
-        default_root_dir='/data1/thunguyen/',
+        default_root_dir=args.trainer_dir_path,
         accumulate_grad_batches=10,
         log_every_n_steps=1
     )
@@ -354,7 +214,7 @@ def bool_type(bool_str: str):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "output_dir", type=str,
+        "--output_dir", type=str,
         help='''Directory in which to output checkpoints, logs, etc. Ignored
                 if not on rank 0'''
     )
@@ -374,6 +234,11 @@ if __name__ == '__main__':
         "--wandb_id", type=str, default=None,
         help="ID of a previous run to be resumed"
     )
+    parser.add_argument("--trainer_dir_path", type=str, default=None)
+    parser.add_argument("--model_checkpoint_path", type=str, default=None)
+    parser.add_argument("--json_data_path", type=str, default=None)
+    parser.add_argument("--preprocessed_data_dir", type=str, default=None)
+    parser.add_argument("--model_weights_path", type=str, default=None)
     parser = pl.Trainer.add_argparse_args(parser)
     args = parser.parse_args()
     main(args)
