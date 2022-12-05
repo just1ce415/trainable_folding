@@ -139,9 +139,27 @@ def process_single_chain(
         chain_feat.update(feats)
     return chain_feat
 
+
+def crop_feature(features, crop_size):
+    seq_len = features['seq_length']
+    # start_crop = random.randint(0, seq_len - crop_size)
+    start_crop = seq_len - crop_size
+    feat_skip = {'seq_length', 'resolution', 'num_alignments', 'assembly_num_chains', 'num_templates', 'cluster_bias_mask'}
+    feat_1 = {'aatype', 'residue_index', 'all_atom_positions', 'all_atom_mask', 'asym_id', 'sym_id', 'entity_id', 'deletion_mean', 'entity_mask', 'seq_mask'}
+    for k in features.keys():
+        if k not in feat_skip:
+            if k in feat_1:
+                features[k] = features[k][start_crop: start_crop+crop_size]
+            else:
+                features[k] = features[k][:, start_crop: start_crop+crop_size]
+    features['seq_length'] = crop_size
+    return features
+
 def _preprocess_one(single_dataset):
     cif_path = single_dataset['cif_file']
     file_id = os.path.basename(cif_path)[:-4]
+    sdf_path = single_dataset['sdf']
+    sample_id = os.path.basename(sdf_path)[:-4]
     chains = single_dataset['chains']
     with open(cif_path, 'r') as f:
         mmcif_string = f.read()
@@ -168,7 +186,7 @@ def _preprocess_one(single_dataset):
     ######## Template##################
     atomtype_B = []
     coordinate_B = []
-    for mol in pybel.readfile('sdf', single_dataset['sdf']):
+    for mol in pybel.readfile('sdf', sdf_path):
         for atom in mol:
             coordinate_B.append(atom.coords)
             atomtype_B.append(atom.type)
@@ -185,8 +203,9 @@ def _preprocess_one(single_dataset):
             temp_mask_B[0][residue_constants.atom_order[atomtype_B[i]]] = 1
     np_example['all_atom_positions'][-1] = temp_coor_B[0]
     np_example['all_atom_mask'][-1] = temp_mask_B[0]
+    np_example = crop_feature(np_example, 384)  # in this case it is fixed
 
-    np.savez(f'{preprocessed_data_dir}/{file_id}', **np_example)
+    np.savez(f'{preprocessed_data_dir}/{sample_id}', **np_example)
 
 
 if __name__ == '__main__':
