@@ -190,9 +190,12 @@ def _preprocess_one(single_dataset):
         for atom in mol:
             coordinate_B.append(atom.coords)
             atomtype_B.append(atom.type)
-    atomtype_B[10] = 'N'
-    atomtype_B[9] = 'CA'
-    atomtype_B[7] = 'C'
+
+    assert atomtype_B == verification_atom_seq, f'Issue with {sample_id}, Atom seq {atomtype_B} does not match {verification_atom_seq}'
+
+    atomtype_B[8] = 'N'
+    atomtype_B[7] = 'CA'
+    atomtype_B[5] = 'C'
     temp_coor_B = np.zeros((1, 37, 3))
     temp_mask_B = np.zeros((1, 37))
     for i in range(len(coordinate_B)):
@@ -215,6 +218,7 @@ if __name__ == '__main__':
     parser.add_argument("--preprocessed_data_dir", type=str, default=None)
     parser.add_argument("--mmcif_dir", type=str, default=None)
     parser.add_argument("--new_res_a3m_path", type=str, default=None)
+    parser.add_argument("--verification_sdf", type=str, default=None)
     parser.add_argument("--n_jobs", type=int, default=8)
     args = parser.parse_args()
 
@@ -222,8 +226,14 @@ if __name__ == '__main__':
     preprocessed_data_dir = args.preprocessed_data_dir
     mmcif_dir = args.mmcif_dir
     new_res_a3m_path = args.new_res_a3m_path
-    with open(args.json_data_path) as f:
-        json_data = json.load(f)
+    verification_sdf = args.verification_sdf
+
+    verification_atom_seq = []
+    for mol in pybel.readfile('sdf', verification_sdf):
+        for atom in mol:
+            verification_atom_seq.append(atom.type)
+
+    json_data = json.load(open(args.json_data_path))
 
     pool = Pool(processes=args.n_jobs)
     for _ in tqdm(pool.imap_unordered(_preprocess_one, json_data), total=len(json_data)):
