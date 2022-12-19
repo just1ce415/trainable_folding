@@ -127,7 +127,7 @@ def nearest_neighbor_clusters(batch, gap_agreement_weight=0.):
   # Never put weight on agreeing on BERT mask.
 
   weights = torch.tensor(
-      [1.] * 22 + [gap_agreement_weight] + [0.], dtype=torch.float32, device='cuda:0')
+      [1.] * 22 + [gap_agreement_weight] + [0.], dtype=torch.float32, device=batch['msa_mask'].device)
 
   msa_mask = batch['msa_mask']
   msa_one_hot = torch.nn.functional.one_hot(batch['msa'].long(), 24)
@@ -991,9 +991,9 @@ class InputEmbedding(nn.Module):
         mask_2d = mask_2d.type(torch.float32)
         if(self.global_config['recycle'] and recycle==None):
             recycle = {
-                    'prev_pos': torch.zeros(num_batch, num_res, 37, 3).to('cuda:0'),
-                    'prev_msa_first_row': torch.zeros(num_batch, num_res, self.msa_channel).to('cuda:0'),
-                    'prev_pair': torch.zeros(num_batch, num_res, num_res, self.pair_channel).to('cuda:0')
+                    'prev_pos': torch.zeros(num_batch, num_res, 37, 3).to(batch['aatype'].device),
+                    'prev_msa_first_row': torch.zeros(num_batch, num_res, self.msa_channel).to(batch['aatype'].device),
+                    'prev_pair': torch.zeros(num_batch, num_res, num_res, self.pair_channel).to(batch['aatype'].device)
                     }
             #recycle['prev_pos'][0] = orig_atom
 
@@ -1094,16 +1094,16 @@ class Distogram(nn.Module):
 class DockerIteration(nn.Module):
     def __init__(self, global_config):
         super().__init__()
-        self.InputEmbedder = InputEmbedding(global_config).to('cuda:0')
-        self.TemplateEmbedding1D = TemplateEmbedding1D(global_config).to('cuda:0')
-        self.Evoformer = nn.ModuleList([EvoformerIteration(global_config['model']['embeddings_and_evoformer']['evoformer'], global_config['model']['embeddings_and_evoformer']).to('cuda:0') for _ in range(global_config['model']['embeddings_and_evoformer']['evoformer_num_block'])])
-        self.EvoformerExtractSingleRec = nn.Linear(global_config['model']['embeddings_and_evoformer']['msa_channel'], global_config['model']['embeddings_and_evoformer']['seq_channel']).to('cuda:0')
-        self.StructureModule = structure_multimer.StructureModule(global_config['model']['heads']['structure_module'], global_config['model']['embeddings_and_evoformer']).to('cuda:0')
-        self.Distogram = Distogram(global_config).to('cuda:0')
-        self.PredictedLddt = PredictedLddt(global_config).to('cuda:0')
-        self.PredictedAlignedError = PredictedAlignedError(global_config).to('cuda:0')
-        self.ExperimentallyResolvedHead = ExperimentallyResolvedHead(global_config).to('cuda:0')
-        self.MaskedMsaHead = MaskedMsaHead(global_config).to('cuda:0')
+        self.InputEmbedder = InputEmbedding(global_config)
+        self.TemplateEmbedding1D = TemplateEmbedding1D(global_config)
+        self.Evoformer = nn.ModuleList([EvoformerIteration(global_config['model']['embeddings_and_evoformer']['evoformer'], global_config['model']['embeddings_and_evoformer']) for _ in range(global_config['model']['embeddings_and_evoformer']['evoformer_num_block'])])
+        self.EvoformerExtractSingleRec = nn.Linear(global_config['model']['embeddings_and_evoformer']['msa_channel'], global_config['model']['embeddings_and_evoformer']['seq_channel'])
+        self.StructureModule = structure_multimer.StructureModule(global_config['model']['heads']['structure_module'], global_config['model']['embeddings_and_evoformer'])
+        self.Distogram = Distogram(global_config)
+        self.PredictedLddt = PredictedLddt(global_config)
+        self.PredictedAlignedError = PredictedAlignedError(global_config)
+        self.ExperimentallyResolvedHead = ExperimentallyResolvedHead(global_config)
+        self.MaskedMsaHead = MaskedMsaHead(global_config)
 
         self.global_config = global_config
 
