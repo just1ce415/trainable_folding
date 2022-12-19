@@ -178,7 +178,7 @@ class PredictLDDT(torch.nn.Module):
 class StructureModuleIteration(torch.nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
-        self.InvariantPointAttention = InvariantPointAttention(config, global_config).to('cuda:0')
+        self.InvariantPointAttention = InvariantPointAttention(config, global_config)
         self.drop = nn.Dropout(0.1)
         self.rec_norm = nn.LayerNorm(config['num_channel'])
         self.rec_norm2 = nn.LayerNorm(config['num_channel'])
@@ -263,7 +263,7 @@ class StructureModule(torch.nn.Module):
         self.num_iter = config['num_layer']
         num_1dc = config['num_channel']
 
-        self.StructureModuleIteration = StructureModuleIteration(config, global_config).to('cuda:0')
+        self.StructureModuleIteration = StructureModuleIteration(config, global_config)
         self.layers = [self.StructureModuleIteration for _ in range(self.num_iter)]
         self.single_layer_norm = nn.LayerNorm(num_1dc)
         self.pair_layer_norm = nn.LayerNorm(global_config['pair_channel'])
