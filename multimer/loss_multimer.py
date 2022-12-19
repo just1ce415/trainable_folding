@@ -125,9 +125,12 @@ def lddt_loss(out, batch, config):
 
     # Average over the batch dimension
     loss = torch.mean(loss)
-    del score
-    del errors
-    return loss
+
+    # lddt for new residue
+    new_res_lddt = score[:, -1] * 100
+
+    del errors, score
+    return loss, new_res_lddt
 
 def distogram_loss(out, batch, config):
     logits = out['distogram']['logits']
