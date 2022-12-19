@@ -103,7 +103,7 @@ def compute_plddt(logits):
   """
   num_bins = logits.shape[-1]
   bin_width = 1.0 / num_bins
-  bin_centers = torch.arange(0.5 * bin_width, 1.0, bin_width, device='cuda:0')
+  bin_centers = torch.arange(0.5 * bin_width, 1.0, bin_width, device=logits.device)
   probs = torch.nn.functional.softmax(logits, dim=-1)
   predicted_lddt_ca = torch.sum(probs * bin_centers[None, ...], dim=-1)
   return predicted_lddt_ca * 100
@@ -165,7 +165,7 @@ def predicted_tm_score(
     tm_per_bin = 1.0 / (1 + (bin_centers ** 2) / (d0 ** 2))
     predicted_tm_term = torch.sum(probs * tm_per_bin, dim=-1)
 
-    pair_mask = torch.ones((num_res, num_res), dtype=bool, device='cuda:0')
+    pair_mask = torch.ones((num_res, num_res), dtype=bool, device=logits.device)
     if interface:
         pair_mask *= asym_id[..., None] != asym_id[None, ...]
 
