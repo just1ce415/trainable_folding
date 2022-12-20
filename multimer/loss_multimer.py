@@ -512,7 +512,7 @@ def sidechain_loss(
     renum_mask: torch.Tensor,
     config
 ) -> torch.Tensor:
-    print(rigidgroups_gt_exists.shape, renamed_atom14_gt_exists.shape)
+    # print(rigidgroups_gt_exists.shape, renamed_atom14_gt_exists.shape)
     renamed_gt_frames = (
         1.0 - alt_naming_is_better[..., None, None, None]
     ) * rigidgroups_gt_frames + alt_naming_is_better[
