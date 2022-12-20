@@ -1178,8 +1178,9 @@ class DockerIteration(nn.Module):
 
     def forward(self, batch):
         recycles = None
-        for recycle_iter in range(4):
-            is_final_iter = recycle_iter == 3
+        num_recycle = self.global_config['model']['num_recycle']
+        for recycle_iter in range(num_recycle):
+            is_final_iter = recycle_iter == (num_recycle - 1)
             with torch.set_grad_enabled(is_final_iter):
                 out, m_1_prev, z_prev, x_prev = self.iteration(batch, recycles)
                 if (not is_final_iter):
