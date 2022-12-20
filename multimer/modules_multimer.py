@@ -1215,7 +1215,19 @@ class DockerIteration(nn.Module):
         structure_loss, structure_loss_loop, gt_rigid, gt_affine_mask = loss_multimer.structure_loss(out, batch, self.global_config['model']['heads'])
         pae_loss, pae_loop_loss = loss_multimer.tm_loss(pae_logits, pae_breaks, out['struct_out']['frames'][-1], gt_rigid, batch['renum_mask'], gt_affine_mask, batch['resolution'], self.global_config['model']['heads'])
         masked_msa_loss = loss_multimer.masked_msa_loss(out, batch)
-        loss = 0.01*lddt_loss + 0.01*resolved_loss + 0.3*distogram_loss + structure_loss + 0.01*pae_loss + 2*masked_msa_loss + 0.01*lddt_loop_loss + 0.01*resolved_loop_loss + 0.3*distogram_loop_loss + structure_loss_loop + 0.01*pae_loop_loss
+        loss = sum([
+            0.01 * lddt_loss,
+            0.01 * resolved_loss,
+            0.3 * distogram_loss,
+            1.0 * structure_loss,
+            0.01 * pae_loss,
+            2.0 * masked_msa_loss,
+            0.02 * lddt_loop_loss,
+            0.02 * resolved_loop_loss,
+            0.6 * distogram_loop_loss,
+            2.0 * structure_loss_loop,
+            0.02 * pae_loop_loss
+        ])
         loss_item = {}
         loss_item['resolved_loss'] = resolved_loss
         loss_item['resolved_loop_loss'] = resolved_loop_loss
