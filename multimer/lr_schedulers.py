@@ -79,4 +79,4 @@ class AlphaFoldLRScheduler(torch.optim.lr_scheduler._LRScheduler):
         else: # plateau
             lr = self.max_lr
 
-        return [lr for group in self.optimizer.param_groups]
+        return [lr * group['multiplier'] for group in self.optimizer.param_groups]
