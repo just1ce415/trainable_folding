@@ -136,71 +136,7 @@ class TrainableFolding(pl.LightningModule):
                 "name": "AbFinetuneScheduler",
             },
         }
-    
 
-def main(args):
-    with open(args.json_data_path) as f:
-        json_data = json.load(f)
-    callbacks = []
-    checkpoint_callback = ModelCheckpoint(dirpath=args.model_checkpoint_path, every_n_train_steps=5)
-    callbacks.append(checkpoint_callback)
-    lr_monitor = LearningRateMonitor(logging_interval="step")
-    callbacks.append(lr_monitor)
-    model_module = TrainableFolding(
-        config_multimer=config_multimer,
-        json_data=json_data,
-        batch_size=1,
-        preprocessed_data_dir=args.preprocessed_data_dir,
-        model_weights_path=args.model_weights_path,
-    )
-    if(args.deepspeed_config_path is not None):
-        if "SLURM_JOB_ID" in os.environ:
-            cluster_environment = SLURMEnvironment()
-        else:
-            cluster_environment = None
-        strategy = DeepSpeedPlugin(
-            config=args.deepspeed_config_path,
-            cluster_environment=cluster_environment,
-        )
-    elif args.gpus > 1 or args.num_nodes > 1:
-        strategy = 'ddp'
-    else:
-        strategy = None
-
-    loggers = []
-    wdb_logger = WandbLogger(
-        name='ab_ft_loop_train',
-        save_dir=args.output_dir,
-        id=args.wandb_id,
-        resume='True',
-        project='ab_ft_loop'
-    )
-    loggers.append(wdb_logger)
-
-    trainer = pl.Trainer.from_argparse_args(
-        args,
-        strategy=strategy,
-        callbacks=callbacks,
-        logger=loggers,
-        max_epochs=200,
-        default_root_dir=args.trainer_dir_path,
-        accumulate_grad_batches=10,
-        log_every_n_steps=1
-    )
-
-    if(args.resume_model_weights_only):
-        ckpt_path = None
-    else:
-        ckpt_path = args.resume_from_ckpt
-
-    trainer.fit(
-        model_module,
-#        datamodule=data_module,
-        ckpt_path=ckpt_path,
-    )
-    #trainer.save_checkpoint(
-    #    os.path.join(trainer.logger.log_dir, "checkpoints", "final.ckpt")
-    #)
 
 def bool_type(bool_str: str):
     bool_str_lower = bool_str.lower()
