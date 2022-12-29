@@ -33,7 +33,7 @@ class InvariantPointAttention(torch.nn.Module):
         self.softplus = nn.Softplus()
 
     def forward(self, act, act_2d, sequence_mask, rigid):
-        
+
         q_scalar = checkpoint(self.q, act)
         q_scalar = q_scalar.view(*q_scalar.shape[:-1], self.num_head, -1)
         k_scalar = checkpoint(self.k, act)
@@ -104,7 +104,7 @@ class InvariantPointAttention(torch.nn.Module):
         result_attention_over_2d = result_attention_over_2d.reshape(*result_attention_over_2d.shape[:-2], -1)
         output_features.append(result_attention_over_2d)
         final_act = torch.cat(output_features, -1)
-        
+
         out = self.final_r(final_act)
 
         return out
@@ -181,7 +181,7 @@ class StructureModuleIteration(torch.nn.Module):
         # act = activation['act']
         # rigid = activation['rigid']
         act = act.clone()
-        rec_1d_update = checkpoint(self.InvariantPointAttention, act, act_2d, sequence_mask, rigid)
+        rec_1d_update = self.InvariantPointAttention(act, act_2d, sequence_mask, rigid)
         act = act + rec_1d_update
         act = self.rec_norm(act)
         input_act = act.clone()
@@ -254,7 +254,7 @@ class StructureModule(torch.nn.Module):
         out = []
         for l in self.layers:
             l.to(act.device)
-            act, rigids, sc = checkpoint(l, act.clone(), rigids, initial_act, act_2d, batch['aatype'], sequence_mask)
+            act, rigids, sc = l(act, rigids, initial_act, act_2d, batch['aatype'], sequence_mask)
             out.append(sc)
         outputs = dict_multimap(torch.stack, out)
         outputs['act'] = act
