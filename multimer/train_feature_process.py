@@ -11,6 +11,7 @@ import torch
 from alphadock import residue_constants
 from multimer import (config_multimer, load_param_multimer, modules_multimer,
                       test_multimer)
+from preprocess import crop_feature
 from pytorch_lightning.callbacks.lr_monitor import LearningRateMonitor
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
@@ -27,24 +28,39 @@ class MultimerDataset(Dataset):
 
     def _preprocess_all(self):
         self.processed_data = {}
-        for i, single_dataset in enumerate(self.data):
+        i = 0
+        for single_dataset in self.data:
             sdf_path = single_dataset['sdf']
             sample_id = os.path.basename(sdf_path)[:-4]
             file_path = f'{self.preprocessed_data_dir}/{sample_id}.npz'
             assert os.path.exists(file_path), f'File not found: {file_path}'
+            # check that we have at least one res close to a new one
+            n_close_res = np.load(f'{self.preprocessed_data_dir}/{sample_id}.npz')['loss_mask'].sum()
+            if n_close_res <= 1:
+                continue
             self.processed_data[i] = sample_id
+            i += 1
 
     def process(self, idx):
-        np_example = dict(np.load(f'{self.preprocessed_data_dir}/{self.processed_data[idx]}.npz'))
+        n_close_res = 0
+        count = 0
+        while n_close_res <= 1:
+            np_example = dict(np.load(f'{self.preprocessed_data_dir}/{self.processed_data[idx]}.npz'))
+            np_example = crop_feature(np_example, 384)
+            n_close_res = np_example['loss_mask'].sum()
+            count += 1
+            if count == 100:
+                raise RuntimeError("Did not find a good crop")
         np_example = {k: torch.tensor(v) for k, v in np_example.items()}
 
         return np_example
 
     def __len__(self):
-        return len(self.data)
+        return len(self.processed_data)
 
     def __getitem__(self, idx):
         return self.process(idx)
+
 
 class NewResidueFolding(pl.LightningModule):
     def __init__(
