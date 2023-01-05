@@ -86,6 +86,9 @@ def lddt(
 
     dist_l1 = torch.abs(dmat_true - dmat_pred)
 
+    dmat_true = dmat_true.to(dtype=dmat_pred.dtype)
+    new_res_dist_hl = nn.functional.huber_loss(dmat_pred[:, -1], dmat_true[0, :, -1], delta=0.1)
+
     score = (
         (dist_l1 < 0.5).type(dist_l1.dtype)
         + (dist_l1 < 1.0).type(dist_l1.dtype)
@@ -98,13 +101,14 @@ def lddt(
     norm = 1.0 / (eps + torch.sum(dists_to_score, dim=dims))
     score = norm * (eps + torch.sum(dists_to_score * score, dim=dims))
 
-    return score
+    return score, new_res_dist_hl
 
 def lddt_loss(out, batch, config):
     pred_all_atom_pos = out['final_all_atom']
     true_all_atom_pos = batch['all_atom_positions']
     all_atom_mask = batch['all_atom_mask']
-    score = lddt(pred_all_atom_pos[...,1,:], true_all_atom_pos[..., 1, :], all_atom_mask[...,1:2])
+    score, new_res_dist_hl = lddt(pred_all_atom_pos[...,1,:], true_all_atom_pos[..., 1, :], all_atom_mask[...,1:2])
+    new_res_dist_hl = torch.clamp(new_res_dist_hl, 0, 3)
     score = score.detach()
     no_bins = config['predicted_lddt']['num_bins']
     bin_index = torch.floor(score * no_bins).long()
@@ -125,18 +129,20 @@ def lddt_loss(out, batch, config):
 
     # Average over the batch dimension
     loss = torch.mean(loss)
+    loss = torch.clamp(loss, 0, 3)
 
     # lddt for new residue
-    new_res_lddt = score[:, -1] * 100
+    new_res_lddt = torch.round(score[0, -1] * 100, decimals=2)
 
     del errors, score
-    return loss, new_res_lddt
+    return loss, new_res_lddt, new_res_dist_hl
 
 def distogram_loss(out, batch, config):
     logits = out['distogram']['logits']
     bin_edges = out['distogram']['bin_edges']
     positions = batch['pseudo_beta']
     mask = batch['pseudo_beta_mask']
+    loss_mask = batch['loss_mask']
     sq_breaks = bin_edges ** 2
     dists = torch.sum(
         (positions[..., None, :] - positions[..., None, :, :]) ** 2,
@@ -153,12 +159,20 @@ def distogram_loss(out, batch, config):
     mean = errors * square_mask
     mean = torch.sum(mean, dim=-1)
     mean = mean / denom[..., None]
+    ####### Calculate loss separately for mask######
+    mean_loss_maskes = mean * loss_mask
+    mean_loss_maskes = torch.sum(mean_loss_maskes, dim=-1)
+    mean_loss_maskes = torch.mean(mean_loss_maskes)
+    mean_loss_maskes = torch.clamp(mean_loss_maskes, 0, 0.1)
+    ################################################
+
     mean = torch.sum(mean, dim=-1)
 
     # Average over the batch dimensions
-    mean = torch.mean(mean)
+    loss = torch.mean(mean)
+    loss = torch.clamp(loss, 0, 2)
     del positions, mask, dists, true_bins, errors, square_mask
-    return mean
+    return loss, mean_loss_maskes
 
 def experimentally_resolved_loss(out, batch, config):
     logits = out['experimentally_resolved']
@@ -173,6 +187,7 @@ def experimentally_resolved_loss(out, batch, config):
                 (batch['resolution'] >= config['experimentally_resolved']['min_resolution']) & (batch['resolution'] <= config['experimentally_resolved']['max_resolution'])
         )
     loss = torch.mean(loss)
+    loss = torch.clamp(loss, 0, 1)
 
     return loss
 
@@ -330,7 +345,6 @@ def compute_renamed_ground_truth(
 
     atom14_gt_exists = gt_mask
     atom14_atom_is_ambiguous = atom_is_ambiguous
-    #print(atom14_gt_exists.shape, atom14_atom_is_ambiguous.shape, atom14_gt_exists.shape)
 
     mask = (
         atom14_gt_exists[..., None, :, None]
@@ -982,6 +996,7 @@ def tm_loss(
     predicted_rigid_tensor,
     backbone_rigid,
     backbone_rigid_mask,
+    loss_mask,
     resolution,
     config,
     eps=1e-8,
@@ -1015,6 +1030,15 @@ def tm_loss(
     scale = 0.5  # hack to help FP16 training along
     denom = eps + torch.sum(scale * square_mask, dim=(-1, -2))
     loss = loss / denom[..., None]
+    ######### loss for masked loop ###########
+    loss_masked = loss * loss_mask
+    loss_masked = torch.sum(loss_masked, dim=-1)
+    loss_masked = loss_masked * (
+            (resolution >= min_resolution) & (resolution <= max_resolution)
+    )
+    loss_masked = torch.mean(loss_masked)
+    loss_masked = torch.clamp(loss_masked, 0, 3)
+    #########################################
     loss = torch.sum(loss, dim=-1)
     loss = loss * scale
 
@@ -1024,8 +1048,11 @@ def tm_loss(
 
     # Average over the loss dimension
     loss = torch.mean(loss)
+    loss = torch.clamp(loss, 0, 3)
 
-    return loss
+    return loss, loss_masked
+
+
 def structure_loss(out, batch, config):
     aatype = batch['aatype'][0]
     all_atom_positions = batch['all_atom_positions'][0]
@@ -1078,7 +1105,12 @@ def structure_loss(out, batch, config):
             asym_id,
             config['structure_module'])
     violation_loss = structural_violation_loss(pred_mask, violations, config['structure_module'])
-    return 0.5*(intra_chain_bb_loss + interface_bb_loss) + 0.5*sc_loss + sup_chi_loss + violation_loss, gt_rigid, gt_affine_mask
+
+    loss = 0.5*(intra_chain_bb_loss + interface_bb_loss) + 0.5*sc_loss + sup_chi_loss + violation_loss
+    loss = torch.clamp(loss, 0, 3)
+
+    return loss, gt_rigid, gt_affine_mask
+
 
 def masked_msa_loss(out, batch):
     errors = softmax_cross_entropy(
