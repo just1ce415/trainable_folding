@@ -89,56 +89,110 @@ class NewResidueFolding(pl.LightningModule):
         return self.model(batch)
 
     def training_step(self, batch):
-        output, loss, loss_items = self.forward(batch)
-        self.log('train_loss', loss, on_step=True, on_epoch=True, logger=True)
+        output, loss_items = self.forward(batch)
         for k, v in loss_items.items():
             self.log(f'train_{k}', v, on_step=True, on_epoch=True, logger=True)
-        return loss
+        return loss_items['loss']
 
-    def validation_step(self, batch, batch_idx):
-        sample_name = self.val_sample_names[batch_idx]
-        output, loss, loss_items = self.forward(batch)
+    def _get_predicted_structure(self, batch, output, sample_name, mode='val'):
         output['predicted_aligned_error']['asym_id'] = batch['asym_id'][0]
         confidences = test_multimer.get_confidence_metrics(output, True)
-        # out_converted = {}
-        # for k, v in confidences.items():
-        #     if (k != "plddt" and k != "aligned_confidence_probs" and k != "predicted_aligned_error"):
-        #         out_converted[k] = confidences[k].detach().cpu().numpy().tolist()
-        # out_json = out_converted
 
         plddt = confidences['plddt'].detach().cpu().numpy()
         plddt_b_factors = np.repeat(
             plddt[..., None], residue_constants.atom_type_num, axis=-1
         )
+        pdb_out = test_multimer.protein_to_pdb(
+            batch['aatype'][0].cpu().numpy(),
+            output['final_all_atom'].detach().cpu().numpy(),
+            batch['residue_index'][0].cpu().numpy() + 1,
+            batch['asym_id'][0].cpu().numpy(),
+            output['final_atom_mask'].cpu().numpy(), plddt_b_factors[0]
+        )
 
-        pdb_out = test_multimer.protein_to_pdb(batch['aatype'][0].cpu().numpy(),
-                                               output['final_all_atom'].detach().cpu().numpy(),
-                                               batch['residue_index'][0].cpu().numpy() + 1,
-                                               batch['asym_id'][0].cpu().numpy(),
-                                               output['final_atom_mask'].cpu().numpy(), plddt_b_factors[0])
+        filename = f"{mode}_pred_{sample_name}_{np.random.randint(1000000, 10000000)}.pdb"
+        with open(filename, 'w') as f:
+            f.write(pdb_out)
+        self.logger.experiment.log({f'{mode}_pred_{sample_name}': Molecule(filename)})
+        os.remove(filename)
 
-        self.log('val_loss', loss, on_step=False, on_epoch=True, logger=True)
-        # new res is always the last, batch size is always 0
-        self.log('val_new_res_plddt', plddt[0, -1], on_step=False, on_epoch=True, logger=True)
+    def _get_true_structure(self, batch, sample_name):
+        # a temp solution for b_factors
+        b_factors = np.ones((len(batch['aatype'][0]), residue_constants.atom_type_num)) * 100.0
+        pdb_out = test_multimer.protein_to_pdb(
+            batch['aatype'][0].cpu().numpy(),
+            batch['all_atom_positions'][0].cpu().numpy(),
+            batch['residue_index'][0].cpu().numpy() + 1,
+            batch['asym_id'][0].cpu().numpy(),
+            batch['all_atom_mask'][0].cpu().numpy(), b_factors
+        )
+
+        filename = f"true_{sample_name}_{np.random.randint(1000000, 10000000)}.pdb"
+        with open(filename, 'w') as f:
+            f.write(pdb_out)
+        self.logger.experiment.log({f'true_{sample_name}': Molecule(filename)})
+        os.remove(filename)
+
+    def validation_step(self, batch, batch_idx):
+        sample_name = self.val_sample_names[batch_idx]
+        output, loss_items = self.forward(batch)
+        self._get_predicted_structure(batch, output, sample_name)
+
+        # Individual scores
+        self.log(f'val_plddt_{sample_name}', loss_items['new_res_plddt'], on_step=True, on_epoch=False, logger=True)
+        self.log(f'val_lddt_{sample_name}', loss_items['new_res_lddt'], on_step=True, on_epoch=False, logger=True)
+
         for k, v in loss_items.items():
             self.log(f'val_{k}', v, on_step=False, on_epoch=True, logger=True)
 
-        filename = f"{np.random.randint(1000000, 10000000)}.pdb"
-        with open(filename, 'w') as f:
-            f.write(pdb_out)
+        return {'sample_name': sample_name, **loss_items}
 
+
+    def validation_epoch_end(self, validation_step_outputs):
+        columns = [key for key in validation_step_outputs[0]]
+        values = [output.values() for output in validation_step_outputs]
         wdb_logger.log_table(
-            key=sample_name,
-            columns=['id', 'new_res_lddt', 'pdb'],
-            data=[[sample_name, loss_items['new_res_lddt'], Molecule(filename)]]
-        )
-        os.remove(filename)
+                key=f'val_step_{self.global_step}',
+                columns=columns,
+                data=values,
+            )
 
-        return sample_name
+    def test_step(self, batch, batch_idx):
+        sample_name = self.val_sample_names[batch_idx]
+        output, loss_items = self.forward(batch)
+        self._get_predicted_structure(batch, output, sample_name, mode='test')
+        self._get_true_structure(batch, sample_name)
+
+        for k, v in loss_items.items():
+            self.log(f'test_{k}', v, on_step=False, on_epoch=True, logger=True)
+
+        # for each sample
+        for k, v in loss_items.items():
+            self.log(f'test_{k}_{sample_name}', v, on_step=False, on_epoch=True, logger=True)
+
+        return {'sample_name': sample_name, **loss_items}
+
+    def test_epoch_end(self, test_step_outputs):
+        columns = [key for key in test_step_outputs[0]]
+        values = [output.values() for output in test_step_outputs]
+        wdb_logger.log_table(
+                key='test_metrics',
+                columns=columns,
+                data=values,
+            )
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
-        return optimizer
+        lr_scheduler = optim.lr_scheduler.CyclicLR(
+            optimizer,
+            base_lr=self.learning_rate,
+            max_lr=self.learning_rate*10,
+            step_size_up=10,
+            mode="triangular2",
+            gamma=0.85,
+            cycle_momentum=False,
+        )
+        return [optimizer], [{"scheduler": lr_scheduler, "interval": "step", "frequency": 1}]
 
 
 if __name__ == '__main__':
@@ -196,7 +250,7 @@ if __name__ == '__main__':
             checkpoint_callback,
             lr_monitor,
         ],
-        logger=[wdb_logger],
+        logger=wdb_logger,
         log_every_n_steps=1,
         resume_from_checkpoint=args.resume_from_checkpoint,
         accumulate_grad_batches=args.accumulate_grad_batches,

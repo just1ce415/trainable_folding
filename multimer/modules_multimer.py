@@ -1241,40 +1241,51 @@ class DockerIteration(nn.Module):
         out['predicted_aligned_error']['breaks'] = pae_breaks
         out['experimentally_resolved'] = resovled_logits
         out['msa_head'] = masked_msa_logits
+        plddt = compute_plddt(pred_lddt)
         resolved_loss = loss_multimer.experimentally_resolved_loss(out, batch, self.global_config['model']['heads'])
-        lddt_loss, new_res_lddt = loss_multimer.lddt_loss(out, batch, self.global_config['model']['heads'])
-        distogram_loss = loss_multimer.distogram_loss(out, batch, self.global_config['model']['heads'])
-        structure_loss, gt_rigid, gt_affine_mask = loss_multimer.structure_loss(out, batch, self.global_config['model']['heads'])
-        pae_loss = loss_multimer.tm_loss(pae_logits[0], pae_breaks, out['struct_out']['frames'][-1][0], gt_rigid, gt_affine_mask, batch['resolution'][0], self.global_config['model']['heads'])
-        masked_msa_loss = loss_multimer.masked_msa_loss(out, batch)
-        # loss = 0.01*lddt_loss + 0.01*resolved_loss + 0.3*distogram_loss + structure_loss + 0.01*pae_loss + 2*masked_msa_loss
+        lddt_loss, new_res_lddt, new_res_dist_hl = loss_multimer.lddt_loss(
+            out, batch, self.global_config['model']['heads']
+        )
+        distogram_loss, distogram_loss_masked = loss_multimer.distogram_loss(
+            out, batch, self.global_config['model']['heads']
+        )
+        structure_loss, gt_rigid, gt_affine_mask = loss_multimer.structure_loss(
+            out, batch, self.global_config['model']['heads']
+        )
+        pae_loss, pae_loss_masked = loss_multimer.tm_loss(
+            pae_logits[0],
+            pae_breaks,
+            out['struct_out']['frames'][-1][0],
+            gt_rigid,
+            gt_affine_mask,
+            batch['loss_mask'],
+            batch['resolution'][0],
+            self.global_config['model']['heads']
+        )
         loss = sum([
             0.01 * lddt_loss,
             0.01 * resolved_loss,
             0.3 * distogram_loss,
             1.0 * structure_loss,
             0.01 * pae_loss,
+            20.0 * distogram_loss_masked,
+            0.3 * pae_loss_masked,
+            0.5 * new_res_dist_hl,
         ])
 
-        loss_items = {}
-        loss_items['resolved_loss'] = resolved_loss
-        loss_items['lddt_loss'] = lddt_loss
-        loss_items['distogram_loss'] = distogram_loss
-        loss_items['structure_loss'] = structure_loss
-        loss_items['pae_loss'] = pae_loss
-        loss_items['maksed_msa_loss'] = masked_msa_loss
-        loss_items['new_res_lddt'] = new_res_lddt
+        loss_items = {
+            'loss': loss,
+            'resolved_loss': resolved_loss,
+            'lddt_loss': lddt_loss,
+            'distogram_loss': distogram_loss,
+            'structure_loss': structure_loss,
+            'pae_loss': pae_loss,
+            'distogram_loss_masked': distogram_loss_masked,
+            'pae_loss_masked': pae_loss_masked,
+            'new_res_lddt': new_res_lddt,
+            'new_res_plddt': plddt[0, -1],
+            'new_res_is_confident': (new_res_lddt > 70) * 1.0,
+            'new_res_dist_hl': new_res_dist_hl,
+        }
 
-        #print(structure_loss, lddt_loss, resolved_loss, distogram_loss, pae_loss, masked_msa_loss)
-        #del distogram_logits, distogram_bin_edges, resovled_logits, pred_lddt
-        return out, loss, loss_items
-
-
-
-
-
-
-
-
-
-
+        return out, loss_items
