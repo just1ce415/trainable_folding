@@ -175,7 +175,13 @@ if __name__ == '__main__':
         model_weights_path=args.model_weights_path,
         val_sample_names=val_dataset.processed_data
     )
-    checkpoint_callback = ModelCheckpoint(dirpath=args.model_checkpoint_path, every_n_train_steps=5)
+    checkpoint_callback = ModelCheckpoint(
+        dirpath=args.model_checkpoint_path,
+        save_top_k=5,
+        mode='max',
+        monitor='val_new_res_is_confident',
+        filename='step{step:03d}-confidence{val_new_res_is_confident:.2f}'
+    )
     lr_monitor = LearningRateMonitor(logging_interval="step")
     wdb_logger = WandbLogger(
         name=args.wandb_name,
@@ -184,7 +190,6 @@ if __name__ == '__main__':
         resume=True,
         project='new_residue'
     )
-
 
     trainer = pl.Trainer(
         callbacks=[
