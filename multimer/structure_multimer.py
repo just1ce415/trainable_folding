@@ -285,7 +285,7 @@ class StructureModule(torch.nn.Module):
 
         out = []
         for l in self.layers:
-            act, rigids, sc = checkpoint(l, act.clone(), rigids, initial_act, act_2d, batch['aatype'], sequence_mask)
+            act, rigids, sc = l(act, rigids, initial_act, act_2d, batch['aatype'], sequence_mask)
             out.append(sc)
         outputs = dict_multimap(torch.stack, out)
         outputs['act'] = act
