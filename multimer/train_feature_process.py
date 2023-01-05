@@ -136,12 +136,16 @@ if __name__ == '__main__':
     parser.add_argument("--wandb_logger_dir", type=str, default=None)
     parser.add_argument("--wandb_name", type=str, default=None)
     parser.add_argument("--wandb_id", type=str, default=None)
+    parser.add_argument("--gpus", type=int, default=1)
     parser.add_argument("--accumulate_grad_batches", type=int, default=1)
     args = parser.parse_args()
 
+    np.random.seed(13)
+    torch.use_deterministic_algorithms(True, warn_only=True)
+
     json_data = json.load(open(args.json_path))
     train_dataset = MultimerDataset(json_data, args.preprocessed_data_dir)
-    train_loader = DataLoader(train_dataset, batch_size=1)
+    train_loader = DataLoader(train_dataset, batch_size=1, shuffle=False)
 
     if args.val_json_path:
         val_json_data = json.load(open(args.val_json_path))
@@ -177,7 +181,7 @@ if __name__ == '__main__':
         accumulate_grad_batches=args.accumulate_grad_batches,
         max_epochs=10,
         accelerator="gpu",
-        devices=2,
+        devices=args.gpus,
         strategy="deepspeed_stage_1",
         val_check_interval=200,
         # limit_train_batches=1,
