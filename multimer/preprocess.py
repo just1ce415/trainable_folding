@@ -176,29 +176,9 @@ def _preprocess_one(single_dataset):
     sdf_path = single_dataset['sdf']
     sample_id = os.path.basename(sdf_path)[:-4]
     chains = single_dataset['chains']
-    with open(cif_path, 'r') as f:
-        mmcif_string = f.read()
-    mmcif_obj = mmcif_parsing.parse(file_id=file_id, mmcif_string=mmcif_string).mmcif_object
-    sequences = []
-    for c in mmcif_obj.chain_to_seqres.keys():
-        sequences.append(mmcif_obj.chain_to_seqres[c])
-    is_homomer = len(set(sequences)) == 1
-    all_chain_features = {}
-    for chain in chains:
-        if (chain in mmcif_obj.chain_to_seqres):
-            a3m_file = os.path.join(pre_alignment_path, f'{file_id}_{chain}', 'mmseqs/aggregated.a3m')
-            # hhr_file = os.path.join(self.pre_align, f'{file_id}_{chain}', 'mmseqs/uniref.hhr')
-        else:
-            a3m_file = new_res_a3m_path
-        hhr_file = None
-        chain_features = process_single_chain(mmcif_obj, chain, a3m_file, is_homomer, hhr_file=hhr_file, mmcif_dir=mmcif_dir)
-        chain_features = pipeline_multimer.convert_monomer_features(chain_features,
-                                                                chain_id=chain)
-        all_chain_features[chain] = chain_features
-    all_chain_features = pipeline_multimer.add_assembly_features(all_chain_features)
-    np_example = pair_and_merge(all_chain_features, is_homomer)
-    np_example = pipeline_multimer.pad_msa(np_example, 512)
-    ######## Template##################
+
+    ### START READING COORDS FOR NEW RES
+
     atomtype_B = []
     coordinate_B = []
     for mol in pybel.readfile('sdf', sdf_path):
@@ -206,7 +186,10 @@ def _preprocess_one(single_dataset):
             coordinate_B.append(atom.coords)
             atomtype_B.append(atom.type)
 
-    assert atomtype_B == verification_atom_seq, f'Issue with {sample_id}, Atom seq {atomtype_B} does not match {verification_atom_seq}'
+    if atomtype_B != verification_atom_seq:
+        print(f'Issue with {sample_id}, Atom seq {atomtype_B} does not match {verification_atom_seq}')
+        return
+
 
     atomtype_B[8] = 'N'
     atomtype_B[7] = 'CA'
@@ -219,6 +202,47 @@ def _preprocess_one(single_dataset):
             temp_coor_B[0][residue_constants.atom_order[atomtype_B[i]]][1] = coordinate_B[i][1]
             temp_coor_B[0][residue_constants.atom_order[atomtype_B[i]]][2] = coordinate_B[i][2]
             temp_mask_B[0][residue_constants.atom_order[atomtype_B[i]]] = 1
+
+    ### END READING COORDS FOR NEW RES
+
+    with open(cif_path, 'r') as f:
+        mmcif_string = f.read()
+    mmcif_obj = mmcif_parsing.parse(file_id=file_id, mmcif_string=mmcif_string).mmcif_object
+    sequences = []
+    for c in mmcif_obj.chain_to_seqres.keys():
+        sequences.append(mmcif_obj.chain_to_seqres[c])
+    is_homomer = len(set(sequences)) == 1
+    best_chain = {}
+    min_dist = 5.0
+    for chain in chains:
+        if (chain in mmcif_obj.chain_to_seqres):
+            a3m_file = os.path.join(pre_alignment_path, f'{file_id}_{chain}', 'mmseqs/aggregated.a3m')
+            # hhr_file = os.path.join(self.pre_align, f'{file_id}_{chain}', 'mmseqs/uniref.hhr')
+        else:
+            a3m_file = new_res_a3m_path
+        hhr_file = None
+        chain_features = process_single_chain(mmcif_obj, chain, a3m_file, is_homomer, hhr_file=hhr_file, mmcif_dir=mmcif_dir)
+        chain_features = pipeline_multimer.convert_monomer_features(chain_features,
+                                                                chain_id=chain)
+        if chain == 'Z':
+            all_chain_features = {chain: chain_features}
+            continue
+
+        distances = np.sqrt(np.sum((temp_coor_B - chain_features['all_atom_positions']) ** 2,axis=-1,))
+        curr_min_dist = np.min(distances[chain_features['all_atom_mask'] == 1])
+        if curr_min_dist < min_dist:
+            best_chain = {chain: chain_features}
+            min_dist = curr_min_dist
+
+    if len(best_chain) == 0:
+        return
+
+    all_chain_features = {**best_chain, **all_chain_features}
+
+    all_chain_features = pipeline_multimer.add_assembly_features(all_chain_features)
+    np_example = pair_and_merge(all_chain_features, is_homomer)
+    np_example = pipeline_multimer.pad_msa(np_example, 512)
+
     np_example['all_atom_positions'][-1] = temp_coor_B[0]
     np_example['all_atom_mask'][-1] = temp_mask_B[0]
     np_example = crop_feature(np_example, 384)  # in this case it is fixed
