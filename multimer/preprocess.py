@@ -228,7 +228,7 @@ def _preprocess_one(single_dataset):
             all_chain_features = {chain: chain_features}
             continue
 
-        distances = np.sqrt(np.sum((temp_coor_B - chain_features['all_atom_positions']) ** 2,axis=-1,))
+        distances = np.sqrt(np.sum((temp_coor_B - chain_features['all_atom_positions']) ** 2, axis=-1))
         curr_min_dist = np.min(distances[chain_features['all_atom_mask'] == 1])
         if curr_min_dist < min_dist:
             best_chain = {chain: chain_features}
@@ -245,9 +245,25 @@ def _preprocess_one(single_dataset):
 
     np_example['all_atom_positions'][-1] = temp_coor_B[0]
     np_example['all_atom_mask'][-1] = temp_mask_B[0]
-    np_example = crop_feature(np_example, 384)  # in this case it is fixed
+    # np_example = crop_feature(np_example, 384)  # in this case it is fixed
+
+    distances = np.sqrt(
+        np.sum(
+            (
+                np_example['all_atom_positions'][None, -1, ...]
+                - np_example['all_atom_positions'][:, ...]
+            )
+            ** 2,
+            axis=-1,
+        )
+    )
+
+    close_atoms = (distances < 5.0) * np_example['all_atom_mask']
+    np_example['loss_mask'] = (close_atoms.sum(axis=1) > 0.0) * 1.0
 
     np.savez(f'{preprocessed_data_dir}/{sample_id}', **np_example)
+
+    return single_dataset
 
 
 if __name__ == '__main__':
@@ -274,8 +290,10 @@ if __name__ == '__main__':
 
     json_data = json.load(open(args.json_data_path))
 
+    results = []
     pool = Pool(processes=args.n_jobs)
-    for _ in tqdm(pool.imap_unordered(_preprocess_one, json_data), total=len(json_data)):
-        pass
+    for m in tqdm(pool.imap_unordered(_preprocess_one, json_data), total=len(json_data)):
+        if m:
+            results.append(m)
     pool.close()
     pool.join()
