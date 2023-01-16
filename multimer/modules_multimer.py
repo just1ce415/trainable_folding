@@ -13,6 +13,7 @@ from typing import Optional, List
 from functools import partialmethod, partial, reduce 
 from operator import add 
 from multimer.utils.tensor_utils import masked_mean
+from multimer.test_multimer import compute_plddt
 
 def gumbel_noise(shape: Sequence[int]) -> torch.tensor:
   """Generate Gumbel Noise of given Shape.
@@ -1119,6 +1120,21 @@ class DockerIteration(nn.Module):
         self.ExperimentallyResolvedHead.to(device)
         self.MaskedMsaHead.to(device)
 
+    def _preprocess_batch_msa(self, batch):
+        batch['full_msa'] = torch.nn.functional.one_hot(batch['msa'].long(), 23).float()
+        batch['msa_profile'] = make_msa_profile(batch)
+        batch = sample_msa(batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['num_msa'])
+        batch = make_masked_msa(batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['masked_msa'])
+        batch['cluster_profile'], batch['cluster_deletion_mean'] = nearest_neighbor_clusters(batch)
+        batch['msa_feat'] = create_msa_feat(batch)
+        batch['extra_msa_feat'], batch['extra_msa_mask'] = create_extra_msa_feature(
+            batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['num_extra_msa']
+        )
+        batch['pseudo_beta'], batch['pseudo_beta_mask'] = pseudo_beta_fn(
+            batch['aatype'], batch['all_atom_positions'], batch['all_atom_mask']
+        )
+        return batch
+
     def iteration(self, batch, recycle=None):
         msa_activations, pair_activations, msa_mask, pair_mask = self.InputEmbedder(batch, recycle=recycle)
         num_msa_seq = msa_activations.shape[1]
@@ -1176,21 +1192,48 @@ class DockerIteration(nn.Module):
         del pair_activations
         return representations, m_1_prev, z_prev, x_prev
 
-    def forward(self, batch):
+    def forward(self, init_batch, is_eval_mode):
+        batch = self._preprocess_batch_msa(init_batch)
         recycles = None
-        num_recycle = self.global_config['model']['num_recycle']
-        for recycle_iter in range(num_recycle):
-            is_final_iter = recycle_iter == (num_recycle - 1)
-            with torch.set_grad_enabled(is_final_iter):
-                out, m_1_prev, z_prev, x_prev = self.iteration(batch, recycles)
-                if (not is_final_iter):
-                    del out
-                    recycles = {
-                        'prev_msa_first_row': m_1_prev,
-                        'prev_pair': z_prev,
-                        'prev_pos':x_prev
-                    }
-                    del m_1_prev, z_prev, x_prev
+        if is_eval_mode:
+            min_num_recycle = self.global_config['model']['min_num_recycle_eval']
+            confident_plddt = self.global_config['model']['confident_plddt']
+            num_recycle = self.global_config['model']['max_num_recycle_eval']
+            for recycle_iter in range(num_recycle):
+                with torch.set_grad_enabled(False):
+                    out, m_1_prev, z_prev, x_prev = self.iteration(batch, recycles)
+                    plddt = compute_plddt(self.PredictedLddt(out))
+                    mean_masked_plddt = ((plddt * batch['renum_mask']).sum() / batch['renum_mask'].sum())
+                    if recycle_iter >= min_num_recycle and mean_masked_plddt >= confident_plddt:
+                        break
+                    # check if we are on the final iteration: if not - recycle
+                    elif recycle_iter < (num_recycle - 1):
+                        recycles = {
+                            'prev_msa_first_row': m_1_prev,
+                            'prev_pair': z_prev,
+                            'prev_pos': x_prev
+                        }
+                        if self.global_config['model']['resample_msa_in_recycling']:
+                            batch = self._preprocess_batch_msa(init_batch)
+                        del out, m_1_prev, z_prev, x_prev
+                    recycle_iter += 1
+
+        else:
+            num_recycle = self.global_config['model']['num_recycle']
+            for recycle_iter in range(num_recycle):
+                is_final_iter = recycle_iter == (num_recycle - 1)
+                with torch.set_grad_enabled(is_final_iter):
+                    out, m_1_prev, z_prev, x_prev = self.iteration(batch, recycles)
+                    if not is_final_iter:
+                        recycles = {
+                            'prev_msa_first_row': m_1_prev,
+                            'prev_pair': z_prev,
+                            'prev_pos': x_prev
+                        }
+                        if self.global_config['model']['resample_msa_in_recycling']:
+                            batch = self._preprocess_batch_msa(batch)
+                        del out, m_1_prev, z_prev, x_prev
+
 
         del recycles
         distogram_logits, distogram_bin_edges = self.Distogram(out)
@@ -1210,7 +1253,7 @@ class DockerIteration(nn.Module):
         out['experimentally_resolved'] = resovled_logits
         out['msa_head'] = masked_msa_logits
         resolved_loss, resolved_loop_loss = loss_multimer.experimentally_resolved_loss(out, batch, self.global_config['model']['heads'])
-        lddt_loss, lddt_loop_loss = loss_multimer.lddt_loss(out, batch, self.global_config['model']['heads'])
+        lddt_loss, lddt_loop_loss, loop_lddt = loss_multimer.lddt_loss(out, batch, self.global_config['model']['heads'])
         distogram_loss, distogram_loop_loss = loss_multimer.distogram_loss(out, batch, self.global_config['model']['heads'])
         structure_loss, structure_loss_loop, gt_rigid, gt_affine_mask = loss_multimer.structure_loss(out, batch, self.global_config['model']['heads'])
         pae_loss, pae_loop_loss = loss_multimer.tm_loss(pae_logits, pae_breaks, out['struct_out']['frames'][-1], gt_rigid, batch['renum_mask'], gt_affine_mask, batch['resolution'], self.global_config['model']['heads'])
@@ -1240,6 +1283,9 @@ class DockerIteration(nn.Module):
         loss_item['pae_loss'] = pae_loss
         loss_item['pae_loop_loss'] = pae_loop_loss
         loss_item['maksed_msa_loss'] = masked_msa_loss
+        loss_item['loop_lddt'] = loop_lddt
+        loss_item['recycle_iter'] = float(recycle_iter)
+        loss_item['loop_plddt'] = mean_masked_plddt
         del distogram_logits, distogram_bin_edges, resovled_logits, pred_lddt
         return out, loss, loss_item
 

@@ -137,9 +137,15 @@ def lddt_loss(out, batch, config):
     )
     loss_renum_loop = torch.mean(loss_renum_loop)
     ################################################
+
+    # lddt for loop
+    loop_lddt = torch.round(torch.sum(score * mask_renum * 100, dim=-1) / (
+            1e-10 + torch.sum(mask_renum, dim=-1)
+    ), decimals=2)[0]
+
     del score
     del errors
-    return loss, loss_renum_loop
+    return loss, loss_renum_loop, loop_lddt
 
 def distogram_loss(out, batch, config):
     logits = out['distogram']['logits']

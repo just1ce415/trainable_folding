@@ -108,14 +108,7 @@ class TrainableFolding(pl.LightningModule):
         return torch.utils.data.DataLoader(mul_dataset, batch_size=self.batch_size, shuffle=False)
 
     def forward(self, batch):
-        batch['msa_profile'] = modules_multimer.make_msa_profile(batch)
-        batch = modules_multimer.sample_msa(batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['num_msa'])
-        batch = modules_multimer.make_masked_msa(batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['masked_msa'])
-        (batch['cluster_profile'], batch['cluster_deletion_mean']) = modules_multimer.nearest_neighbor_clusters(batch)
-        batch['msa_feat'] = modules_multimer.create_msa_feat(batch)
-        batch['extra_msa_feat'], batch['extra_msa_mask'] = modules_multimer.create_extra_msa_feature(batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['num_extra_msa'])
-        batch['pseudo_beta'], batch['pseudo_beta_mask'] = modules_multimer.pseudo_beta_fn(batch['aatype'], batch['all_atom_positions'], batch['all_atom_mask'])
-        return self.model(batch)
+        return self.model(batch, is_eval_mode=self.trainer.evaluating)
    
     def training_step(self, batch, batch_idx):
         output, loss, loss_items = self.forward(batch)
