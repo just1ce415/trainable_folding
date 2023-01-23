@@ -19,7 +19,7 @@ from typing import Sequence
 
 from absl import logging
 
-from multimer import utils
+from multimer import utils_file
 # Internal import (7716).
 
 
@@ -70,7 +70,7 @@ class Kalign:
         raise ValueError('Kalign requires all sequences to be at least 6 '
                          'residues long. Got %s (%d residues).' % (s, len(s)))
 
-    with utils.tmpdir_manager() as query_tmp_dir:
+    with utils_file.tmpdir_manager() as query_tmp_dir:
       input_fasta_path = os.path.join(query_tmp_dir, 'input.fasta')
       output_a3m_path = os.path.join(query_tmp_dir, 'output.a3m')
 
@@ -88,7 +88,7 @@ class Kalign:
       process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
 
-      with utils.timing('Kalign query'):
+      with utils_file.timing('Kalign query'):
         stdout, stderr = process.communicate()
         retcode = process.wait()
         logging.info('Kalign stdout:\n%s\n\nstderr:\n%s\n',
