@@ -174,6 +174,38 @@ def align_seq_pdb(renum_seq_file, renum_pdb_file, chain_id):
                 all_atom_mask[position][residue_constants.atom_order[atom.name]] = 1.0
     return all_atom_positions, all_atom_mask, renum_mask
 
+def align_antigen_seq(ang_cif_seq, pdb_file, antigen_chain):
+    with open(pdb_file, "r") as fp:
+        pdb_string = fp.read()
+    protein_object = from_pdb_string(pdb_string, antigen_chain)
+    pdb_seq = _aatype_to_str_sequence(protein_object.aatype)
+    aligner = kalign.Kalign(binary_path=shutil.which('kalign'))
+    parsed_a3m = parsers.parse_a3m(aligner.align([ang_cif_seq , pdb_seq]))
+    true_aligned_seq, pdb_aligned_seq = parsed_a3m.sequences
+    true_to_pdb_seq_mapping = {}
+    true_seq_index = -1
+    pdb_seq_index = -1
+    
+    for true_seq_res, pdb_seq_res in zip(true_aligned_seq, pdb_aligned_seq):
+        if true_seq_res != '-':
+            true_seq_index += 1
+        if pdb_seq_res != '-':
+            pdb_seq_index += 1
+        if true_seq_res != '-' and pdb_seq_res != '-':
+            true_to_pdb_seq_mapping[true_seq_index] = pdb_seq_index
+    num_res = len(ang_cif_seq)
+    all_atom_positions = np.zeros(
+        [num_res, residue_constants.atom_type_num, 3], dtype=np.float32
+    )
+    all_atom_mask = np.zeros(
+        [num_res, residue_constants.atom_type_num], dtype=np.float32
+    )
+    for i, j in true_to_pdb_seq_mapping.items():
+        all_atom_positions[i] = protein_object.atom_positions[j]
+        all_atom_mask[i] = 1.0
+    renum_mask = np.zeros(num_res, dtype=np.float32)
+    return all_atom_positions, all_atom_mask, renum_mask
+
 def _aatype_to_str_sequence(aatype):
     return ''.join([
         residue_constants.restypes_with_x[aatype[i]] 
@@ -206,15 +238,36 @@ def make_pdb_features(
 
     return pdb_feats
 
-#if __name__ == '__main__':
-#    with open('6A77/6A77_coeff0_6_model_1_multimer_0.pdb', "r") as fp:
-#        pdb_string = fp.read()
-#    protein_object_A = from_pdb_string(pdb_string, 'A')
-#    protein_object_H = from_pdb_string(pdb_string, 'H')
-#    protein_object_L = from_pdb_string(pdb_string, 'L')
-#    template_aatype = np.concatenate((protein_object_A.aatype, protein_object_H.aatype, protein_object_L.aatype), axis=0)
-#    template_all_atom_pos = np.concatenate((protein_object_A.atom_positions, protein_object_H.atom_positions, protein_object_L.atom_positions), axis=0)
-#    template_all_atom_mask = np.concatenate((protein_object_A.atom_mask, protein_object_H.atom_mask, protein_object_L.atom_mask), axis=0)
-#    print(template_aatype.shape, template_all_atom_pos.shape, template_all_atom_mask.shape)
-    
+from multimer import kalign
+import shutil
+import parsers
+if __name__ == '__main__':
+   with open('/storage/thu/antibodies_all_structures/all_structures/chothia/7kqg.pdb', "r") as fp:
+       pdb_string = fp.read()
+   protein_object_A = from_pdb_string(pdb_string, 'A')
+   # protein_object_H = from_pdb_string(pdb_string, 'H')
+   # protein_object_L = from_pdb_string(pdb_string, 'L')
+   # template_aatype = np.concatenate((protein_object_A.aatype, protein_object_H.aatype, protein_object_L.aatype), axis=0)
+   # template_all_atom_pos = np.concatenate((protein_object_A.atom_positions, protein_object_H.atom_positions, protein_object_L.atom_positions), axis=0)
+   # template_all_atom_mask = np.concatenate((protein_object_A.atom_mask, protein_object_H.atom_mask, protein_object_L.atom_mask), axis=0)
+   true_seq = 'PLTTTPTKSYFANLKGTRTRGKLCPDCLNCTDLDVALGRPMCVGTTPSAKASILHEVKPVTSGCFPIMHDRTKIRQLPNLLRGYENIRLSTQNVIDAEKAPGGPYRLGTSGSCPNATSKSGFFATMAWAVPKDNNKNATNPLTVEVPYICTEGEDQITVWGFHSDDKTQMKNLYGDSNPQKFTSSANGVTTHYVSQIGSFPDQTEDGGLPQSGRIVVDYMMQKPGKTGTIVYQRGVLLPQKVWCASGRSKVIKGSLPLIGEADCLHEKYGGLNKSKPYYTGEHAKAIGNCPIWVKTPLK'
+   query_seq = _aatype_to_str_sequence(protein_object_A.aatype)
+   aligner = kalign.Kalign(binary_path=shutil.which('kalign'))
+   parsed_a3m = parsers.parse_a3m(aligner.align([true_seq , query_seq]))
+   old_aligned_template, new_aligned_template = parsed_a3m.sequences
+   old_to_new_template_mapping = {}
+   old_template_index = -1
+   new_template_index = -1
+   num_same = 0
+   for old_template_aa, new_template_aa in zip(
+           old_aligned_template, new_aligned_template):
+       if old_template_aa != '-':
+           old_template_index += 1
+       if new_template_aa != '-':
+           new_template_index += 1
+       if old_template_aa != '-' and new_template_aa != '-':
+           old_to_new_template_mapping[old_template_index] = new_template_index
+           if old_template_aa == new_template_aa:
+               num_same += 1
+   print(old_to_new_template_mapping)
 
