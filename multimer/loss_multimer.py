@@ -1197,9 +1197,9 @@ def structure_loss(out, batch, config):
             batch['renum_mask'][0],
             config['structure_module'])
     violation_loss, violation_loss_loop = structural_violation_loss(pred_mask, batch['renum_mask'][0], violations, config['structure_module'])
-    return 0.5*(intra_chain_bb_loss + interface_bb_loss) + 0.5*sc_loss + sup_chi_loss + violation_loss,\
-           0.5*(intra_chain_bb_loss_loop + interface_bb_loss_loop) + 0.5*sc_loss_loop + sup_chi_loss_loop + violation_loss_loop,\
-           gt_rigid, gt_affine_mask
+    structure_loss = 0.5*(intra_chain_bb_loss + interface_bb_loss) + 0.5*sc_loss + sup_chi_loss + violation_loss
+    structure_loop_loss = 0.5*(intra_chain_bb_loss_loop + interface_bb_loss_loop) + 0.5*sc_loss_loop + sup_chi_loss_loop + violation_loss_loop
+    return structure_loss, structure_loop_loss, gt_rigid, gt_affine_mask
 
 def masked_msa_loss(out, batch):
     errors = softmax_cross_entropy(
