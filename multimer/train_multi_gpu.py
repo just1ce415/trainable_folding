@@ -12,9 +12,7 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 from alphadock import residue_constants
-from Bio import PDB
-from multimer import (config_multimer, load_param_multimer, modules_multimer,
-                      pdb_to_template, test_multimer)
+from multimer import config_multimer, load_param_multimer, modules_multimer, test_multimer
 from multimer.lr_schedulers import AlphaFoldLRScheduler
 from pytorch_lightning.callbacks.lr_monitor import LearningRateMonitor
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
@@ -107,6 +105,14 @@ class TrainableFolding(pl.LightningModule):
         self.val_sample_names = mul_dataset.processed_data
         return torch.utils.data.DataLoader(mul_dataset, batch_size=self.batch_size, shuffle=False)
 
+    def test_dataloader(self):
+        mul_dataset = MultimerDataset(
+            json_data=self.val_data,
+            preprocessed_data_dir=self.preprocessed_data_dir
+        )
+        self.val_sample_names = mul_dataset.processed_data
+        return torch.utils.data.DataLoader(mul_dataset, batch_size=self.batch_size, shuffle=False)
+
     def forward(self, batch):
         return self.model(batch, is_eval_mode=self.trainer.evaluating)
    
@@ -151,6 +157,88 @@ class TrainableFolding(pl.LightningModule):
         os.remove(filename)
 
         return sample_name
+
+    def _get_predicted_structure(self, batch, output, sample_name, mode='val'):
+        output['predicted_aligned_error']['asym_id'] = batch['asym_id'][0]
+        confidences = test_multimer.get_confidence_metrics(output, True)
+
+        plddt = confidences['plddt'].detach().cpu().numpy()
+        plddt_b_factors = np.repeat(
+            plddt[..., None], residue_constants.atom_type_num, axis=-1
+        )
+        pdb_out = test_multimer.protein_to_pdb(
+            batch['aatype'][0].cpu().numpy(),
+            output['final_all_atom'].detach().cpu().numpy(),
+            batch['residue_index'][0].cpu().numpy() + 1,
+            batch['asym_id'][0].cpu().numpy(),
+            output['final_atom_mask'].cpu().numpy(), plddt_b_factors[0]
+        )
+
+        filename = f"{mode}_pred_{sample_name}_{np.random.randint(1000000, 10000000)}.pdb"
+        with open(filename, 'w') as f:
+            f.write(pdb_out)
+        self.logger.experiment.log({f'{mode}_pred_{sample_name}': Molecule(filename)})
+        os.remove(filename)
+
+    def _get_true_structure(self, batch, sample_name):
+        # a temp solution for b_factors
+        b_factors = np.ones((len(batch['aatype'][0]), residue_constants.atom_type_num)) * 100.0
+        pdb_out = test_multimer.protein_to_pdb(
+            batch['aatype'][0].cpu().numpy(),
+            batch['all_atom_positions'][0].cpu().numpy(),
+            batch['residue_index'][0].cpu().numpy() + 1,
+            batch['asym_id'][0].cpu().numpy(),
+            batch['all_atom_mask'][0].cpu().numpy(), b_factors
+        )
+
+        filename = f"true_{sample_name}_{np.random.randint(1000000, 10000000)}.pdb"
+        with open(filename, 'w') as f:
+            f.write(pdb_out)
+        self.logger.experiment.log({f'true_{sample_name}': Molecule(filename)})
+        os.remove(filename)
+
+    def _get_masked_true_structure(self, batch, sample_name):
+        # a temp solution for b_factors
+        b_factors = np.ones((len(batch['aatype'][0]), residue_constants.atom_type_num)) * 100.0
+        pdb_out = test_multimer.protein_to_pdb(
+            batch['aatype'][0].cpu().numpy(),
+            batch['all_atom_positions'][0].cpu().numpy(),
+            batch['residue_index'][0].cpu().numpy() + 1,
+            batch['asym_id'][0].cpu().numpy(),
+            batch['all_atom_mask'][0].cpu().numpy(), b_factors,
+            batch['renum_mask'][0].cpu().numpy()
+        )
+
+        filename = f"masked_{sample_name}_{np.random.randint(1000000, 10000000)}.pdb"
+        with open(filename, 'w') as f:
+            f.write(pdb_out)
+        self.logger.experiment.log({f'masked_{sample_name}': Molecule(filename)})
+        os.remove(filename)
+
+    def test_step(self, batch, batch_idx):
+        sample_name = self.val_sample_names[batch_idx]
+        output, loss, loss_items = self.forward(batch)
+        self._get_predicted_structure(batch, output, sample_name, mode='baseline')
+        self._get_true_structure(batch, sample_name)
+        self._get_masked_true_structure(batch, sample_name)
+
+        for k, v in loss_items.items():
+            self.log(f'test_{k}', v, on_step=False, on_epoch=True, logger=True)
+
+        # for each sample
+        for k, v in loss_items.items():
+            self.log(f'test_{k}_{sample_name}', v, on_step=False, on_epoch=True, logger=True)
+
+        return {'sample_name': sample_name, 'mask_size': batch['renum_mask'][0].sum(), **loss_items}
+
+    def test_epoch_end(self, test_step_outputs):
+        columns = [key for key in test_step_outputs[0]]
+        values = [output.values() for output in test_step_outputs]
+        wdb_logger.log_table(
+                key='test_metrics',
+                columns=columns,
+                data=values,
+            )
     
     def configure_optimizers(self, 
         learning_rate: float = 5e-5,
@@ -240,11 +328,13 @@ if __name__ == '__main__':
     parser = pl.Trainer.add_argparse_args(parser)
     args = parser.parse_args()
 
+    SEED = 4
+
     with open(args.json_data_path) as f:
         json_data = json.load(f)
 
     n_train_samples = int(len(json_data) * (1 - args.val_size))
-    random.shuffle(json_data)
+    random.Random(SEED).shuffle(json_data)
     train_data, val_data = json_data[:n_train_samples], json_data[n_train_samples:]
     callbacks = []
     checkpoint_callback = ModelCheckpoint(dirpath=args.model_checkpoint_path, every_n_train_steps=1)
@@ -274,7 +364,6 @@ if __name__ == '__main__':
     else:
         strategy = None
 
-    loggers = []
     wdb_logger = WandbLogger(
         name=args.wandb_name,
         save_dir=args.output_dir,
@@ -282,14 +371,13 @@ if __name__ == '__main__':
         resume='True',
         project='ab_ft_loop'
     )
-    loggers.append(wdb_logger)
 
     trainer = pl.Trainer.from_argparse_args(
         args,
         strategy=strategy,
         callbacks=callbacks,
-        logger=loggers,
-        max_epochs=10,
+        logger=wdb_logger,
+        max_epochs=2,
         default_root_dir=args.trainer_dir_path,
         accumulate_grad_batches=args.accum_grad_batches,
         log_every_n_steps=1,
