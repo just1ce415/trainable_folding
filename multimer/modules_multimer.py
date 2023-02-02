@@ -1258,6 +1258,9 @@ class DockerIteration(nn.Module):
         structure_loss, structure_loss_loop, gt_rigid, gt_affine_mask = loss_multimer.structure_loss(out, batch, self.global_config['model']['heads'])
         pae_loss, pae_loop_loss = loss_multimer.tm_loss(pae_logits, pae_breaks, out['struct_out']['frames'][-1], gt_rigid, batch['renum_mask'], gt_affine_mask, batch['resolution'], self.global_config['model']['heads'])
         masked_msa_loss = loss_multimer.masked_msa_loss(out, batch)
+        plddt = compute_plddt(self.PredictedLddt(out))
+
+        mean_masked_plddt = ((plddt * batch['renum_mask']).sum() / batch['renum_mask'].sum())
         loss = sum([
             0.01 * lddt_loss,
             0.01 * resolved_loss,
