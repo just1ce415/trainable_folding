@@ -30,7 +30,7 @@ def _chain_end(atom_index, end_resname, chain_name, residue_index) -> str:
   return (f'{chain_end:<6}{atom_index:>5}      {end_resname:>3} '
           f'{chain_name:>1}{residue_index:>4}')
 
-def protein_to_pdb(aatype, atom_positions, residue_index, chain_index, atom_mask, b_factors):
+def protein_to_pdb(aatype, atom_positions, residue_index, chain_index, atom_mask, b_factors, out_mask=None):
     restypes = residue_constants.restypes + ["X"]
     res_1to3 = lambda r: residue_constants.restype_1to3.get(restypes[r], "UNK")
     atom_types = residue_constants.atom_types
@@ -49,6 +49,8 @@ def protein_to_pdb(aatype, atom_positions, residue_index, chain_index, atom_mask
     atom_index = 1
     last_chain_index = chain_index[0]
     for i in range(aatype.shape[0]):
+        if out_mask is not None and out_mask[i] == 0:
+            continue
         if last_chain_index != chain_index[i]:
             pdb_lines.append(_chain_end(
             atom_index, res_1to3(aatype[i - 1]), chain_ids[chain_index[i - 1]],
