@@ -14,6 +14,7 @@ import torch
 from alphadock import residue_constants
 from multimer import config_multimer, load_param_multimer, modules_multimer, test_multimer
 from multimer.lr_schedulers import AlphaFoldLRScheduler
+from multimer.preprocess import find_mask_groups
 from pytorch_lightning.callbacks.lr_monitor import LearningRateMonitor
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
