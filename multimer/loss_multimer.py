@@ -143,9 +143,8 @@ def lddt_loss(out, batch, config):
             1e-10 + torch.sum(mask_renum, dim=-1)
     ), decimals=2)[0]
 
-    del score
     del errors
-    return loss, loss_renum_loop, loop_lddt
+    return loss, loss_renum_loop, loop_lddt, score
 
 def distogram_loss(out, batch, config):
     logits = out['distogram']['logits']
