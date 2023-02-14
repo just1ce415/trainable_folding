@@ -43,23 +43,41 @@ def crop_feature(features, crop_size):
     return features
 
 class MultimerDataset(Dataset):
-    def __init__(self, json_data, preprocessed_data_dir):
+    def __init__(self, json_data, preprocessed_data_dir, crop_size):
         self.data = json_data
         self.preprocessed_data_dir = preprocessed_data_dir
+        self.crop_size = crop_size
         self._preprocess_all()
 
     def _preprocess_all(self):
         self.processed_data = {}
+        self.seeds = {}
         for i, single_dataset in enumerate(self.data):
             cif_path = single_dataset['cif_file']
             file_id = os.path.basename(cif_path)[:-4]
             file_path = f'{self.preprocessed_data_dir}/{file_id}.npz'
             assert os.path.exists(file_path), f'File not found: {file_path}'
             self.processed_data[i] = file_id
+            if single_dataset['dataset'] == 'train':
+                self.seeds[i] = None
+            else:
+                self.seeds[i] = single_dataset['seed']
 
     def process(self, idx):
-        np_example = dict(np.load(f'{self.preprocessed_data_dir}/{self.processed_data[idx]}.npz'))
-        np_example = crop_feature(np_example, 384)
+        if self.seeds[idx]:
+            random.seed(self.seeds[idx])  # to stable the crop procedure for val and test
+        n_groups = 0
+        count = 0
+        while n_groups < 2:
+            np_example = dict(np.load(f'{self.preprocessed_data_dir}/{self.processed_data[idx]}.npz'))
+            np_example = crop_feature(np_example, self.crop_size)
+            n_groups = len(find_mask_groups(np_example['renum_mask']))
+            count += 1
+            if count == 100:
+                raise RuntimeError("Did not find a good crop")
+
+        if self.seeds[idx]:
+            np_example['seed'] = self.seeds[idx]
         np_example = {k: torch.tensor(v) for k, v in np_example.items()}
 
         return np_example
@@ -79,7 +97,9 @@ class TrainableFolding(pl.LightningModule):
             batch_size,
             preprocessed_data_dir,
             model_weights_path,
-            n_layers_in_lr_group
+            n_layers_in_lr_group,
+            test_table_name='test_metrics',
+            crop_size=384,
     ):
         super(TrainableFolding, self).__init__()
         self.config_multimer = config_multimer.config_multimer
@@ -90,18 +110,22 @@ class TrainableFolding(pl.LightningModule):
         self.batch_size = batch_size
         self.preprocessed_data_dir = preprocessed_data_dir
         self.n_layers_in_lr_group = n_layers_in_lr_group
+        self.test_table_name = test_table_name
+        self.crop_size = crop_size
    
     def train_dataloader(self):
         mul_dataset = MultimerDataset(
             json_data=self.train_data,
-            preprocessed_data_dir=self.preprocessed_data_dir
+            preprocessed_data_dir=self.preprocessed_data_dir,
+            crop_size=self.crop_size,
         )
         return torch.utils.data.DataLoader(mul_dataset, batch_size=self.batch_size, shuffle=True, drop_last=True)
 
     def val_dataloader(self):
         mul_dataset = MultimerDataset(
             json_data=self.val_data,
-            preprocessed_data_dir=self.preprocessed_data_dir
+            preprocessed_data_dir=self.preprocessed_data_dir,
+            crop_size=self.crop_size,
         )
         self.val_sample_names = mul_dataset.processed_data
         return torch.utils.data.DataLoader(mul_dataset, batch_size=self.batch_size, shuffle=False)
@@ -109,7 +133,8 @@ class TrainableFolding(pl.LightningModule):
     def test_dataloader(self):
         mul_dataset = MultimerDataset(
             json_data=self.val_data,
-            preprocessed_data_dir=self.preprocessed_data_dir
+            preprocessed_data_dir=self.preprocessed_data_dir,
+            crop_size=self.crop_size,
         )
         self.val_sample_names = mul_dataset.processed_data
         return torch.utils.data.DataLoader(mul_dataset, batch_size=self.batch_size, shuffle=False)
@@ -125,6 +150,7 @@ class TrainableFolding(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
+        torch.manual_seed(batch['seed'])
         sample_name = self.val_sample_names[batch_idx]
         output, loss, loss_items = self.forward(batch)
         output['predicted_aligned_error']['asym_id'] = batch['asym_id'][0]
@@ -217,6 +243,7 @@ class TrainableFolding(pl.LightningModule):
         os.remove(filename)
 
     def test_step(self, batch, batch_idx):
+        torch.manual_seed(batch['seed'])
         sample_name = self.val_sample_names[batch_idx]
         output, loss, loss_items = self.forward(batch)
         self._get_predicted_structure(batch, output, sample_name, mode='baseline')
@@ -236,7 +263,7 @@ class TrainableFolding(pl.LightningModule):
         columns = [key for key in test_step_outputs[0]]
         values = [output.values() for output in test_step_outputs]
         wdb_logger.log_table(
-                key='test_metrics',
+                key=self.test_table_name,
                 columns=columns,
                 data=values,
             )
@@ -310,33 +337,28 @@ if __name__ == '__main__':
         help="Path to a model checkpoint from which to restore training state"
     )
     parser.add_argument(
-        "--resume_model_weights_only", type=bool_type, default=False,
-        help="Whether to load just model weights as opposed to training state"
-    )
-    parser.add_argument(
         "--wandb_id", type=str, default=None,
         help="ID of a previous run to be resumed"
     )
     parser.add_argument("--wandb_name", type=str, default=None)
+    parser.add_argument("--project", type=str, default=None)
+    parser.add_argument("--test_table_name", type=str, default=None)
     parser.add_argument("--trainer_dir_path", type=str, default=None)
     parser.add_argument("--model_checkpoint_path", type=str, default=None)
-    parser.add_argument("--json_data_path", type=str, default=None)
+    parser.add_argument("--train_json_path", type=str, default=None)
+    parser.add_argument("--val_json_path", type=str, default=None)
     parser.add_argument("--preprocessed_data_dir", type=str, default=None)
     parser.add_argument("--model_weights_path", type=str, default=None)
     parser.add_argument("--accum_grad_batches", type=int, default=16)
     parser.add_argument("--n_layers_in_lr_group", type=int, default=None)
-    parser.add_argument("--val_size", type=float, default=0.05)
+    parser.add_argument("--crop_size", type=int, default=None)
+    parser.add_argument("--step", type=str, default='train')
     parser = pl.Trainer.add_argparse_args(parser)
     args = parser.parse_args()
 
-    SEED = 4
+    train_data = json.load(open(args.train_json_path))
+    val_data = json.load(open(args.val_json_path))
 
-    with open(args.json_data_path) as f:
-        json_data = json.load(f)
-
-    n_train_samples = int(len(json_data) * (1 - args.val_size))
-    random.Random(SEED).shuffle(json_data)
-    train_data, val_data = json_data[:n_train_samples], json_data[n_train_samples:]
     callbacks = []
     checkpoint_callback = ModelCheckpoint(dirpath=args.model_checkpoint_path, every_n_train_steps=1)
     callbacks.append(checkpoint_callback)
@@ -350,6 +372,8 @@ if __name__ == '__main__':
         preprocessed_data_dir=args.preprocessed_data_dir,
         model_weights_path=args.model_weights_path,
         n_layers_in_lr_group=args.n_layers_in_lr_group,
+        test_table_name=args.test_table_name,
+        crop_size=args.crop_size,
     )
     if args.deepspeed_config_path is not None:
         if "SLURM_JOB_ID" in os.environ:
@@ -370,7 +394,7 @@ if __name__ == '__main__':
         save_dir=args.output_dir,
         id=args.wandb_id,
         resume='True',
-        project='ab_ft_loop'
+        project=args.project,
     )
 
     trainer = pl.Trainer.from_argparse_args(
@@ -378,19 +402,18 @@ if __name__ == '__main__':
         strategy=strategy,
         callbacks=callbacks,
         logger=wdb_logger,
-        max_epochs=2,
+        max_epochs=3,
         default_root_dir=args.trainer_dir_path,
         accumulate_grad_batches=args.accum_grad_batches,
         log_every_n_steps=1,
-        val_check_interval=0.1,
+        val_check_interval=0.2,
+        accelerator='gpu',
+        num_sanity_val_steps=len(val_data),
     )
 
-    if args.resume_model_weights_only:
-        ckpt_path = None
+    if args.step == 'train':
+        trainer.fit(model_module, ckpt_path=args.resume_from_ckpt)
+    elif args.step == 'test':
+        trainer.test(model_module, ckpt_path=args.resume_from_ckpt)
     else:
-        ckpt_path = args.resume_from_ckpt
-
-    trainer.fit(
-        model_module,
-        ckpt_path=ckpt_path,
-    )
+        print('Select "train" or "test" option for parameter "step"')
