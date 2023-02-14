@@ -98,7 +98,7 @@ class TrainableFolding(pl.LightningModule):
             preprocessed_data_dir,
             model_weights_path,
             n_layers_in_lr_group,
-            test_table_name='test_metrics',
+            test_mode_name='test',
             crop_size=384,
     ):
         super(TrainableFolding, self).__init__()
@@ -110,7 +110,7 @@ class TrainableFolding(pl.LightningModule):
         self.batch_size = batch_size
         self.preprocessed_data_dir = preprocessed_data_dir
         self.n_layers_in_lr_group = n_layers_in_lr_group
-        self.test_table_name = test_table_name
+        self.test_mode_name = test_mode_name
         self.crop_size = crop_size
    
     def train_dataloader(self):
@@ -246,7 +246,7 @@ class TrainableFolding(pl.LightningModule):
         torch.manual_seed(batch['seed'])
         sample_name = self.val_sample_names[batch_idx]
         output, loss, loss_items = self.forward(batch)
-        self._get_predicted_structure(batch, output, sample_name, mode='baseline')
+        self._get_predicted_structure(batch, output, sample_name, mode=self.test_mode_name)
         self._get_true_structure(batch, sample_name)
         self._get_masked_true_structure(batch, sample_name)
 
@@ -263,7 +263,7 @@ class TrainableFolding(pl.LightningModule):
         columns = [key for key in test_step_outputs[0]]
         values = [output.values() for output in test_step_outputs]
         wdb_logger.log_table(
-                key=self.test_table_name,
+                key=f'{self.test_mode_name}_metrics',
                 columns=columns,
                 data=values,
             )
@@ -340,9 +340,12 @@ if __name__ == '__main__':
         "--wandb_id", type=str, default=None,
         help="ID of a previous run to be resumed"
     )
+    parser.add_argument(
+        "--test_mode_name", type=str, default="test",
+        help="Just a prefix for test table and structures like: test, validation, baseline"
+    )
     parser.add_argument("--wandb_name", type=str, default=None)
     parser.add_argument("--project", type=str, default=None)
-    parser.add_argument("--test_table_name", type=str, default=None)
     parser.add_argument("--trainer_dir_path", type=str, default=None)
     parser.add_argument("--model_checkpoint_path", type=str, default=None)
     parser.add_argument("--train_json_path", type=str, default=None)
@@ -372,7 +375,7 @@ if __name__ == '__main__':
         preprocessed_data_dir=args.preprocessed_data_dir,
         model_weights_path=args.model_weights_path,
         n_layers_in_lr_group=args.n_layers_in_lr_group,
-        test_table_name=args.test_table_name,
+        test_mode_name=args.test_mode_name,
         crop_size=args.crop_size,
     )
     if args.deepspeed_config_path is not None:

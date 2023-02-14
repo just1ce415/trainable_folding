@@ -14,9 +14,9 @@ python train_multi_gpu.py \
           --wandb_id $run_name \
           --wandb_name $run_name \
           --project "antibodies_test" \
-          --test_table_name "val_metrics" \
-          --trainer_dir_path /home/eglukhov/antigen/train_data/ \
-          --model_checkpoint_path /home/eglukhov/antigen/train_data/checkpoints/$run_name \
+          --test_mode_name "val_metrics" \
+          --trainer_dir_path /storage/erglukhov/antibodies/train_data/ \
+          --model_checkpoint_path /storage/erglukhov/antibodies/checkpoints/$run_name \
           --train_json_path /storage/erglukhov/antibodies/datasets/v3/train.json \
           --val_json_path /storage/erglukhov/antibodies/datasets/v3/val.json \
           --preprocessed_data_dir /storage/erglukhov/antibodies/datasets/v3/npz_data \
