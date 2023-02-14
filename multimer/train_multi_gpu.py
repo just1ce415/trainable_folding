@@ -143,47 +143,51 @@ class TrainableFolding(pl.LightningModule):
         return self.model(batch, is_eval_mode=self.trainer.evaluating)
    
     def training_step(self, batch, batch_idx):
-        output, loss, loss_items = self.forward(batch)
-        self.log('train_loss', loss, on_step=True, on_epoch=False, logger=True)
+        output, loss_items = self.forward(batch)
         for k, v in loss_items.items():
             self.log(k, v, on_step=True, on_epoch=False, logger=True)
-        return loss
+        return loss_items['loss']
 
     def validation_step(self, batch, batch_idx):
         torch.manual_seed(batch['seed'])
         sample_name = self.val_sample_names[batch_idx]
-        output, loss, loss_items = self.forward(batch)
-        output['predicted_aligned_error']['asym_id'] = batch['asym_id'][0]
-        confidences = test_multimer.get_confidence_metrics(output, True)
+        output, loss_items = self.forward(batch)
+        self._get_predicted_structure(batch, output, sample_name)
 
-        plddt = confidences['plddt'].detach().cpu().numpy()
-        plddt_b_factors = np.repeat(
-            plddt[..., None], residue_constants.atom_type_num, axis=-1
-        )
-
-        pdb_out = test_multimer.protein_to_pdb(batch['aatype'][0].cpu().numpy(),
-                                               output['final_all_atom'].detach().cpu().numpy(),
-                                               batch['residue_index'][0].cpu().numpy() + 1,
-                                               batch['asym_id'][0].cpu().numpy(),
-                                               output['final_atom_mask'].cpu().numpy(), plddt_b_factors[0])
-
-        self.log('val_loss', loss, on_step=False, on_epoch=True, logger=True)
-        # new res is always the last, batch size is always 0
         for k, v in loss_items.items():
             self.log(f'val_{k}', v, on_step=False, on_epoch=True, logger=True)
 
-        filename = f"{np.random.randint(1000000, 10000000)}.pdb"
-        with open(filename, 'w') as f:
-            f.write(pdb_out)
+        # for each sample
+        for k, v in loss_items.items():
+            self.log(f'val_{k}_{sample_name}', v, on_step=True, on_epoch=False, logger=True)
 
+        return {'sample_name': sample_name, 'mask_size': batch['renum_mask'][0].sum(), **loss_items}
+
+    def test_step(self, batch, batch_idx):
+        torch.manual_seed(batch['seed'])
+        sample_name = self.val_sample_names[batch_idx]
+        output, loss_items = self.forward(batch)
+        self._get_predicted_structure(batch, output, sample_name, mode=self.test_mode_name)
+        self._get_true_structure(batch, sample_name)
+        self._get_masked_true_structure(batch, sample_name)
+
+        for k, v in loss_items.items():
+            self.log(f'test_{k}', v, on_step=False, on_epoch=True, logger=True)
+
+        # for each sample
+        for k, v in loss_items.items():
+            self.log(f'test_{k}_{sample_name}', v, on_step=False, on_epoch=True, logger=True)
+
+        return {'sample_name': sample_name, 'mask_size': batch['renum_mask'][0].sum(), **loss_items}
+
+    def test_epoch_end(self, test_step_outputs):
+        columns = [key for key in test_step_outputs[0]]
+        values = [output.values() for output in test_step_outputs]
         wdb_logger.log_table(
-            key=sample_name,
-            columns=['id', 'pdb'],
-            data=[[sample_name, Molecule(filename)]]
-        )
-        os.remove(filename)
-
-        return sample_name
+                key=f'{self.test_mode_name}_metrics',
+                columns=columns,
+                data=values,
+            )
 
     def _get_predicted_structure(self, batch, output, sample_name, mode='val'):
         output['predicted_aligned_error']['asym_id'] = batch['asym_id'][0]
@@ -241,32 +245,6 @@ class TrainableFolding(pl.LightningModule):
             f.write(pdb_out)
         self.logger.experiment.log({f'masked_{sample_name}': Molecule(filename)})
         os.remove(filename)
-
-    def test_step(self, batch, batch_idx):
-        torch.manual_seed(batch['seed'])
-        sample_name = self.val_sample_names[batch_idx]
-        output, loss, loss_items = self.forward(batch)
-        self._get_predicted_structure(batch, output, sample_name, mode=self.test_mode_name)
-        self._get_true_structure(batch, sample_name)
-        self._get_masked_true_structure(batch, sample_name)
-
-        for k, v in loss_items.items():
-            self.log(f'test_{k}', v, on_step=False, on_epoch=True, logger=True)
-
-        # for each sample
-        for k, v in loss_items.items():
-            self.log(f'test_{k}_{sample_name}', v, on_step=False, on_epoch=True, logger=True)
-
-        return {'sample_name': sample_name, 'mask_size': batch['renum_mask'][0].sum(), **loss_items}
-
-    def test_epoch_end(self, test_step_outputs):
-        columns = [key for key in test_step_outputs[0]]
-        values = [output.values() for output in test_step_outputs]
-        wdb_logger.log_table(
-                key=f'{self.test_mode_name}_metrics',
-                columns=columns,
-                data=values,
-            )
     
     def configure_optimizers(self, 
         learning_rate: float = 5e-5,
