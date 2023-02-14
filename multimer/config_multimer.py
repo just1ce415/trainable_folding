@@ -320,9 +320,9 @@ config_multimer= {
         },
         'num_ensemble_eval': 1,
         'num_recycle': 5,
-        'max_num_recycle_eval': 30,
-        'min_num_recycle_eval': 3,
-        'confident_plddt': 90,
-        'resample_msa_in_recycling': True
+        'max_num_recycle_eval': 5,
+        'min_num_recycle_eval': 5,
+        'confident_plddt': 85,
+        'resample_msa_in_recycling': False
     }
 }
