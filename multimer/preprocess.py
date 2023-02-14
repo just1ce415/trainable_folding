@@ -12,6 +12,21 @@ from tqdm import tqdm
 from multimer import msa_pairing, pdb_to_template, pipeline_multimer, feature_processing
 
 
+def find_mask_groups(lst):
+    groups = []
+    start = None
+    for i, x in enumerate(lst):
+        if x == 1:
+            if start is None:
+                start = i
+        elif start is not None:
+            groups.append((start, i - 1))
+            start = None
+    if start is not None:
+        groups.append((start, len(lst) - 1))
+    return groups
+
+
 def process_single_chain_pdb(
         all_position,
         all_mask,
