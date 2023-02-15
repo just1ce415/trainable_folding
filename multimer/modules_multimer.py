@@ -1275,22 +1275,24 @@ class DockerIteration(nn.Module):
             2.0 * structure_loss_loop,
             0.02 * pae_loop_loss
         ])
-        loss_item = {}
-        loss_item['resolved_loss'] = resolved_loss
-        loss_item['resolved_loop_loss'] = resolved_loop_loss
-        loss_item['lddt_loss'] = lddt_loss
-        loss_item['lddt_loop_loss'] = lddt_loop_loss
-        loss_item['distogram_loss'] = distogram_loss
-        loss_item['distogram_loop_loss'] = distogram_loop_loss
-        loss_item['structure_loss'] = structure_loss
-        loss_item['structure_loop_loss'] = structure_loss_loop
-        loss_item['pae_loss'] = pae_loss
-        loss_item['pae_loop_loss'] = pae_loop_loss
-        loss_item['maksed_msa_loss'] = masked_msa_loss
-        loss_item['loop_lddt'] = loop_lddt
-        loss_item['recycle_iter'] = float(recycle_iter)
-        loss_item['loop_plddt'] = mean_masked_plddt
-        loss_item['num_alignments'] = float(batch['num_alignments'].cpu().numpy()[0])
+        loss_item = {
+            'loss': loss,
+            'resolved_loss': resolved_loss,
+            'resolved_loop_loss': resolved_loop_loss,
+            'lddt_loss': lddt_loss,
+            'lddt_loop_loss': lddt_loop_loss,
+            'distogram_loss': distogram_loss,
+            'distogram_loop_loss': distogram_loop_loss,
+            'structure_loss': structure_loss,
+            'structure_loop_loss': structure_loss_loop,
+            'pae_loss': pae_loss,
+            'pae_loop_loss': pae_loop_loss,
+            'maksed_msa_loss': masked_msa_loss,
+            'loop_lddt': loop_lddt,
+            'recycle_iter': float(recycle_iter),
+            'loop_plddt': mean_masked_plddt,
+            'num_alignments': float(batch['num_alignments'].cpu().numpy()[0])
+        }
 
         groups = find_mask_groups(batch['renum_mask'].cpu().numpy()[0])
         # names = ['H1', 'H2', 'H3', 'L1', 'L2', 'L3']
@@ -1301,7 +1303,7 @@ class DockerIteration(nn.Module):
             loss_item[f'plddt_{name}'] = np.mean(plddt.detach().cpu().numpy()[0][start:end])
 
         del distogram_logits, distogram_bin_edges, resovled_logits, pred_lddt
-        return out, loss, loss_item
+        return out, loss_item
 
 
 
