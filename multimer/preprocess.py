@@ -124,9 +124,9 @@ def _preprocess_one(single_dataset):
         #################
         if chain != antigen_chain:
             all_atom_positions, all_atom_mask, renum_mask = pdb_to_template.align_seq_pdb(
-                single_dataset['renum_seq'][chain], single_dataset['cif_file'], chain)
+                single_dataset['renum_seq'][chain], single_dataset['pdb_file'], chain)
         else:
-            all_atom_positions, all_atom_mask, renum_mask = pdb_to_template.align_antigen_seq(sequence, single_dataset['cif_file'], chain)
+            all_atom_positions, all_atom_mask, renum_mask = pdb_to_template.make_antigen_features(sequence, single_dataset['cif_file'], chain)
         description = '_'.join([file_id, chain])
         #################
         a3m_file = os.path.join(pre_alignment_path, f'{file_id}_{chain}', 'mmseqs/aggregated.a3m')

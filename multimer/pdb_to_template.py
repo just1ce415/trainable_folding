@@ -7,6 +7,8 @@ from Bio.PDB import PDBParser
 from alphadock import residue_constants
 from typing import Any, Mapping, Optional
 from multimer import pipeline_multimer
+from multimer import mmcif_parsing
+import os
 
 @dataclasses.dataclass(frozen=True)
 class Protein:
@@ -206,6 +208,19 @@ def align_antigen_seq(ang_cif_seq, pdb_file, antigen_chain):
     renum_mask = np.zeros(num_res, dtype=np.float32)
     return all_atom_positions, all_atom_mask, renum_mask
 
+def make_antigen_features(sequence, cif_file, chain_id):
+    file_id = os.path.basename(cif_file)[:-4]
+    with open(cif_file, 'r') as f:
+        mmcif_string = f.read()
+    mmcif_obj = mmcif_parsing.parse(file_id=file_id, mmcif_string=mmcif_string).mmcif_object
+    all_atom_positions, all_atom_mask = pipeline_multimer._get_atom_positions(
+        mmcif_obj, chain_id, max_ca_ca_distance=15000.0
+    )
+    assert all_atom_positions.shape[0] == len(sequence)
+    renum_mask = np.zeros(len(sequence), dtype=np.float32)
+    return all_atom_positions, all_atom_mask, renum_mask
+
+
 def _aatype_to_str_sequence(aatype):
     return ''.join([
         residue_constants.restypes_with_x[aatype[i]] 
@@ -238,36 +253,41 @@ def make_pdb_features(
 
     return pdb_feats
 
-from multimer import kalign
-import shutil
-import parsers
-if __name__ == '__main__':
-   with open('/storage/thu/antibodies_all_structures/all_structures/chothia/7kqg.pdb', "r") as fp:
-       pdb_string = fp.read()
-   protein_object_A = from_pdb_string(pdb_string, 'A')
-   # protein_object_H = from_pdb_string(pdb_string, 'H')
-   # protein_object_L = from_pdb_string(pdb_string, 'L')
-   # template_aatype = np.concatenate((protein_object_A.aatype, protein_object_H.aatype, protein_object_L.aatype), axis=0)
-   # template_all_atom_pos = np.concatenate((protein_object_A.atom_positions, protein_object_H.atom_positions, protein_object_L.atom_positions), axis=0)
-   # template_all_atom_mask = np.concatenate((protein_object_A.atom_mask, protein_object_H.atom_mask, protein_object_L.atom_mask), axis=0)
-   true_seq = 'PLTTTPTKSYFANLKGTRTRGKLCPDCLNCTDLDVALGRPMCVGTTPSAKASILHEVKPVTSGCFPIMHDRTKIRQLPNLLRGYENIRLSTQNVIDAEKAPGGPYRLGTSGSCPNATSKSGFFATMAWAVPKDNNKNATNPLTVEVPYICTEGEDQITVWGFHSDDKTQMKNLYGDSNPQKFTSSANGVTTHYVSQIGSFPDQTEDGGLPQSGRIVVDYMMQKPGKTGTIVYQRGVLLPQKVWCASGRSKVIKGSLPLIGEADCLHEKYGGLNKSKPYYTGEHAKAIGNCPIWVKTPLK'
-   query_seq = _aatype_to_str_sequence(protein_object_A.aatype)
-   aligner = kalign.Kalign(binary_path=shutil.which('kalign'))
-   parsed_a3m = parsers.parse_a3m(aligner.align([true_seq , query_seq]))
-   old_aligned_template, new_aligned_template = parsed_a3m.sequences
-   old_to_new_template_mapping = {}
-   old_template_index = -1
-   new_template_index = -1
-   num_same = 0
-   for old_template_aa, new_template_aa in zip(
-           old_aligned_template, new_aligned_template):
-       if old_template_aa != '-':
-           old_template_index += 1
-       if new_template_aa != '-':
-           new_template_index += 1
-       if old_template_aa != '-' and new_template_aa != '-':
-           old_to_new_template_mapping[old_template_index] = new_template_index
-           if old_template_aa == new_template_aa:
-               num_same += 1
-   print(old_to_new_template_mapping)
+# from multimer import kalign
+# import shutil
+# from multimer import mmcif_parsing
+# if __name__ == '__main__':
+   # with open('/storage/thu/antibodies_all_structures/all_structures/chothia/7kqg.pdb', "r") as fp:
+   #     pdb_string = fp.read()
+   # protein_object_A = from_pdb_string(pdb_string, 'A')
+   # # protein_object_H = from_pdb_string(pdb_string, 'H')
+   # # protein_object_L = from_pdb_string(pdb_string, 'L')
+   # # template_aatype = np.concatenate((protein_object_A.aatype, protein_object_H.aatype, protein_object_L.aatype), axis=0)
+   # # template_all_atom_pos = np.concatenate((protein_object_A.atom_positions, protein_object_H.atom_positions, protein_object_L.atom_positions), axis=0)
+   # # template_all_atom_mask = np.concatenate((protein_object_A.atom_mask, protein_object_H.atom_mask, protein_object_L.atom_mask), axis=0)
+   # true_seq = 'PLTTTPTKSYFANLKGTRTRGKLCPDCLNCTDLDVALGRPMCVGTTPSAKASILHEVKPVTSGCFPIMHDRTKIRQLPNLLRGYENIRLSTQNVIDAEKAPGGPYRLGTSGSCPNATSKSGFFATMAWAVPKDNNKNATNPLTVEVPYICTEGEDQITVWGFHSDDKTQMKNLYGDSNPQKFTSSANGVTTHYVSQIGSFPDQTEDGGLPQSGRIVVDYMMQKPGKTGTIVYQRGVLLPQKVWCASGRSKVIKGSLPLIGEADCLHEKYGGLNKSKPYYTGEHAKAIGNCPIWVKTPLK'
+   # query_seq = _aatype_to_str_sequence(protein_object_A.aatype)
+   # aligner = kalign.Kalign(binary_path=shutil.which('kalign'))
+   # parsed_a3m = parsers.parse_a3m(aligner.align([true_seq , query_seq]))
+   # old_aligned_template, new_aligned_template = parsed_a3m.sequences
+   # old_to_new_template_mapping = {}
+   # old_template_index = -1
+   # new_template_index = -1
+   # num_same = 0
+   # for old_template_aa, new_template_aa in zip(
+   #         old_aligned_template, new_aligned_template):
+   #     if old_template_aa != '-':
+   #         old_template_index += 1
+   #     if new_template_aa != '-':
+   #         new_template_index += 1
+   #     if old_template_aa != '-' and new_template_aa != '-':
+   #         old_to_new_template_mapping[old_template_index] = new_template_index
+   #         if old_template_aa == new_template_aa:
+   #             num_same += 1
+   # print(old_to_new_template_mapping)
+   # with open('/data/thu/af_database/pdb_mmcif/mmcif_files/7n0u.cif', 'r') as f:
+   #     mmcif_string = f.read()
+   # mmcif_obj = mmcif_parsing.parse(file_id="4hkx", mmcif_string=mmcif_string).mmcif_object
+   # print(mmcif_obj.chain_to_seqres.keys())
+
 
