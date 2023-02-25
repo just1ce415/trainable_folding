@@ -53,8 +53,7 @@ class MultimerDataset(Dataset):
         self.processed_data = {}
         self.seeds = {}
         for i, single_dataset in enumerate(self.data):
-            cif_path = single_dataset['cif_file']
-            file_id = os.path.basename(cif_path)[:-4]
+            file_id = single_dataset['sample_id']
             file_path = f'{self.preprocessed_data_dir}/{file_id}.npz'
             assert os.path.exists(file_path), f'File not found: {file_path}'
             self.processed_data[i] = file_id
