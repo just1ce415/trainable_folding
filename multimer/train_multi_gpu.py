@@ -314,24 +314,23 @@ if __name__ == '__main__':
         help="Path to a model checkpoint from which to restore training state"
     )
     parser.add_argument(
-        "--wandb_id", type=str, default=None,
-        help="ID of a previous run to be resumed"
-    )
-    parser.add_argument(
         "--test_mode_name", type=str, default="test",
         help="Just a prefix for test table and structures like: test, validation, baseline"
     )
+    parser.add_argument("--wandb_output_dir", type=str, default=None)
+    parser.add_argument("--wandb_project", type=str, default=None)
     parser.add_argument("--wandb_name", type=str, default=None)
-    parser.add_argument("--project", type=str, default=None)
+    parser.add_argument("--wandb_id", type=str, default=None)
     parser.add_argument("--trainer_dir_path", type=str, default=None)
     parser.add_argument("--model_checkpoint_path", type=str, default=None)
     parser.add_argument("--train_json_path", type=str, default=None)
     parser.add_argument("--val_json_path", type=str, default=None)
     parser.add_argument("--preprocessed_data_dir", type=str, default=None)
     parser.add_argument("--model_weights_path", type=str, default=None)
-    parser.add_argument("--accum_grad_batches", type=int, default=16)
+    parser.add_argument("--accum_grad_batches", type=int, default=1)
     parser.add_argument("--n_layers_in_lr_group", type=int, default=None)
     parser.add_argument("--crop_size", type=int, default=None)
+    parser.add_argument("--max_epochs", type=int, default=1)
     parser.add_argument("--step", type=str, default='train')
     parser = pl.Trainer.add_argparse_args(parser)
     args = parser.parse_args()
@@ -339,11 +338,16 @@ if __name__ == '__main__':
     train_data = json.load(open(args.train_json_path))
     val_data = json.load(open(args.val_json_path))
 
-    callbacks = []
-    checkpoint_callback = ModelCheckpoint(dirpath=args.model_checkpoint_path, every_n_train_steps=1)
-    callbacks.append(checkpoint_callback)
+    checkpoint_callback = ModelCheckpoint(
+        dirpath=args.model_checkpoint_path,
+        save_top_k=5,
+        mode='min',
+        monitor='val_structure_loop_loss',
+        filename='{step:03d}-{val_structure_loop_loss:.2f}',
+        save_last=True,
+    )
     lr_monitor = LearningRateMonitor(logging_interval="step")
-    callbacks.append(lr_monitor)
+    callbacks = [checkpoint_callback, lr_monitor]
     model_module = TrainableFolding(
         config_multimer=config_multimer,
         train_data=train_data,
@@ -370,11 +374,12 @@ if __name__ == '__main__':
         strategy = None
 
     wdb_logger = WandbLogger(
+        save_dir=args.wandb_output_dir,
+        project=args.wandb_project,
         name=args.wandb_name,
-        save_dir=args.output_dir,
         id=args.wandb_id,
         resume='True',
-        project=args.project,
+        offline=True,
     )
 
     trainer = pl.Trainer.from_argparse_args(
@@ -382,7 +387,7 @@ if __name__ == '__main__':
         strategy=strategy,
         callbacks=callbacks,
         logger=wdb_logger,
-        max_epochs=3,
+        max_epochs=args.max_epochs,
         default_root_dir=args.trainer_dir_path,
         accumulate_grad_batches=args.accum_grad_batches,
         log_every_n_steps=1,
