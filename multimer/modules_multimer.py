@@ -747,20 +747,15 @@ class FragExtraStackIteration(torch.nn.Module):
         self.PairTransition = Transition(config['pair_transition'], global_config)
 
     def forward(self, msa_act, pair_act, msa_mask, pair_mask):
-        #msa_act, pair_act = extra_msa_stack_inputs['msa'], extra_msa_stack_inputs['pair']
-        #msa_mask, pair_mask = extra_mask['msa'], extra_mask['pair']
-        msa_act = msa_act.clone()
-        pair_act = pair_act.clone()
-        pair_act += checkpoint(self.OuterProductMean, msa_act.clone(), msa_mask)
-        msa_act += checkpoint(self.RowAttentionWithPairBias, msa_act.clone(), pair_act.clone(), msa_mask)
-        msa_act += checkpoint(self.ExtraColumnGlobalAttention, msa_act.clone(), msa_mask)
-        msa_act += checkpoint(self.RecTransition, msa_act.clone(), msa_mask)
-        pair_act += checkpoint(self.TriangleMultiplicationOutgoing, pair_act.clone(), pair_mask)
-        pair_act += checkpoint(self.TriangleMultiplicationIngoing, pair_act.clone(), pair_mask)
-        pair_act += checkpoint(self.TriangleAttentionStartingNode, pair_act.clone(), pair_mask)
-        pair_act += checkpoint(self.TriangleAttentionEndingNode, pair_act.clone(), pair_mask)
-        pair_act += checkpoint(self.PairTransition, pair_act.clone(), pair_mask)
-
+        pair_act = pair_act + self.OuterProductMean(msa_act, msa_mask)
+        msa_act = msa_act + self.RowAttentionWithPairBias(msa_act, pair_act, msa_mask)
+        msa_act = msa_act + self.ExtraColumnGlobalAttention(msa_act, msa_mask)
+        msa_act = msa_act + self.RecTransition(msa_act, msa_mask)
+        pair_act = pair_act + self.TriangleMultiplicationOutgoing(pair_act, pair_mask)
+        pair_act = pair_act + self.TriangleMultiplicationIngoing(pair_act, pair_mask)
+        pair_act = pair_act + self.TriangleAttentionStartingNode(pair_act, pair_mask)
+        pair_act = pair_act + self.TriangleAttentionEndingNode(pair_act, pair_mask)
+        pair_act = pair_act + self.PairTransition(pair_act, pair_mask)
         return msa_act, pair_act
 
 
@@ -789,18 +784,15 @@ class EvoformerIteration(nn.Module):
         self.PairTransition = Transition(config['pair_transition'], global_config)
 
     def forward(self, msa_act, pair_act, msa_mask, pair_mask):
-        msa_act = msa_act.clone()
-        pair_act = pair_act.clone()
-        pair_act += checkpoint(self.OuterProductMean, msa_act.clone(), msa_mask)
-        msa_act += checkpoint(self.RowAttentionWithPairBias,msa_act.clone(), pair_act.clone(), msa_mask)
-        msa_act += checkpoint(self.LigColumnAttention,msa_act.clone(), msa_mask)
-        msa_act += checkpoint(self.RecTransition,msa_act.clone(), msa_mask)
-        pair_act += checkpoint(self.TriangleMultiplicationOutgoing,pair_act.clone(), pair_mask)
-        pair_act += checkpoint(self.TriangleMultiplicationIngoing,pair_act.clone(), pair_mask)
-        pair_act += checkpoint(self.TriangleAttentionStartingNode,pair_act.clone(), pair_mask)
-        pair_act += checkpoint(self.TriangleAttentionEndingNode,pair_act.clone(), pair_mask)
-        pair_act += checkpoint(self.PairTransition, pair_act.clone(), pair_mask)
-        
+        pair_act = pair_act + self.OuterProductMean(msa_act, msa_mask)
+        msa_act = msa_act + self.RowAttentionWithPairBias(msa_act, pair_act, msa_mask)
+        msa_act = msa_act + self.LigColumnAttention(msa_act, msa_mask)
+        msa_act = msa_act + self.RecTransition(msa_act, msa_mask)
+        pair_act = pair_act + self.TriangleMultiplicationOutgoing(pair_act, pair_mask)
+        pair_act = pair_act + self.TriangleMultiplicationIngoing(pair_act, pair_mask)
+        pair_act = pair_act + self.TriangleAttentionStartingNode(pair_act, pair_mask)
+        pair_act = pair_act + self.TriangleAttentionEndingNode(pair_act, pair_mask)
+        pair_act = pair_act + self.PairTransition(pair_act, pair_mask)
         return msa_act, pair_act
 
 class TemplateEmbeddingIteration(nn.Module):
@@ -813,13 +805,13 @@ class TemplateEmbeddingIteration(nn.Module):
         self.PairTransition = Transition(config['pair_transition'], global_config)
 
     def forward(self, act, pair_mask):
-        act = act.clone()
-        act += checkpoint(self.TriangleMultiplicationOutgoing, act.clone(), pair_mask)
-        act += checkpoint(self.TriangleMultiplicationIngoing, act.clone(), pair_mask)
-        act += checkpoint(self.TriangleAttentionStartingNode, act.clone(), pair_mask)
-        act += checkpoint(self.TriangleAttentionEndingNode, act.clone(), pair_mask)
-        act += checkpoint(self.PairTransition, act.clone(), pair_mask)
+        act = act + self.TriangleMultiplicationOutgoing(act, pair_mask)
+        act = act + self.TriangleMultiplicationIngoing(act, pair_mask)
+        act = act + self.TriangleAttentionStartingNode(act, pair_mask)
+        act = act + self.TriangleAttentionEndingNode(act, pair_mask)
+        act = act + self.PairTransition(act, pair_mask)
         return act
+
 
 class SingleTemplateEmbedding(nn.Module):
     def __init__(self, config, global_config):
@@ -886,14 +878,14 @@ class SingleTemplateEmbedding(nn.Module):
         # to_concat.append(query_embedding)
         
         act = self.template_pair_emb_0(template_dgram)
-        act = act + checkpoint(self.template_pair_emb_1,pseudo_beta_mask_2d[...,None])
-        act = act + checkpoint(self.template_pair_emb_2, aatype[None, :, :])
-        act = act + checkpoint(self.template_pair_emb_3, aatype[:, None, :])
-        act = act + checkpoint(self.template_pair_emb_4, unbind_unit_vector[0])
-        act = act + checkpoint(self.template_pair_emb_5, unbind_unit_vector[1])
-        act = act + checkpoint(self.template_pair_emb_6, unbind_unit_vector[2])
-        act = act + checkpoint(self.template_pair_emb_7, backbone_mask_2d[..., None])
-        act = act + checkpoint(self.template_pair_emb_8, query_embedding)
+        act = act + self.template_pair_emb_1(pseudo_beta_mask_2d[..., None])
+        act = act + self.template_pair_emb_2(aatype[None, :, :])
+        act = act + self.template_pair_emb_3(aatype[:, None, :])
+        act = act + self.template_pair_emb_4(unbind_unit_vector[0])
+        act = act + self.template_pair_emb_5(unbind_unit_vector[1])
+        act = act + self.template_pair_emb_6(unbind_unit_vector[2])
+        act = act + self.template_pair_emb_7(backbone_mask_2d[..., None])
+        act = act + self.template_pair_emb_8(query_embedding)
         act = torch.unsqueeze(act, dim=0)
         for iter_temp in self.TemplateEmbeddingIteration:
             act = checkpoint(iter_temp, act.clone(), torch.unsqueeze(padding_mask_2d, dim=0))
@@ -914,8 +906,12 @@ class TemplateEmbedding(nn.Module):
         num_res, _, query_num_channels = query_embedding.shape
         scan_init = torch.zeros((num_res, num_res, self.num_channels), device=query_embedding.device, dtype=query_embedding.dtype)
         for i in range(num_templates):
-            partial_emb = checkpoint(self.SingleTemplateEmbedding, query_embedding, template_batch['template_aatype'][i], template_batch['template_all_atom_positions'][i], template_batch['template_all_atom_mask'][i],
-                    padding_mask_2d, multichain_mask_2d)
+            partial_emb = self.SingleTemplateEmbedding(
+                query_embedding, template_batch['template_aatype'][i],
+                template_batch['template_all_atom_positions'][i],
+                template_batch['template_all_atom_mask'][i],
+                padding_mask_2d, multichain_mask_2d
+            )
             scan_init = scan_init +  partial_emb
         embedding = scan_init / num_templates
         embedding = self.relu(embedding)
@@ -1000,8 +996,8 @@ class InputEmbedding(nn.Module):
             #recycle['prev_pos'][0] = orig_atom
 
         if(recycle is not None):
-            prev_msa_first_row, pair_activation_update = checkpoint(self.RecyclingEmbedder, batch, recycle)
-            pair_activations = pair_activations +  pair_activation_update
+            prev_msa_first_row, pair_activation_update = self.RecyclingEmbedder(batch, recycle)
+            pair_activations = pair_activations + pair_activation_update
             msa_activations[:,0] += prev_msa_first_row
             del recycle
         
@@ -1012,7 +1008,7 @@ class InputEmbedding(nn.Module):
                 'template_all_atom_mask': batch['template_all_atom_mask'][0]
             }
             multichain_mask = batch['asym_id'][..., None] == batch['asym_id'][:, None, ...]
-            template_act = checkpoint(self.TemplateEmbedding, pair_activations[0], template_batch, mask_2d[0], multichain_mask[0])
+            template_act = self.TemplateEmbedding(pair_activations[0], template_batch, mask_2d[0], multichain_mask[0])
             pair_activations = pair_activations + template_act
             del template_batch
 
@@ -1026,7 +1022,7 @@ class InputEmbedding(nn.Module):
         #        'msa': extra_msa_mask.type(torch.float32),
         #        'pair': mask_2d
         #        }
-        pair_activations = checkpoint(self.FragExtraStack, extra_msa_activations, pair_activations.clone(), batch['extra_msa_mask'].type(torch.float32), mask_2d)
+        pair_activations = self.FragExtraStack(extra_msa_activations, pair_activations, batch['extra_msa_mask'].type(torch.float32), mask_2d)
         msa_mask = batch['msa_mask']
         del target_feat
         return msa_activations, pair_activations, msa_mask, mask_2d
@@ -1108,18 +1104,7 @@ class DockerIteration(nn.Module):
         self.MaskedMsaHead = MaskedMsaHead(global_config)
 
         self.global_config = global_config
-    
-    def model_to_device(self, device):
-        self.InputEmbedder.to(device)
-        self.TemplateEmbedding1D.to(device)
-        self.Evoformer.to(device)
-        self.EvoformerExtractSingleRec.to(device)
-        self.StructureModule.to(device)
-        self.Distogram.to(device)
-        self.PredictedLddt.to(device)
-        self.PredictedAlignedError.to(device)
-        self.ExperimentallyResolvedHead.to(device)
-        self.MaskedMsaHead.to(device)
+
 
     def _preprocess_batch_msa(self, batch):
         batch['full_msa'] = torch.nn.functional.one_hot(batch['msa'].long(), 23).float()
@@ -1140,7 +1125,7 @@ class DockerIteration(nn.Module):
         msa_activations, pair_activations, msa_mask, pair_mask = self.InputEmbedder(batch, recycle=recycle)
         num_msa_seq = msa_activations.shape[1]
         if(self.global_config['model']['embeddings_and_evoformer']['template']['enabled']):
-            template_features, template_masks = checkpoint(self.TemplateEmbedding1D, batch)
+            template_features, template_masks = self.TemplateEmbedding1D(batch)
             msa_activations = torch.cat((msa_activations, template_features), dim=1).type(torch.float32)
             msa_mask = torch.cat((msa_mask, template_masks), dim=1).type(torch.float32)
             del template_features
