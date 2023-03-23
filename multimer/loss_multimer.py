@@ -141,7 +141,7 @@ def lddt_loss(out, batch, config):
     # lddt for loop
     loop_lddt = torch.round(torch.sum(score * mask_renum * 100, dim=-1) / (
             1e-10 + torch.sum(mask_renum, dim=-1)
-    ), decimals=2)[0]
+    ))[0]
 
     del errors
     return loss, loss_renum_loop, loop_lddt, score
