@@ -391,8 +391,8 @@ if __name__ == '__main__':
         default_root_dir=args.trainer_dir_path,
         accumulate_grad_batches=args.accum_grad_batches,
         log_every_n_steps=1,
-        val_check_interval=0.2,
         accelerator='gpu',
+        val_check_interval=1.0,
         num_sanity_val_steps=len(val_data),
     )
 
