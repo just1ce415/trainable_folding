@@ -1344,6 +1344,7 @@ class DockerIteration(nn.Module):
             'new_res_plddt': new_res_plddt.item() * 100,
             'new_res_is_confident': (new_res_plddt.item() > 0.7) * 1.0,
             'new_res_dist_hl': new_res_dist_hl,
+            'recycle_iter': float(recycle_iter),
         }
 
         return out, loss_items
