@@ -711,18 +711,15 @@ class FragExtraStackIteration(torch.nn.Module):
 
     def forward(self, msa_act, pair_act, msa_mask, pair_mask):
 
-        msa_act = msa_act.clone()
-        pair_act = pair_act.clone()
-        pair_act += self.OuterProductMean(msa_act.clone(), msa_mask)
-        msa_act += self.RowAttentionWithPairBias(msa_act.clone(), pair_act.clone(), msa_mask)
-        msa_act += self.ExtraColumnGlobalAttention(msa_act.clone(), msa_mask)
-        msa_act += self.RecTransition(msa_act.clone(), msa_mask)
-        pair_act += self.TriangleMultiplicationOutgoing(pair_act.clone(), pair_mask)
-        pair_act += self.TriangleMultiplicationIngoing(pair_act.clone(), pair_mask)
-        pair_act += self.TriangleAttentionStartingNode(pair_act.clone(), pair_mask)
-        pair_act += self.TriangleAttentionEndingNode(pair_act.clone(), pair_mask)
-        pair_act += self.PairTransition(pair_act.clone(), pair_mask)
-
+        pair_act = pair_act + self.OuterProductMean(msa_act, msa_mask)
+        msa_act = msa_act + self.RowAttentionWithPairBias(msa_act, pair_act, msa_mask)
+        msa_act = msa_act + self.ExtraColumnGlobalAttention(msa_act, msa_mask)
+        msa_act = msa_act + self.RecTransition(msa_act, msa_mask)
+        pair_act = pair_act + self.TriangleMultiplicationOutgoing(pair_act, pair_mask)
+        pair_act = pair_act + self.TriangleMultiplicationIngoing(pair_act, pair_mask)
+        pair_act = pair_act + self.TriangleAttentionStartingNode(pair_act, pair_mask)
+        pair_act = pair_act + self.TriangleAttentionEndingNode(pair_act, pair_mask)
+        pair_act = pair_act + self.PairTransition(pair_act, pair_mask)
         return msa_act, pair_act
 
 
@@ -766,18 +763,15 @@ class EvoformerIteration(nn.Module):
         self.PairTransition = Transition(config['pair_transition'], global_config)
 
     def forward(self, msa_act, pair_act, msa_mask, pair_mask):
-        msa_act = msa_act.clone()
-        pair_act = pair_act.clone()
-        pair_act += self.OuterProductMean(msa_act.clone(), msa_mask)
-        msa_act += self.RowAttentionWithPairBias(msa_act.clone(), pair_act.clone(), msa_mask)
-        msa_act += self.LigColumnAttention(msa_act.clone(), msa_mask)
-        msa_act += self.RecTransition(msa_act.clone(), msa_mask)
-        pair_act += self.TriangleMultiplicationOutgoing(pair_act.clone(), pair_mask)
-        pair_act += self.TriangleMultiplicationIngoing(pair_act.clone(), pair_mask)
-        pair_act += self.TriangleAttentionStartingNode(pair_act.clone(), pair_mask)
-        pair_act += self.TriangleAttentionEndingNode(pair_act.clone(), pair_mask)
-        pair_act += self.PairTransition(pair_act.clone(), pair_mask)
-
+        pair_act = pair_act + self.OuterProductMean(msa_act, msa_mask)
+        msa_act = msa_act + self.RowAttentionWithPairBias(msa_act, pair_act, msa_mask)
+        msa_act = msa_act + self.LigColumnAttention(msa_act, msa_mask)
+        msa_act = msa_act + self.RecTransition(msa_act, msa_mask)
+        pair_act = pair_act + self.TriangleMultiplicationOutgoing(pair_act, pair_mask)
+        pair_act = pair_act + self.TriangleMultiplicationIngoing(pair_act, pair_mask)
+        pair_act = pair_act + self.TriangleAttentionStartingNode(pair_act, pair_mask)
+        pair_act = pair_act + self.TriangleAttentionEndingNode(pair_act, pair_mask)
+        pair_act = pair_act + self.PairTransition(pair_act, pair_mask)
         return msa_act, pair_act
 
 
