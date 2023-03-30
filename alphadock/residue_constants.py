@@ -338,10 +338,10 @@ rigid_group_atom_positions = {
         ['CG2', 4, (0.533, -0.776, 1.203)],
     ],
     'NEW': [
-        ['N', 0, (-0.525, 1.363, 0.000)],
+        ['N', 0, (-0.25, 7.4, 0.000)],
         ['CA', 0, (0.000, 0.000, 0.000)],
-        ['C', 0, (1.526, -0.000, -0.000)],
-    ],
+        ['C', 0, (1.5, -0.000, -0.000)],
+    ]
 }
 
 # A list of atoms (excluding hydrogen) for each AA type. PDB naming convention.
