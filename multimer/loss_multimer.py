@@ -132,7 +132,7 @@ def lddt_loss(out, batch, config):
     loss = torch.clamp(loss, 0, 3)
 
     # lddt for new residue
-    new_res_lddt = torch.round(score[0, -1] * 100, decimals=2)
+    new_res_lddt = score[:, -1:]
 
     del errors, score
     return loss, new_res_lddt, new_res_dist_hl
