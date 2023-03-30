@@ -1066,7 +1066,7 @@ def structure_loss(out, batch, config):
         c_xyz=all_atom_positions[..., c, :],
         eps=1e-20,
         )
-    gt_affine_mask = (all_atom_mask[:, n] * all_atom_mask[:, ca] * all_atom_mask[:, c]).float()
+    gt_affine_mask = (all_atom_mask[:, n] * all_atom_mask[:, ca] * all_atom_mask[:, c]).to(torch.float32)
     chi_angles, chi_mask = all_atom_multimer.compute_chi_angles(
             all_atom_positions,
             all_atom_mask,
@@ -1075,7 +1075,7 @@ def structure_loss(out, batch, config):
     pred_mask = pred_mask * seq_mask[:, None]
     pred_positions = out['final_atom14_positions']
     gt_positions, gt_mask = compute_atom14_gt(aatype.long(), all_atom_positions, all_atom_mask, pred_positions)
-    alt_gt_positions, alt_gt_mask, atom_is_ambiguous = get_alt_atom14(aatype.long(), gt_positions.type(torch.float32), gt_mask.type(torch.float32))
+    alt_gt_positions, alt_gt_mask, atom_is_ambiguous = get_alt_atom14(aatype.long(), gt_positions.type(torch.float32), gt_mask.to(torch.float32))
     alt_naming_is_better, gt_positions, gt_mask = compute_renamed_ground_truth(gt_positions, alt_gt_positions, atom_is_ambiguous, gt_mask, alt_gt_mask, pred_positions)
     asym_id = batch['asym_id'][0]
     intra_chain_mask = asym_id[:, None] == asym_id[None, :]

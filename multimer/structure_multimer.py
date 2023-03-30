@@ -85,7 +85,7 @@ class InvariantPointAttention(torch.nn.Module):
         mask_2d = sequence_mask * torch.transpose(sequence_mask, -1, -2)
         attn_logits -= 1e5 * (1. - mask_2d[..., None])
         attn_logits *= math.sqrt(1. / 3)
-        attn = torch.softmax(attn_logits, -2)
+        attn = torch.softmax(attn_logits, -2).to(torch.float32)
         result_scalar = torch.einsum('...qkh, ...khc->...qhc', attn, v_scalar)
         v_point_global = v_point_global.view(*v_point_global.shape[:-2], self.num_head, -1, 3)
         result_point_global = torch.sum(attn[..., None, None] * v_point_global[:, None, ...], -4)
@@ -103,8 +103,8 @@ class InvariantPointAttention(torch.nn.Module):
         result_attention_over_2d = torch.einsum('...ijh, ...ijc->...ihc', attn, act_2d)
         result_attention_over_2d = result_attention_over_2d.reshape(*result_attention_over_2d.shape[:-2], -1)
         output_features.append(result_attention_over_2d)
-        final_act = torch.cat(output_features, -1)
-        
+        final_act = torch.cat(output_features, -1).to(torch.float32)
+
         out = self.final_r(final_act)
 
         return out

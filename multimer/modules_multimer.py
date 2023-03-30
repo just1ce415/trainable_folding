@@ -115,7 +115,7 @@ def make_masked_msa(batch, config):
     # if 'bert_mask' in batch:
     #  batch['bert_mask'] *= mask_position.astype(jnp.float32)
     # else:
-    batch['bert_mask'] = mask_position.type(torch.float32)
+    batch['bert_mask'] = mask_position.to(torch.float32)
     batch['true_msa'] = batch['msa']
     batch['msa'] = bert_msa
 
@@ -675,11 +675,11 @@ class RecyclingEmbedder(torch.nn.Module):
         )
         lower = torch.linspace(self.min_bin, self.max_bin, self.num_bins, device=prev_pseudo_beta.device) ** 2
         upper = torch.cat([lower[1:], lower.new_tensor([1e8])], dim=-1)
-        dgram = ((dgram > lower) * (dgram < upper)).type(dgram.dtype)
+        dgram = ((dgram > lower) * (dgram < upper)).to(torch.float32)
         prev_pos_linear = self.prev_pos_linear(dgram)
         pair_activation_update = prev_pos_linear + self.prev_pair_norm(recycle['prev_pair'])
         rel_feat = self._relative_encoding(batch)
-        pair_activation_update = pair_activation_update + self.position_activations(rel_feat.float())
+        pair_activation_update = pair_activation_update + self.position_activations(rel_feat.to(torch.float32))
         prev_msa_first_row = self.prev_msa_first_row_norm(recycle['prev_msa_first_row'])
         del dgram, prev_pseudo_beta
 
@@ -1019,7 +1019,7 @@ class InputEmbedding(nn.Module):
     def forward(self, batch, recycle):
         num_batch, num_res = batch['aatype'].shape[0], batch['aatype'].shape[1]
         # batch_profile = torch.sum(batch['msa_mask'][...,None] * nn.functional.one_hot(batch['msa'].long(), 22), 1)/(torch.sum(batch['msa_mask'][...,None], 1)+ 1e-10)
-        target_feat = nn.functional.one_hot(batch['aatype'].long(), 22).float()
+        target_feat = nn.functional.one_hot(batch['aatype'].long(), 22).to(torch.float32)
         preprocessed_1d = self.preprocessing_1d(target_feat)
         left_single = self.left_single(target_feat)
         right_single = self.right_single(target_feat)
@@ -1030,9 +1030,9 @@ class InputEmbedding(nn.Module):
         mask_2d = mask_2d.type(torch.float32)
         if self.global_config['recycle'] and recycle is None:
             recycle = {
-                'prev_pos': torch.zeros(num_batch, num_res, 37, 3).to(batch['aatype'].device),
-                'prev_msa_first_row': torch.zeros(num_batch, num_res, self.msa_channel).to(batch['aatype'].device),
-                'prev_pair': torch.zeros(num_batch, num_res, num_res, self.pair_channel).to(batch['aatype'].device)
+                'prev_pos': torch.zeros(num_batch, num_res, 37, 3, dtype=torch.float32).to(batch['aatype'].device),
+                'prev_msa_first_row': torch.zeros(num_batch, num_res, self.msa_channel, dtype=torch.float32).to(batch['aatype'].device),
+                'prev_pair': torch.zeros(num_batch, num_res, num_res, self.pair_channel, dtype=torch.float32).to(batch['aatype'].device)
             }
 
         if recycle is not None:
@@ -1056,7 +1056,7 @@ class InputEmbedding(nn.Module):
         pair_activations = self.FragExtraStack(
             extra_msa_activations,
             pair_activations.clone(),
-            batch['extra_msa_mask'].type(torch.float32),
+            batch['extra_msa_mask'].to(torch.float32),
             mask_2d
         )
         msa_mask = batch['msa_mask']
@@ -1175,8 +1175,8 @@ class DockerIteration(nn.Module):
         num_msa_seq = msa_activations.shape[1]
         if self.global_config['model']['embeddings_and_evoformer']['template']['enabled']:
             template_features, template_masks = self.TemplateEmbedding1D(batch)
-            msa_activations = torch.cat((msa_activations, template_features), dim=1).type(torch.float32)
-            msa_mask = torch.cat((msa_mask, template_masks), dim=1).type(torch.float32)
+            msa_activations = torch.cat((msa_activations, template_features), dim=1).to(torch.float32)
+            msa_mask = torch.cat((msa_mask, template_masks), dim=1).to(torch.float32)
             del template_features
 
         for evo_i, evo_iter in enumerate(self.Evoformer):
