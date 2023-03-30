@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from multimer import structure_multimer, all_atom_multimer, rigid, loss_multimer
+from multimer import config_multimer, structure_multimer, all_atom_multimer, rigid, loss_multimer
 from typing import Sequence
 from alphadock import residue_constants as rc
 from torch.utils.checkpoint import checkpoint
@@ -1164,6 +1164,21 @@ class DockerIteration(nn.Module):
 
         self.global_config = global_config
 
+    def _preprocess_batch_msa(self, batch):
+        batch['full_msa'] = torch.nn.functional.one_hot(batch['msa'].long(), 23).to(torch.float32)
+        batch['msa_profile'] = make_msa_profile(batch)
+        batch = sample_msa(batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['num_msa'])
+        batch = make_masked_msa(batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['masked_msa'])
+        batch['cluster_profile'], batch['cluster_deletion_mean'] = nearest_neighbor_clusters(batch)
+        batch['msa_feat'] = create_msa_feat(batch)
+        batch['extra_msa_feat'], batch['extra_msa_mask'] = create_extra_msa_feature(
+            batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['num_extra_msa']
+        )
+        batch['pseudo_beta'], batch['pseudo_beta_mask'] = pseudo_beta_fn(
+            batch['aatype'], batch['all_atom_positions'], batch['all_atom_mask']
+        )
+        return batch
+
     def iteration(self, batch, recycle=None):
         msa_activations, pair_activations, msa_mask, pair_mask = self.InputEmbedder(batch, recycle=recycle)
         num_msa_seq = msa_activations.shape[1]
@@ -1203,20 +1218,43 @@ class DockerIteration(nn.Module):
         del pair_activations
         return representations, m_1_prev, z_prev, x_prev
 
-    def forward(self, batch):
+    def forward(self, init_batch, is_eval_mode):
         recycles = None
-        for recycle_iter in range(4):
-            is_final_iter = recycle_iter == 3
-            with torch.set_grad_enabled(is_final_iter):
-                out, m_1_prev, z_prev, x_prev = self.iteration(batch, recycles)
-                if (not is_final_iter):
-                    del out
-                    recycles = {
-                        'prev_msa_first_row': m_1_prev,
-                        'prev_pair': z_prev,
-                        'prev_pos': x_prev,
-                    }
-                    del m_1_prev, z_prev, x_prev
+        batch = self._preprocess_batch_msa(init_batch)
+        if is_eval_mode:
+            min_num_recycle = self.global_config['model']['min_num_recycle_eval']
+            confident_plddt = self.global_config['model']['confident_plddt']
+            num_recycle = self.global_config['model']['max_num_recycle_eval']
+            for recycle_iter in range(num_recycle):
+                with torch.set_grad_enabled(False):
+                    out, m_1_prev, z_prev, x_prev = self.iteration(batch, recycles)
+                    new_res_plddt = self.PredictedLddtNewRes(out) * 100
+                    if recycle_iter >= min_num_recycle and new_res_plddt >= confident_plddt:
+                        break
+                    # check if we are on the final iteration: if not - recycle
+                    elif recycle_iter < (num_recycle - 1):
+                        recycles = {
+                            'prev_msa_first_row': m_1_prev,
+                            'prev_pair': z_prev,
+                            'prev_pos': x_prev
+                        }
+                        if self.global_config['model']['resample_msa_in_recycling'] and new_res_plddt < confident_plddt:
+                            batch = self._preprocess_batch_msa(init_batch)
+                        del out, m_1_prev, z_prev, x_prev
+
+        else:
+            num_recycle = self.global_config['model']['num_recycle']
+            for recycle_iter in range(num_recycle):
+                is_final_iter = recycle_iter == (num_recycle - 1)
+                with torch.set_grad_enabled(is_final_iter):
+                    out, m_1_prev, z_prev, x_prev = self.iteration(batch, recycles)
+                    if not is_final_iter:
+                        recycles = {
+                            'prev_msa_first_row': m_1_prev,
+                            'prev_pair': z_prev,
+                            'prev_pos': x_prev
+                        }
+                        del out, m_1_prev, z_prev, x_prev
 
         del recycles
         distogram_logits, distogram_bin_edges = self.Distogram(out)
