@@ -1118,6 +1118,24 @@ class PredictedLddt(nn.Module):
         logits = self.logits(act)
         return logits
 
+class PredictedLddtNewRes(nn.Module):
+    def __init__(self, global_config):
+        super().__init__()
+        self.input_layer_norm = nn.LayerNorm(global_config['model']['embeddings_and_evoformer']['seq_channel'])
+        self.linear_layers = nn.ModuleList()
+        self.linear_layers.append(nn.Linear(384, 64))
+        self.linear_layers.append(nn.Linear(64, 64))
+        self.linear_layers.append(nn.Linear(64, 64))
+        self.out = nn.Linear(64, 1)
+        self.final = nn.Sigmoid()
+
+    def forward(self, representations):
+        act = representations['structure_module'][:,-1,:]
+        act = self.input_layer_norm(act)
+        for layer in self.linear_layers:
+            act = layer(act).relu_()
+        return self.final(self.out(act))
+
 
 class Distogram(nn.Module):
     def __init__(self, global_config):
@@ -1158,6 +1176,9 @@ class DockerIteration(nn.Module):
         )
         self.Distogram = Distogram(global_config)
         self.PredictedLddt = PredictedLddt(global_config)
+        self.PredictedLddtNewRes = PredictedLddtNewRes(global_config)
+        self.nr_plddt_loss = nn.MSELoss()
+        self.nr_plddt_mae = nn.L1Loss()
         self.PredictedAlignedError = PredictedAlignedError(global_config)
         self.ExperimentallyResolvedHead = ExperimentallyResolvedHead(global_config)
         self.MaskedMsaHead = MaskedMsaHead(global_config)
@@ -1259,6 +1280,7 @@ class DockerIteration(nn.Module):
         del recycles
         distogram_logits, distogram_bin_edges = self.Distogram(out)
         pred_lddt = self.PredictedLddt(out)
+        new_res_plddt = self.PredictedLddtNewRes(out)
         pae_logits, pae_breaks = self.PredictedAlignedError(out)
         resovled_logits = self.ExperimentallyResolvedHead(out)
         masked_msa_logits = self.MaskedMsaHead(out)
@@ -1273,11 +1295,13 @@ class DockerIteration(nn.Module):
         out['predicted_aligned_error']['breaks'] = pae_breaks
         out['experimentally_resolved'] = resovled_logits
         out['msa_head'] = masked_msa_logits
-        plddt = compute_plddt(pred_lddt)
+
         resolved_loss = loss_multimer.experimentally_resolved_loss(out, batch, self.global_config['model']['heads'])
         lddt_loss, new_res_lddt, new_res_dist_hl = loss_multimer.lddt_loss(
             out, batch, self.global_config['model']['heads']
         )
+        new_res_lddt_loss = self.nr_plddt_loss(new_res_lddt.float(), new_res_plddt.float())
+        new_res_lddt_mae = self.nr_plddt_mae(new_res_lddt.float(), new_res_plddt.float())
         distogram_loss, distogram_loss_masked = loss_multimer.distogram_loss(
             out, batch, self.global_config['model']['heads']
         )
@@ -1302,21 +1326,23 @@ class DockerIteration(nn.Module):
             0.01 * pae_loss,
             20.0 * distogram_loss_masked,
             0.3 * pae_loss_masked,
-            0.5 * new_res_dist_hl,
+            2.0 * new_res_dist_hl,
+            0.1 * new_res_lddt_loss,
         ])
 
         loss_items = {
             'loss': loss,
             'resolved_loss': resolved_loss,
             'lddt_loss': lddt_loss,
+            'new_res_lddt_mae': new_res_lddt_mae,
             'distogram_loss': distogram_loss,
             'structure_loss': structure_loss,
             'pae_loss': pae_loss,
             'distogram_loss_masked': distogram_loss_masked,
             'pae_loss_masked': pae_loss_masked,
-            'new_res_lddt': new_res_lddt,
-            'new_res_plddt': plddt[0, -1],
-            'new_res_is_confident': (new_res_lddt > 70) * 1.0,
+            'new_res_lddt': new_res_lddt.item() * 100,
+            'new_res_plddt': new_res_plddt.item() * 100,
+            'new_res_is_confident': (new_res_plddt.item() > 0.7) * 1.0,
             'new_res_dist_hl': new_res_dist_hl,
         }
 
