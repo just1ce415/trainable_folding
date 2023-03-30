@@ -865,7 +865,7 @@ class SingleTemplateEmbedding(nn.Module):
             c_xyz=raw_atom_pos[..., c, :],
             eps=1e-20,
         )
-        backbone_mask = (template_all_atom_mask[:, n] * template_all_atom_mask[:, ca] * template_all_atom_mask[:, c]).float()
+        backbone_mask = (template_all_atom_mask[:, n] * template_all_atom_mask[:, ca] * template_all_atom_mask[:, c]).to(torch.float32)
         points = rigids.get_trans()[..., None, :, :]
         rigid_vec = rigids[..., None].invert_apply(points)
         inv_distance_scalar = torch.rsqrt(1e-20 + torch.sum(rigid_vec ** 2, dim=-1))
