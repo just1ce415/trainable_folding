@@ -4,20 +4,48 @@ sys.path.insert(1, '../')
 import argparse
 import json
 import os
+import shutil
 
 import numpy as np
+import pandas as pd
 import pytorch_lightning as pl
 import torch
+import random
 from alphadock import residue_constants
 from multimer import (config_multimer, load_param_multimer, modules_multimer,
                       test_multimer)
-from preprocess import crop_feature
+from utils.crop_features import crop_feature
 from pytorch_lightning.callbacks.lr_monitor import LearningRateMonitor
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 from torch import optim
 from torch.utils.data import DataLoader, Dataset
 from wandb import Molecule
+import prody
+
+import warnings
+
+warnings.filterwarnings("ignore", "None of the inputs have requires_grad=True. Gradients will be None")
+
+# Suppress output
+prody.confProDy(verbosity='none')
+
+
+def get_virtual_point(res, scale, axis):
+    coords = res.getCoords()
+    coords = coords - coords[1, :]
+    d = coords[0] - coords[axis]
+    d_norm = np.linalg.norm(d)
+    d_unit = d / d_norm
+    d_scaled = d_unit * scale
+    coords[0] = coords[axis] + d_scaled
+    return coords
+
+
+def get_normalised_rmsd(true, pred, scale, axis):
+    true_centered = get_virtual_point(true, scale, axis)
+    pred_centered = get_virtual_point(pred, scale, axis)
+    return np.sqrt(((true_centered - pred_centered) ** 2).sum(axis=1).mean())
 
 
 class MultimerDataset(Dataset):
@@ -28,6 +56,7 @@ class MultimerDataset(Dataset):
 
     def _preprocess_all(self):
         self.processed_data = {}
+        self.seeds = {}
         i = 0
         for single_dataset in self.data:
             sdf_path = single_dataset['sdf']
@@ -35,23 +64,36 @@ class MultimerDataset(Dataset):
             file_path = f'{self.preprocessed_data_dir}/{sample_id}.npz'
             assert os.path.exists(file_path), f'File not found: {file_path}'
             # check that we have at least one res close to a new one
-            n_close_res = np.load(f'{self.preprocessed_data_dir}/{sample_id}.npz')['loss_mask'].sum()
+            n_close_res = np.load(file_path)['loss_mask'].sum()
             if n_close_res <= 1:
                 continue
             self.processed_data[i] = sample_id
+            if single_dataset['dataset'] == 'train':
+                self.seeds[i] = None
+            else:
+                self.seeds[i] = single_dataset['seed']
             i += 1
 
     def process(self, idx):
+        if self.seeds[idx] is not None:
+            random.seed(self.seeds[idx])  # to stable the crop procedure for val and test
+            crop_size = 384
+        else:
+            crop_size = 256
         n_close_res = 0
         count = 0
         while n_close_res <= 1:
             np_example = dict(np.load(f'{self.preprocessed_data_dir}/{self.processed_data[idx]}.npz'))
-            np_example = crop_feature(np_example, 384)
+            np_example = crop_feature(np_example, crop_size)
             n_close_res = np_example['loss_mask'].sum()
             count += 1
             if count == 100:
                 raise RuntimeError("Did not find a good crop")
         np_example = {k: torch.tensor(v) for k, v in np_example.items()}
+        np_example['id'] = idx
+
+        if self.seeds[idx] is not None:
+            np_example['seed'] = self.seeds[idx]
 
         return np_example
 
@@ -69,6 +111,8 @@ class NewResidueFolding(pl.LightningModule):
             model_weights_path,
             val_sample_names,
             learning_rate=0.0001,
+            test_mode_name='test',
+            output_pdb_path=None,
     ):
         super(NewResidueFolding, self).__init__()
         self.config_multimer = config_multimer.config_multimer
@@ -76,17 +120,11 @@ class NewResidueFolding(pl.LightningModule):
         load_param_multimer.import_jax_weights_(self.model, model_weights_path)
         self.val_sample_names = val_sample_names
         self.learning_rate = learning_rate
+        self.test_mode_name = test_mode_name
+        self.output_pdb_path = output_pdb_path
 
     def forward(self, batch):
-        batch['msa_profile'] = modules_multimer.make_msa_profile(batch)
-        batch = modules_multimer.sample_msa(batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['num_msa'])
-        batch = modules_multimer.make_masked_msa(batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['masked_msa'])
-        (batch['cluster_profile'], batch['cluster_deletion_mean']) = modules_multimer.nearest_neighbor_clusters(batch)
-        batch['msa_feat'] = modules_multimer.create_msa_feat(batch)
-        batch['extra_msa_feat'], batch['extra_msa_mask'] = modules_multimer.create_extra_msa_feature(batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['num_extra_msa'])
-        batch['pseudo_beta'], batch['pseudo_beta_mask'] = modules_multimer.pseudo_beta_fn(batch['aatype'], batch['all_atom_positions'], batch['all_atom_mask'])
-
-        return self.model(batch)
+        return self.model(batch, is_eval_mode=self.trainer.evaluating)
 
     def training_step(self, batch):
         output, loss_items = self.forward(batch)
@@ -94,7 +132,7 @@ class NewResidueFolding(pl.LightningModule):
             self.log(f'train_{k}', v, on_step=True, on_epoch=True, logger=True)
         return loss_items['loss']
 
-    def _get_predicted_structure(self, batch, output, sample_name, mode='val'):
+    def _get_predicted_structure(self, batch, output, sample_name, seed, mode='val'):
         output['predicted_aligned_error']['asym_id'] = batch['asym_id'][0]
         confidences = test_multimer.get_confidence_metrics(output, True)
 
@@ -110,13 +148,14 @@ class NewResidueFolding(pl.LightningModule):
             output['final_atom_mask'].cpu().numpy(), plddt_b_factors[0]
         )
 
-        filename = f"{mode}_pred_{sample_name}_{np.random.randint(1000000, 10000000)}.pdb"
+        filename = f"{self.output_pdb_path}/{sample_name}/{mode}_s_{seed:02d}_r_{self.global_rank}.pdb"
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w') as f:
             f.write(pdb_out)
-        self.logger.experiment.log({f'{mode}_pred_{sample_name}': Molecule(filename)})
-        os.remove(filename)
 
-    def _get_true_structure(self, batch, sample_name):
+        return filename
+
+    def _get_true_structure(self, batch, output, sample_name, seed):
         # a temp solution for b_factors
         b_factors = np.ones((len(batch['aatype'][0]), residue_constants.atom_type_num)) * 100.0
         pdb_out = test_multimer.protein_to_pdb(
@@ -124,71 +163,107 @@ class NewResidueFolding(pl.LightningModule):
             batch['all_atom_positions'][0].cpu().numpy(),
             batch['residue_index'][0].cpu().numpy() + 1,
             batch['asym_id'][0].cpu().numpy(),
-            batch['all_atom_mask'][0].cpu().numpy(), b_factors
+            output['final_atom_mask'].cpu().numpy(), b_factors
         )
 
-        filename = f"true_{sample_name}_{np.random.randint(1000000, 10000000)}.pdb"
+        filename = f"{self.output_pdb_path}/{sample_name}/true_s_{seed:02d}_r_{self.global_rank}.pdb"
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w') as f:
             f.write(pdb_out)
-        self.logger.experiment.log({f'true_{sample_name}': Molecule(filename)})
-        os.remove(filename)
+
+        return filename
+
+    def _align_structures(self, batch, output, sample_name, seed, mode='val', save_pdb=False):
+        pred_filename = self._get_predicted_structure(batch, output, sample_name, seed, mode=mode)
+        true_filename = self._get_true_structure(batch, output, sample_name, seed)
+
+        # Load the PDB files using the parsePDB function
+        true = prody.parsePDB(true_filename)
+        pred = prody.parsePDB(pred_filename)
+
+        # Clean up pdbs:
+        os.remove(pred_filename)
+        os.remove(true_filename)
+
+        # Align the two structures
+        prody.superpose(true.select('calpha'), pred.select('calpha'))
+
+        # Get NEW residue and calculate distance
+        ca_true = true.select('resname NEW and name CA')[-1]
+        ca_pred = pred.select('resname NEW and name CA')[-1]
+        distance = prody.calcDistance(ca_true, ca_pred)
+
+        res_true = true.select('resname NEW')
+        res_pred = pred.select('resname NEW')
+        rmsd = prody.calcRMSD(res_true, res_pred)
+
+        normalised_rmsd = get_normalised_rmsd(
+            res_true, res_pred,
+            self.config_multimer['virtual_point']['scale'],
+            self.config_multimer['virtual_point']['axis']
+        )
+
+        # Save aligned structures
+        if save_pdb:
+            new_pred_filename = f"{self.output_pdb_path}/{sample_name}/{mode}_{rmsd:0.2f}_s_{seed:02d}_r_{self.global_rank}.pdb"
+            prody.writePDB(new_pred_filename, pred)
+            if seed == 0:
+                prody.writePDB(true_filename, true)
+
+        return distance, rmsd, normalised_rmsd
 
     def validation_step(self, batch, batch_idx):
-        sample_name = self.val_sample_names[batch_idx]
+        torch.manual_seed(batch['seed'])
+        seed = batch['seed'].item()
+        sample_name = self.val_sample_names[batch['id'].item()]
         output, loss_items = self.forward(batch)
-        self._get_predicted_structure(batch, output, sample_name)
+        distance, rmsd, normalised_rmsd = self._align_structures(batch, output, sample_name, seed, mode='val')
 
-        # Individual scores
-        self.log(f'val_plddt_{sample_name}', loss_items['new_res_plddt'], on_step=True, on_epoch=False, logger=True)
-        self.log(f'val_lddt_{sample_name}', loss_items['new_res_lddt'], on_step=True, on_epoch=False, logger=True)
+        loss_items['new_res_distance'] = distance
+        loss_items['new_res_rmsd'] = rmsd
+        loss_items['new_res_good_rmsd'] = (rmsd < 2.0) * 1.0
+        loss_items['new_res_normalised_rmsd'] = normalised_rmsd
 
         for k, v in loss_items.items():
-            self.log(f'val_{k}', v, on_step=False, on_epoch=True, logger=True)
+            self.log(f'val_{k}', v, on_step=False, on_epoch=True, logger=True, sync_dist=True)
 
         return {'sample_name': sample_name, **loss_items}
-
-
-    def validation_epoch_end(self, validation_step_outputs):
-        columns = [key for key in validation_step_outputs[0]]
-        values = [output.values() for output in validation_step_outputs]
-        wdb_logger.log_table(
-                key=f'val_step_{self.global_step}',
-                columns=columns,
-                data=values,
-            )
 
     def test_step(self, batch, batch_idx):
-        sample_name = self.val_sample_names[batch_idx]
+        torch.manual_seed(batch['seed'])
+        seed = batch['seed'].item()
+        sample_name = self.val_sample_names[batch['id'].item()]
+
         output, loss_items = self.forward(batch)
-        self._get_predicted_structure(batch, output, sample_name, mode='test')
-        self._get_true_structure(batch, sample_name)
+        distance, rmsd, normalised_rmsd = self._align_structures(batch, output, sample_name, seed,
+                                                                 mode=self.test_mode_name, save_pdb=True)
+        loss_items['new_res_distance'] = distance
+        loss_items['new_res_rmsd'] = rmsd
+        loss_items['new_res_good_rmsd'] = (rmsd < 2.0) * 1.0
+        loss_items['new_res_normalised_rmsd'] = normalised_rmsd
 
-        for k, v in loss_items.items():
-            self.log(f'test_{k}', v, on_step=False, on_epoch=True, logger=True)
+        metrics = {
+            'sample_name': sample_name,
+            'seed': seed,
+            **{
+                key: value.item() if isinstance(value, torch.Tensor) else value
+                for key, value in loss_items.items()
+            }
+        }
 
-        # for each sample
-        for k, v in loss_items.items():
-            self.log(f'test_{k}_{sample_name}', v, on_step=False, on_epoch=True, logger=True)
+        with open(f"{self.output_pdb_path}/json_metrics/{sample_name}_{seed:02d}.json", "w") as outfile:
+            outfile.write(json.dumps(metrics, indent=4))
 
         return {'sample_name': sample_name, **loss_items}
-
-    def test_epoch_end(self, test_step_outputs):
-        columns = [key for key in test_step_outputs[0]]
-        values = [output.values() for output in test_step_outputs]
-        wdb_logger.log_table(
-                key='test_metrics',
-                columns=columns,
-                data=values,
-            )
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
         lr_scheduler = optim.lr_scheduler.CyclicLR(
             optimizer,
             base_lr=self.learning_rate,
-            max_lr=self.learning_rate*10,
+            max_lr=self.learning_rate * 10,
             step_size_up=10,
-            mode="triangular2",
+            mode="triangular",
             gamma=0.85,
             cycle_momentum=False,
         )
@@ -197,24 +272,32 @@ class NewResidueFolding(pl.LightningModule):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--json_path', type=str)
+    parser.add_argument('--train_json_path', type=str)
     parser.add_argument('--val_json_path', type=str)
     parser.add_argument('--preprocessed_data_dir', type=str)
     parser.add_argument("--model_weights_path", type=str, default=None)
     parser.add_argument("--model_checkpoint_path", type=str, default=None)
-    parser.add_argument("--resume_from_checkpoint", type=str, default=None)
-    parser.add_argument("--wandb_logger_dir", type=str, default=None)
+    parser.add_argument("--output_pdb_path", type=str, default=None)
+    parser.add_argument("--resume_from_ckpt", type=str, default=None)
+    parser.add_argument("--wandb_offline", action="store_true")
+    parser.add_argument("--wandb_output_dir", type=str, default=None)
     parser.add_argument("--wandb_name", type=str, default=None)
     parser.add_argument("--wandb_id", type=str, default=None)
+    parser.add_argument("--wandb_project", type=str, default=None)
+    parser.add_argument("--num_nodes", type=int, default=None)
     parser.add_argument("--gpus", type=int, default=1)
     parser.add_argument("--accumulate_grad_batches", type=int, default=1)
+    parser.add_argument("--val_check_interval", type=float, default=1.0)
+    parser.add_argument("--max_epochs", type=int, default=1)
+    parser.add_argument("--step", type=str, default='train')
+    parser.add_argument("--test_mode_name", type=str, default="test", )
     args = parser.parse_args()
 
     np.random.seed(13)
-    torch.use_deterministic_algorithms(True, warn_only=True)
+    torch.use_deterministic_algorithms(True)
 
-    json_data = json.load(open(args.json_path))
-    train_dataset = MultimerDataset(json_data, args.preprocessed_data_dir)
+    train_json_data = json.load(open(args.train_json_path))
+    train_dataset = MultimerDataset(train_json_data, args.preprocessed_data_dir)
     train_loader = DataLoader(train_dataset, batch_size=1, shuffle=False)
 
     if args.val_json_path:
@@ -227,22 +310,53 @@ if __name__ == '__main__':
     model = NewResidueFolding(
         config_multimer=config_multimer,
         model_weights_path=args.model_weights_path,
-        val_sample_names=val_dataset.processed_data
+        val_sample_names=val_dataset.processed_data,
+        learning_rate=0.00001,
+        test_mode_name=args.test_mode_name,
+        output_pdb_path=args.output_pdb_path,
     )
+
+    # old_checkpoint = '/gpfs/alpine/bip215/proj-shared/eglukhov/new_residue/output/large_mol/2783482/checkpoints/stepstep=084-distanceval_new_res_distance=6.65.ckpt/global_step85/mp_rank_00_model_states.pt'
+    # checkpoint = torch.load(old_checkpoint, map_location='cpu')['module']
+    # new_weights = model.state_dict()
+    # for k, v in checkpoint.items():
+    #     new_weights[k.replace("_forward_module.", "")] = v
+
+    # # UPDATE weights with trained ones
+    # conf_checkpoint = torch.load('/projectnb2/sc3dm/eglukhov/new_residue/checkpoints/v6/conf/model.ckpt', map_location='cpu')['state_dict']
+    # for k, v in conf_checkpoint.items():
+    #     new_weights[f'model.PredictedLddtNewRes.{k}'] = v
+
+    # model.load_state_dict(new_weights)
+
+    # ### TO FREEZE
+    # for param in model.parameters():
+    #     param.requires_grad = False
+
+    # learnable_layers_names = ['model.InputEmbedder.msa_summarization', 'model.InputEmbedder.msa_norm']
+    # learnable_layers_names = ['model.PredictedLddtNewRes']
+    # learnable_layers = [p[1] for p in model.named_modules() if p[0] in learnable_layers_names]
+
+    # for layer in learnable_layers:
+    #     for param in layer.parameters():
+    #         param.requires_grad = True
+
     checkpoint_callback = ModelCheckpoint(
         dirpath=args.model_checkpoint_path,
         save_top_k=5,
-        mode='max',
-        monitor='val_new_res_is_confident',
-        filename='step{step:03d}-confidence{val_new_res_is_confident:.2f}'
+        mode='min',
+        monitor='val_new_res_rmsd',
+        filename='step{step:03d}-rmsd{val_new_res_rmsd:.2f}',
+        save_last=True,
     )
     lr_monitor = LearningRateMonitor(logging_interval="step")
-    wdb_logger = WandbLogger(
+    logger = WandbLogger(
+        save_dir=args.wandb_output_dir,
+        project=args.wandb_project,
         name=args.wandb_name,
-        save_dir=args.wandb_logger_dir,
         id=args.wandb_id,
-        resume=True,
-        project='new_residue'
+        resume='True',
+        offline=args.wandb_offline,
     )
 
     trainer = pl.Trainer(
@@ -250,18 +364,38 @@ if __name__ == '__main__':
             checkpoint_callback,
             lr_monitor,
         ],
-        logger=wdb_logger,
+        logger=logger,
         log_every_n_steps=1,
-        resume_from_checkpoint=args.resume_from_checkpoint,
         accumulate_grad_batches=args.accumulate_grad_batches,
-        max_epochs=10,
+        max_epochs=args.max_epochs,
         accelerator="gpu",
         devices=args.gpus,
+        num_nodes=args.num_nodes,
         strategy="deepspeed_stage_1",
-        val_check_interval=200,
-        # limit_train_batches=1,
-        # limit_val_batches=1,
-        # num_sanity_val_steps=0,
+        val_check_interval=args.val_check_interval,
+        num_sanity_val_steps=0,
     )
-    trainer.fit(model, train_loader, val_loader)
 
+    if args.step == 'train':
+        trainer.fit(model, train_loader, val_loader, ckpt_path=args.resume_from_ckpt)
+
+        # After training is finished, copy the best model to another path
+        if trainer.global_rank == 0:
+            best_model_path = checkpoint_callback.best_model_path
+            destination_path = f"{args.model_checkpoint_path}/best.ckpt"
+            shutil.copytree(best_model_path, destination_path)
+
+    elif args.step == 'test':
+        os.makedirs(f'{args.output_pdb_path}/json_metrics', exist_ok=True)
+
+        trainer.test(model, val_loader, ckpt_path=args.resume_from_ckpt)
+
+        folder_path = f"{args.output_pdb_path}/json_metrics/"
+        json_files = [file for file in os.listdir(folder_path) if file.endswith('.json')]
+        list_of_dicts = [json.load(open(os.path.join(folder_path, file))) for file in json_files]
+        df = pd.DataFrame(list_of_dicts)
+
+        df.to_csv(f'{args.output_pdb_path}/metrics.csv', index=False)
+
+    else:
+        print('Select "train" or "test" option for parameter "step"')
