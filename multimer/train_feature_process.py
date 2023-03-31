@@ -15,12 +15,12 @@ from alphadock import residue_constants
 from multimer import (config_multimer, load_param_multimer, modules_multimer,
                       test_multimer)
 from utils.crop_features import crop_feature
+from utils.pdb_utils import reconstruct_residue, get_normalised_rmsd
 from pytorch_lightning.callbacks.lr_monitor import LearningRateMonitor
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 from torch import optim
 from torch.utils.data import DataLoader, Dataset
-from wandb import Molecule
 import prody
 
 import warnings
@@ -29,23 +29,6 @@ warnings.filterwarnings("ignore", "None of the inputs have requires_grad=True. G
 
 # Suppress output
 prody.confProDy(verbosity='none')
-
-
-def get_virtual_point(res, scale, axis):
-    coords = res.getCoords()
-    coords = coords - coords[1, :]
-    d = coords[0] - coords[axis]
-    d_norm = np.linalg.norm(d)
-    d_unit = d / d_norm
-    d_scaled = d_unit * scale
-    coords[0] = coords[axis] + d_scaled
-    return coords
-
-
-def get_normalised_rmsd(true, pred, scale, axis):
-    true_centered = get_virtual_point(true, scale, axis)
-    pred_centered = get_virtual_point(pred, scale, axis)
-    return np.sqrt(((true_centered - pred_centered) ** 2).sum(axis=1).mean())
 
 
 class MultimerDataset(Dataset):
@@ -153,6 +136,8 @@ class NewResidueFolding(pl.LightningModule):
         with open(filename, 'w') as f:
             f.write(pdb_out)
 
+        reconstruct_residue(filename, filename)
+
         return filename
 
     def _get_true_structure(self, batch, output, sample_name, seed):
@@ -170,6 +155,8 @@ class NewResidueFolding(pl.LightningModule):
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w') as f:
             f.write(pdb_out)
+
+        reconstruct_residue(filename, filename)
 
         return filename
 
@@ -203,6 +190,8 @@ class NewResidueFolding(pl.LightningModule):
             self.config_multimer['virtual_point']['axis']
         )
 
+        full_rmsd = prody.calcRMSD(true.select('resname REC'), pred.select('resname REC'))
+
         # Save aligned structures
         if save_pdb:
             new_pred_filename = f"{self.output_pdb_path}/{sample_name}/{mode}_{rmsd:0.2f}_s_{seed:02d}_r_{self.global_rank}.pdb"
@@ -210,19 +199,20 @@ class NewResidueFolding(pl.LightningModule):
             if seed == 0:
                 prody.writePDB(true_filename, true)
 
-        return distance, rmsd, normalised_rmsd
+        return distance, rmsd, normalised_rmsd, full_rmsd
 
     def validation_step(self, batch, batch_idx):
         torch.manual_seed(batch['seed'])
         seed = batch['seed'].item()
         sample_name = self.val_sample_names[batch['id'].item()]
         output, loss_items = self.forward(batch)
-        distance, rmsd, normalised_rmsd = self._align_structures(batch, output, sample_name, seed, mode='val')
+        distance, rmsd, normalised_rmsd, full_rmsd = self._align_structures(batch, output, sample_name, seed, mode='val')
 
         loss_items['new_res_distance'] = distance
         loss_items['new_res_rmsd'] = rmsd
         loss_items['new_res_good_rmsd'] = (rmsd < 2.0) * 1.0
         loss_items['new_res_normalised_rmsd'] = normalised_rmsd
+        loss_items['new_res_full_rmsd'] = full_rmsd
 
         for k, v in loss_items.items():
             self.log(f'val_{k}', v, on_step=False, on_epoch=True, logger=True, sync_dist=True)
@@ -235,12 +225,14 @@ class NewResidueFolding(pl.LightningModule):
         sample_name = self.val_sample_names[batch['id'].item()]
 
         output, loss_items = self.forward(batch)
-        distance, rmsd, normalised_rmsd = self._align_structures(batch, output, sample_name, seed,
-                                                                 mode=self.test_mode_name, save_pdb=True)
+        distance, rmsd, normalised_rmsd, full_rmsd = self._align_structures(
+            batch, output, sample_name, seed, mode=self.test_mode_name, save_pdb=True
+        )
         loss_items['new_res_distance'] = distance
         loss_items['new_res_rmsd'] = rmsd
         loss_items['new_res_good_rmsd'] = (rmsd < 2.0) * 1.0
         loss_items['new_res_normalised_rmsd'] = normalised_rmsd
+        loss_items['new_res_full_rmsd'] = full_rmsd
 
         metrics = {
             'sample_name': sample_name,
