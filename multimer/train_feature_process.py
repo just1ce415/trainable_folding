@@ -194,7 +194,7 @@ class NewResidueFolding(pl.LightningModule):
 
         # Save aligned structures
         if save_pdb:
-            new_pred_filename = f"{self.output_pdb_path}/{sample_name}/{mode}_{rmsd:0.2f}_s_{seed:02d}_r_{self.global_rank}.pdb"
+            new_pred_filename = f"{self.output_pdb_path}/{sample_name}/{mode}_{rmsd:0.2f}_s_{seed:02d}.pdb"
             prody.writePDB(new_pred_filename, pred)
             if seed == 0:
                 prody.writePDB(true_filename, true)
