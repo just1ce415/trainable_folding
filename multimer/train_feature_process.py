@@ -95,7 +95,7 @@ class NewResidueFolding(pl.LightningModule):
             val_sample_names,
             learning_rate=0.0001,
             test_mode_name='test',
-            output_pdb_path=None,
+            output_data_path=None,
     ):
         super(NewResidueFolding, self).__init__()
         self.config_multimer = config_multimer.config_multimer
@@ -104,7 +104,7 @@ class NewResidueFolding(pl.LightningModule):
         self.val_sample_names = val_sample_names
         self.learning_rate = learning_rate
         self.test_mode_name = test_mode_name
-        self.output_pdb_path = output_pdb_path
+        self.output_data_path = output_data_path
 
     def forward(self, batch):
         return self.model(batch, is_eval_mode=self.trainer.evaluating)
@@ -131,7 +131,7 @@ class NewResidueFolding(pl.LightningModule):
             output['final_atom_mask'].cpu().numpy(), plddt_b_factors[0]
         )
 
-        filename = f"{self.output_pdb_path}/{sample_name}/{mode}_s_{seed:02d}_r_{self.global_rank}.pdb"
+        filename = f"{self.output_data_path}/structures/{sample_name}/{mode}_s_{seed:02d}_r_{self.global_rank}.pdb"
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w') as f:
             f.write(pdb_out)
@@ -151,7 +151,7 @@ class NewResidueFolding(pl.LightningModule):
             output['final_atom_mask'].cpu().numpy(), b_factors
         )
 
-        filename = f"{self.output_pdb_path}/{sample_name}/true_s_{seed:02d}_r_{self.global_rank}.pdb"
+        filename = f"{self.output_data_path}/structures/{sample_name}/true_s_{seed:02d}_r_{self.global_rank}.pdb"
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w') as f:
             f.write(pdb_out)
@@ -194,7 +194,7 @@ class NewResidueFolding(pl.LightningModule):
 
         # Save aligned structures
         if save_pdb:
-            new_pred_filename = f"{self.output_pdb_path}/{sample_name}/{mode}_{rmsd:0.2f}_s_{seed:02d}.pdb"
+            new_pred_filename = f"{self.output_data_path}/structures/{sample_name}/{mode}_{rmsd:0.2f}_s_{seed:02d}.pdb"
             prody.writePDB(new_pred_filename, pred)
             if seed == 0:
                 prody.writePDB(true_filename, true)
@@ -243,7 +243,7 @@ class NewResidueFolding(pl.LightningModule):
             }
         }
 
-        with open(f"{self.output_pdb_path}/json_metrics/{sample_name}_{seed:02d}.json", "w") as outfile:
+        with open(f"{self.output_data_path}/json_metrics/{sample_name}_{seed:02d}.json", "w") as outfile:
             outfile.write(json.dumps(metrics, indent=4))
 
         return {'sample_name': sample_name, **loss_items}
@@ -269,7 +269,7 @@ if __name__ == '__main__':
     parser.add_argument('--preprocessed_data_dir', type=str)
     parser.add_argument("--model_weights_path", type=str, default=None)
     parser.add_argument("--model_checkpoint_path", type=str, default=None)
-    parser.add_argument("--output_pdb_path", type=str, default=None)
+    parser.add_argument("--output_data_path", type=str, default=None)
     parser.add_argument("--resume_from_ckpt", type=str, default=None)
     parser.add_argument("--wandb_offline", action="store_true")
     parser.add_argument("--wandb_output_dir", type=str, default=None)
@@ -305,7 +305,7 @@ if __name__ == '__main__':
         val_sample_names=val_dataset.processed_data,
         learning_rate=0.00001,
         test_mode_name=args.test_mode_name,
-        output_pdb_path=args.output_pdb_path,
+        output_data_path=args.output_data_path,
     )
 
     # old_checkpoint = '/gpfs/alpine/bip215/proj-shared/eglukhov/new_residue/output/large_mol/2783482/checkpoints/stepstep=084-distanceval_new_res_distance=6.65.ckpt/global_step85/mp_rank_00_model_states.pt'
@@ -378,16 +378,16 @@ if __name__ == '__main__':
             shutil.copytree(best_model_path, destination_path)
 
     elif args.step == 'test':
-        os.makedirs(f'{args.output_pdb_path}/json_metrics', exist_ok=True)
+        os.makedirs(f'{args.output_data_path}/json_metrics', exist_ok=True)
 
         trainer.test(model, val_loader, ckpt_path=args.resume_from_ckpt)
 
-        folder_path = f"{args.output_pdb_path}/json_metrics/"
+        folder_path = f"{args.output_data_path}/json_metrics/"
         json_files = [file for file in os.listdir(folder_path) if file.endswith('.json')]
         list_of_dicts = [json.load(open(os.path.join(folder_path, file))) for file in json_files]
         df = pd.DataFrame(list_of_dicts)
 
-        df.to_csv(f'{args.output_pdb_path}/metrics.csv', index=False)
+        df.to_csv(f'{args.output_data_path}/metrics.csv', index=False)
 
     else:
         print('Select "train" or "test" option for parameter "step"')
