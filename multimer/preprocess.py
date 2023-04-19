@@ -4,6 +4,7 @@ sys.path.insert(1, '../')
 import argparse
 import json
 import os
+import Bio.PDB
 import numpy as np
 from openbabel import pybel
 from multiprocessing import Pool
@@ -12,6 +13,8 @@ from tqdm import tqdm
 from alphadock import residue_constants
 from multimer import mmcif_parsing, msa_pairing, pipeline_multimer, feature_processing
 
+import warnings
+warnings.filterwarnings(action='ignore')
 
 def process_unmerged_features(all_chain_features):
   """Postprocessing stage for per-chain features before merging."""
@@ -172,10 +175,20 @@ def crop_feature(features, crop_size):
 
 def _preprocess_one(single_dataset):
     cif_path = single_dataset['cif_file']
-    file_id = os.path.basename(cif_path)[:-4]
+    pdb_id = os.path.basename(cif_path)[:-4]
     sdf_path = single_dataset['sdf']
     sample_id = os.path.basename(sdf_path)[:-4]
-    chains = single_dataset['chains']
+    # chains = single_dataset['chains']
+    sample_name = single_dataset['sdf'].split('/')[-1][:-4]
+    chains = [sample_name[16:17], 'Z']
+
+    parser = Bio.PDB.MMCIFParser()
+    structure = parser.get_structure(pdb_id, cif_path)
+    fragment_names = ['FMN', 'FAD', 'FAE', '9WY', 'RBF', 'LFN', 'C3F', 'FAS', 'CF2', 'CF4']
+    n_fragments = sum([1 for res in structure[0][sample_name[16:17]] if res.get_resname() in fragment_names])
+
+    if n_fragments != 1:
+        return
 
     ### START READING COORDS FOR NEW RES
 
@@ -191,9 +204,9 @@ def _preprocess_one(single_dataset):
         return
 
 
-    atomtype_B[8] = 'N'
-    atomtype_B[7] = 'CA'
-    atomtype_B[5] = 'C'
+    atomtype_B[13] = 'N'
+    atomtype_B[2] = 'CA'
+    atomtype_B[4] = 'C'
     temp_coor_B = np.zeros((1, 37, 3))
     temp_mask_B = np.zeros((1, 37))
     for i in range(len(coordinate_B)):
@@ -207,37 +220,34 @@ def _preprocess_one(single_dataset):
 
     with open(cif_path, 'r') as f:
         mmcif_string = f.read()
-    mmcif_obj = mmcif_parsing.parse(file_id=file_id, mmcif_string=mmcif_string).mmcif_object
+    mmcif_obj = mmcif_parsing.parse(file_id=pdb_id, mmcif_string=mmcif_string).mmcif_object
     sequences = []
+
+    release_date = mmcif_obj.header['release_date']
+    single_dataset['release_date'] = release_date
+    dataset = 'train'
+    # if release_date >= '2020-01-01':
+    #     dataset = 'val'
+    if release_date >= '2021-01-01':
+        dataset = 'test'
+    single_dataset['dataset'] = dataset
+
     for c in mmcif_obj.chain_to_seqres.keys():
         sequences.append(mmcif_obj.chain_to_seqres[c])
     is_homomer = len(set(sequences)) == 1
-    best_chain = {}
-    min_dist = 5.0
+    all_chain_features = {}
     for chain in chains:
         if (chain in mmcif_obj.chain_to_seqres):
-            a3m_file = os.path.join(pre_alignment_path, f'{file_id}_{chain}', 'mmseqs/aggregated.a3m')
-            # hhr_file = os.path.join(self.pre_align, f'{file_id}_{chain}', 'mmseqs/uniref.hhr')
+            single_dataset['seq_len'] = len(mmcif_obj.chain_to_seqres[chain])
+            a3m_file = os.path.join(pre_alignment_path, f'{pdb_id}_{chain}', 'mmseqs/aggregated.a3m')
         else:
             a3m_file = new_res_a3m_path
         hhr_file = None
         chain_features = process_single_chain(mmcif_obj, chain, a3m_file, is_homomer, hhr_file=hhr_file, mmcif_dir=mmcif_dir)
-        chain_features = pipeline_multimer.convert_monomer_features(chain_features,
-                                                                chain_id=chain)
-        if chain == 'Z':
-            all_chain_features = {chain: chain_features}
-            continue
+        chain_features = pipeline_multimer.convert_monomer_features(chain_features, chain_id=chain)
 
-        distances = np.sqrt(np.sum((temp_coor_B - chain_features['all_atom_positions']) ** 2, axis=-1))
-        curr_min_dist = np.min(distances[chain_features['all_atom_mask'] == 1])
-        if curr_min_dist < min_dist:
-            best_chain = {chain: chain_features}
-            min_dist = curr_min_dist
+        all_chain_features[chain] = chain_features
 
-    if len(best_chain) == 0:
-        return
-
-    all_chain_features = {**best_chain, **all_chain_features}
 
     all_chain_features = pipeline_multimer.add_assembly_features(all_chain_features)
     np_example = pair_and_merge(all_chain_features, is_homomer)
@@ -259,9 +269,11 @@ def _preprocess_one(single_dataset):
     )
 
     close_atoms = (distances < 5.0) * np_example['all_atom_mask']
+    if close_atoms.sum() < 2:
+        return
     np_example['loss_mask'] = (close_atoms.sum(axis=1) > 0.0) * 1.0
 
-    np.savez(f'{preprocessed_data_dir}/{sample_id}', **np_example)
+    # np.savez(f'{preprocessed_data_dir}/{sample_id}', **np_example)
 
     return single_dataset
 
@@ -289,11 +301,40 @@ if __name__ == '__main__':
             verification_atom_seq.append(atom.type)
 
     json_data = json.load(open(args.json_data_path))
+    json_data = [{**j, 'seed': i} for i, j in enumerate(json_data)]
 
-    results = []
+    res = []
+
     pool = Pool(processes=args.n_jobs)
-    for m in tqdm(pool.imap_unordered(_preprocess_one, json_data), total=len(json_data)):
-        if m:
-            results.append(m)
+    for r in tqdm(pool.imap_unordered(_preprocess_one, json_data), total=len(json_data)):
+        if r:
+            res.append(r)
     pool.close()
     pool.join()
+
+    _train_data = [r for r in res if r['dataset'] == 'train']
+    _sorted_train_data = sorted(_train_data, key=lambda x: x['release_date'])
+    train_data = _sorted_train_data[:-276]
+    val_data = _sorted_train_data[-276:]
+    test_data = [r for r in res if r['dataset'] == 'test']
+    for i, r in enumerate(train_data):
+        r['seed'] = i
+        r['dataset'] = 'train'
+    for i, r in enumerate(val_data):
+        r['seed'] = i
+        r['dataset'] = 'val'
+    test_data = [r for r in res if r['dataset'] == 'test']
+
+    os.makedirs(preprocessed_data_dir, exist_ok=True)
+
+    with open(f"{preprocessed_data_dir}/train.json", "w") as outfile:
+        outfile.write(json.dumps(train_data, indent=4))
+
+    with open(f"{preprocessed_data_dir}/val.json", "w") as outfile:
+        outfile.write(json.dumps(val_data, indent=4))
+
+    with open(f"{preprocessed_data_dir}/test.json", "w") as outfile:
+        outfile.write(json.dumps(test_data, indent=4))
+
+    print('Init:', len(json_data))
+    print('Done:', len(res))
