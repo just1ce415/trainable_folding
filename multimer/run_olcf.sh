@@ -1,5 +1,5 @@
 #!/bin/bash
-#BSUB -W 06:00
+#BSUB -W 02:00
 #BSUB -nnodes 46
 #BSUB -P BIP215
 #BSUB -o new_residue.o%J
@@ -15,28 +15,28 @@ export TORCH_EXTENSIONS_DIR=/gpfs/alpine/bip215/proj-shared/eglukhov/torch_exten
 export PRODY_CONFIG_DIR=/gpfs/alpine/bip215/proj-shared/eglukhov/.prody
 
 # Get version from params
-model_version={{MODEL_VERSION}}
+#model_version={{MODEL_VERSION}}
+model_version=1
 
 af_params_dir="/gpfs/alpine/bip215/proj-shared/eglukhov/af_params/";
 project_dir="/gpfs/alpine/bip215/proj-shared/eglukhov/new_residue";
-data_dir=$project_dir/datasets/v8;
+data_dir=$project_dir/datasets/v9;
 project="new_residue";
-run_name="olcf_v8_${model_version}";
-run_version='2'
-restore_version='1'
+run_name="compressed_${model_version}_5";
+run_version='train_1'
+#restore_version='train_1'
 output_dir=$project_dir/output/$run_name/$run_version;
 
 mkdir -p $output_dir;
 jsrun -n 46 -c 6 -g 6 -a 6 --smpiargs="-disable_gpu_hooks" python3 -m train_feature_process \
       --gpus 6 \
       --num_nodes 46 \
-      --train_json_path $data_dir/debug_train.json \
-      --val_json_path $data_dir/debug_val.json \
-      --preprocessed_data_dir $data_dir/npz_files \
+      --train_json_path $data_dir/train.json \
+      --val_json_path $data_dir/val.json \
+      --preprocessed_data_dir /gpfs/alpine/bip215/proj-shared/eglukhov/new_residue/output/get_data_1/v1/npz_files \
       --model_weights_path $af_params_dir/params_model_${model_version}_multimer_v2.npz \
-      --resume_from_ckpt $project_dir/output/$run_name/$restore_version/checkpoints/last.ckpt \
       --model_checkpoint_path $output_dir/checkpoints \
-      --output_pdb_path $output_dir/structures \
+      --output_data_path $output_dir \
       --wandb_offline \
       --wandb_output_dir $output_dir \
       --wandb_project $project \
@@ -46,4 +46,4 @@ jsrun -n 46 -c 6 -g 6 -a 6 --smpiargs="-disable_gpu_hooks" python3 -m train_feat
       --max_epochs 100 \
       --step 'train'
 
-wandb sync --append $output_dir/wandb/latest-run/
+#wandb sync --append $output_dir/wandb/latest-run/
