@@ -32,42 +32,34 @@ prody.confProDy(verbosity='none')
 
 
 class MultimerDataset(Dataset):
-    def __init__(self, json_data, preprocessed_data_dir):
+    def __init__(self, json_data, preprocessed_data_dir, seed_train=False):
         self.data = json_data
         self.preprocessed_data_dir = preprocessed_data_dir
+        self.seed_train = seed_train
         self._preprocess_all()
 
     def _preprocess_all(self):
         self.processed_data = {}
-        self.seeds = {}
         i = 0
         for single_dataset in self.data:
             sdf_path = single_dataset['sdf']
             sample_id = os.path.basename(sdf_path)[:-4]
             file_path = f'{self.preprocessed_data_dir}/{sample_id}.npz'
-            assert os.path.exists(file_path), f'File not found: {file_path}'
-            # check that we have at least one res close to a new one
-            n_close_res = np.load(file_path)['loss_mask'].sum()
-            if n_close_res <= 1:
+            if not os.path.exists(file_path):
                 continue
             self.processed_data[i] = sample_id
-            if single_dataset['dataset'] == 'train':
-                self.seeds[i] = None
-            else:
-                self.seeds[i] = single_dataset['seed']
             i += 1
 
     def process(self, idx):
-        if self.seeds[idx] is not None:
-            random.seed(self.seeds[idx])  # to stable the crop procedure for val and test
-            crop_size = 384
-        else:
-            crop_size = 256
         n_close_res = 0
         count = 0
         while n_close_res <= 1:
             np_example = dict(np.load(f'{self.preprocessed_data_dir}/{self.processed_data[idx]}.npz'))
-            np_example = crop_feature(np_example, crop_size)
+            if self.seed_train or (np_example['is_val'] == 1):
+                random.seed(np_example['seed'].item())
+            crop_size = np_example['crop_size']
+            if len(np_example['aatype']) > crop_size:
+                np_example = crop_feature(np_example, crop_size)
             n_close_res = np_example['loss_mask'].sum()
             count += 1
             if count == 100:
@@ -75,8 +67,6 @@ class MultimerDataset(Dataset):
         np_example = {k: torch.tensor(v) for k, v in np_example.items()}
         np_example['id'] = idx
 
-        if self.seeds[idx] is not None:
-            np_example['seed'] = self.seeds[idx]
 
         return np_example
 
@@ -110,6 +100,8 @@ class NewResidueFolding(pl.LightningModule):
         return self.model(batch, is_eval_mode=self.trainer.evaluating)
 
     def training_step(self, batch):
+        if self.seed_train:
+            torch.manual_seed(batch['seed'])
         output, loss_items = self.forward(batch)
         for k, v in loss_items.items():
             self.log(f'train_{k}', v, on_step=True, on_epoch=True, logger=True)
@@ -248,16 +240,27 @@ class NewResidueFolding(pl.LightningModule):
 
         return {'sample_name': sample_name, **loss_items}
 
+    def predict_step(self, batch, batch_idx):
+        torch.manual_seed(batch['seed'])
+        sample_id = batch['id'].item()
+        sample_name = self.val_sample_names[sample_id]
+        recycle = self.model.forward(batch, is_eval_mode=True, get_recycles_only=True)
+
+        filename = f"{self.output_data_path}/npz_files/{sample_name}"
+        data = {
+            **{k: v.cpu().numpy()[0] for k, v in batch.items()},
+            **{k: v.cpu().numpy()[0] for k, v in recycle.items()},
+        }
+
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        np.savez(filename, **data)
+
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
-        lr_scheduler = optim.lr_scheduler.CyclicLR(
+        lr_scheduler = optim.lr_scheduler.OneCycleLR(
             optimizer,
-            base_lr=self.learning_rate,
-            max_lr=self.learning_rate * 10,
-            step_size_up=10,
-            mode="triangular",
-            gamma=0.85,
-            cycle_momentum=False,
+            max_lr=0.0001,
+            total_steps=500,
         )
         return [optimizer], [{"scheduler": lr_scheduler, "interval": "step", "frequency": 1}]
 
@@ -289,12 +292,12 @@ if __name__ == '__main__':
     torch.use_deterministic_algorithms(True)
 
     train_json_data = json.load(open(args.train_json_path))
-    train_dataset = MultimerDataset(train_json_data, args.preprocessed_data_dir)
+    train_dataset = MultimerDataset(train_json_data, args.preprocessed_data_dir, seed_train=True)
     train_loader = DataLoader(train_dataset, batch_size=1, shuffle=False)
 
     if args.val_json_path:
         val_json_data = json.load(open(args.val_json_path))
-        val_dataset = MultimerDataset(val_json_data, args.preprocessed_data_dir)
+        val_dataset = MultimerDataset(val_json_data, args.preprocessed_data_dir, seed_train=True)
         val_loader = DataLoader(val_dataset, batch_size=1)
     else:
         val_loader = None
@@ -303,7 +306,7 @@ if __name__ == '__main__':
         config_multimer=config_multimer,
         model_weights_path=args.model_weights_path,
         val_sample_names=val_dataset.processed_data,
-        learning_rate=0.00001,
+        learning_rate=0.0001,
         test_mode_name=args.test_mode_name,
         output_data_path=args.output_data_path,
     )
@@ -388,6 +391,10 @@ if __name__ == '__main__':
         df = pd.DataFrame(list_of_dicts)
 
         df.to_csv(f'{args.output_data_path}/metrics.csv', index=False)
+
+    elif args.step == 'predict':
+        #  it is only for inference the initial state of AF
+        trainer.predict(model, val_loader)
 
     else:
         print('Select "train" or "test" option for parameter "step"')
