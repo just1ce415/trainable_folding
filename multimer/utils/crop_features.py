@@ -9,7 +9,7 @@ def crop_feature(features, crop_size):
     # + 1 because np.random.randint doesn't include highest value
     start_crop = np.random.randint(0, seq_len - crop_size + 1)
     feat_skip = {'seq_length', 'resolution', 'num_alignments', 'assembly_num_chains', 'num_templates',
-                 'cluster_bias_mask'}
+                 'cluster_bias_mask', 'id', 'seed', 'is_val', 'crop_size'}
     feat_1 = {
         'aatype', 'residue_index', 'all_atom_positions',
         'all_atom_mask', 'asym_id', 'sym_id', 'entity_id',
