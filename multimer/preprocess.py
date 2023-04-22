@@ -6,6 +6,7 @@ import json
 import os
 import Bio.PDB
 import numpy as np
+import requests
 from openbabel import pybel
 from multiprocessing import Pool
 from tqdm import tqdm
@@ -173,22 +174,24 @@ def crop_feature(features, crop_size):
     features['seq_length'] = crop_size + 1
     return features
 
+def download_cif(pdb_id, output_file=None):
+    if output_file is None:
+        output_file = f"{pdb_id}.cif"
+
+    url = f"https://files.rcsb.org/download/{pdb_id}.cif"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        with open(output_file, "w") as f:
+            f.write(response.text)
+
+
 def _preprocess_one(single_dataset):
-    cif_path = single_dataset['cif_file']
-    pdb_id = os.path.basename(cif_path)[:-4]
-    sdf_path = single_dataset['sdf']
-    sample_id = os.path.basename(sdf_path)[:-4]
-    # chains = single_dataset['chains']
-    sample_name = single_dataset['sdf'].split('/')[-1][:-4]
-    chains = [sample_name[16:17], 'Z']
-
-    parser = Bio.PDB.MMCIFParser()
-    structure = parser.get_structure(pdb_id, cif_path)
-    fragment_names = ['FMN', 'FAD', 'FAE', '9WY', 'RBF', 'LFN', 'C3F', 'FAS', 'CF2', 'CF4']
-    n_fragments = sum([1 for res in structure[0][sample_name[16:17]] if res.get_resname() in fragment_names])
-
-    if n_fragments != 1:
-        return
+    cif_path = single_dataset['cif_path']
+    pdb_id = single_dataset['pdb_id']
+    sdf_path = single_dataset['sdf_path']
+    sample_id = single_dataset['sample_id']
+    chains = [single_dataset['rel_chain'], 'Z']
 
     ### START READING COORDS FOR NEW RES
 
@@ -204,9 +207,9 @@ def _preprocess_one(single_dataset):
         return
 
 
-    atomtype_B[13] = 'N'
-    atomtype_B[2] = 'CA'
-    atomtype_B[4] = 'C'
+    atomtype_B[6] = 'N'
+    atomtype_B[4] = 'CA'
+    atomtype_B[1] = 'C'
     temp_coor_B = np.zeros((1, 37, 3))
     temp_mask_B = np.zeros((1, 37))
     for i in range(len(coordinate_B)):
@@ -218,10 +221,24 @@ def _preprocess_one(single_dataset):
 
     ### END READING COORDS FOR NEW RES
 
+    # download cif from pdb
+    if cif_path == -1:
+        cif_path = f'{preprocessed_data_dir}/cif_files/{pdb_id}.cif'
+    if not os.path.exists(cif_path):
+        cif_path = f'{preprocessed_data_dir}/cif_files/{pdb_id}.cif'
+        os.makedirs(f'{preprocessed_data_dir}/cif_files/', exist_ok=True)
+        download_cif(pdb_id, output_file=cif_path)
+    single_dataset['cif_path'] = cif_path
+
+
     with open(cif_path, 'r') as f:
         mmcif_string = f.read()
     mmcif_obj = mmcif_parsing.parse(file_id=pdb_id, mmcif_string=mmcif_string).mmcif_object
     sequences = []
+
+    single_dataset['resolution'] = mmcif_obj.header["resolution"]
+    single_dataset['structure_method'] = mmcif_obj.header["structure_method"]
+    single_dataset['sequence_len'] = len(mmcif_obj.chain_to_seqres[single_dataset['rel_chain']])
 
     release_date = mmcif_obj.header['release_date']
     single_dataset['release_date'] = release_date
@@ -238,8 +255,10 @@ def _preprocess_one(single_dataset):
     all_chain_features = {}
     for chain in chains:
         if (chain in mmcif_obj.chain_to_seqres):
-            single_dataset['seq_len'] = len(mmcif_obj.chain_to_seqres[chain])
             a3m_file = os.path.join(pre_alignment_path, f'{pdb_id}_{chain}', 'mmseqs/aggregated.a3m')
+            if not os.path.exists(a3m_file):
+                print(f'{a3m_file} is missing')
+                return
         else:
             a3m_file = new_res_a3m_path
         hhr_file = None
@@ -273,7 +292,7 @@ def _preprocess_one(single_dataset):
         return
     np_example['loss_mask'] = (close_atoms.sum(axis=1) > 0.0) * 1.0
 
-    # np.savez(f'{preprocessed_data_dir}/{sample_id}', **np_example)
+    np.savez(f'{preprocessed_data_dir}/npz_files/{sample_id}', **np_example)
 
     return single_dataset
 
@@ -303,6 +322,8 @@ if __name__ == '__main__':
     json_data = json.load(open(args.json_data_path))
     json_data = [{**j, 'seed': i} for i, j in enumerate(json_data)]
 
+    os.makedirs(f'{preprocessed_data_dir}/npz_files/', exist_ok=True)
+
     res = []
 
     pool = Pool(processes=args.n_jobs)
@@ -314,8 +335,8 @@ if __name__ == '__main__':
 
     _train_data = [r for r in res if r['dataset'] == 'train']
     _sorted_train_data = sorted(_train_data, key=lambda x: x['release_date'])
-    train_data = _sorted_train_data[:-276]
-    val_data = _sorted_train_data[-276:]
+    train_data = _sorted_train_data[:-120]
+    val_data = _sorted_train_data[-120:]
     test_data = [r for r in res if r['dataset'] == 'test']
     for i, r in enumerate(train_data):
         r['seed'] = i
