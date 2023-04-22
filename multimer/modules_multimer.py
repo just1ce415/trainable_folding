@@ -1239,8 +1239,14 @@ class DockerIteration(nn.Module):
         del pair_activations
         return representations, m_1_prev, z_prev, x_prev
 
-    def forward(self, init_batch, is_eval_mode):
+    def forward(self, init_batch, is_eval_mode, get_recycles_only=False):
         recycles = None
+        if 'prev_msa_first_row' in init_batch:
+            recycles = {
+                'prev_msa_first_row': init_batch['prev_msa_first_row'],
+                'prev_pair': init_batch['prev_pair'],
+                'prev_pos': init_batch['prev_pos'],
+            }
         batch = self._preprocess_batch_msa(init_batch)
         if is_eval_mode:
             min_num_recycle = self.global_config['model']['min_num_recycle_eval']
@@ -1262,6 +1268,13 @@ class DockerIteration(nn.Module):
                         if self.global_config['model']['resample_msa_in_recycling'] and new_res_plddt < confident_plddt:
                             batch = self._preprocess_batch_msa(init_batch)
                         del out, m_1_prev, z_prev, x_prev
+
+            if get_recycles_only:
+                return {
+                    'prev_msa_first_row': m_1_prev,
+                    'prev_pair': z_prev,
+                    'prev_pos': x_prev
+                }
 
         else:
             num_recycle = self.global_config['model']['num_recycle']
