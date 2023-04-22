@@ -6,7 +6,7 @@ config_multimer= {
     'recycle': True,
     'model': {
         'embeddings_and_evoformer': {
-            'evoformer_num_block': 49,
+            'evoformer_num_block': 5,
             'evoformer': {
                 'msa_column_attention': {
                     'dropout_rate': 0.0,
@@ -299,7 +299,7 @@ config_multimer= {
                 },
                 'num_channel': 384,
                 'num_head': 12,
-                'num_layer': 9,
+                'num_layer': 8,
                 'num_layer_in_transition': 3,
                 'num_point_qk': 4,
                 'num_point_v': 8,
