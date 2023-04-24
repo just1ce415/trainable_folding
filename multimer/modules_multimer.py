@@ -314,7 +314,7 @@ class RowAttentionWithPairBias(nn.Module):
                 msa_act, 
                 biases, 
                 64,
-                use_memory_efficient_kernel=False, 
+                use_memory_efficient_kernel=False,
                 use_lma=False,
             )
 
@@ -377,7 +377,7 @@ class LigColumnAttention(nn.Module):
         self.attn_num_c = attn_num_c
         self.num_heads = num_heads
         self.mha = Attention(in_num_c, in_num_c, in_num_c, attn_num_c, num_heads)
-    
+
     @torch.jit.ignore
     def _chunk(self,
         m: torch.Tensor,
@@ -490,7 +490,7 @@ class TriangleMultiplicationIngoing(nn.Module):
         act = self.layer_norm_input(act)
         mask = mask[..., None]
         left_proj = mask*self.left_projection(act) * torch.sigmoid(self.left_gate(act))
-        right_proj = mask*self.right_projection(act) * torch.sigmoid(self.right_gate(act))    
+        right_proj = mask*self.right_projection(act) * torch.sigmoid(self.right_gate(act))
         out = torch.einsum('bkjc,bkic->bijc', left_proj, right_proj)
         out = self.center_layer_norm(out)
         out = self.output_projection(out)
@@ -517,7 +517,7 @@ class TriangleAttentionStartingNode(nn.Module):
         self.mha = Attention(
             num_in_c, num_in_c, num_in_c, attn_num_c, num_heads
         )
-    
+
     @torch.jit.ignore
     def _chunk(self,
         x: torch.Tensor,
@@ -766,17 +766,19 @@ class FragExtraStack(nn.Module):
     
     def forward(self, msa_act, pair_act, extra_mask_msa, extra_mask_pair):
         for l in self.layers:
-            msa_act, pair_act = checkpoint(l, msa_act.clone(), pair_act.clone(), extra_mask_msa, extra_mask_pair)
+            # msa_act, pair_act = checkpoint(l, msa_act.clone(), pair_act.clone(), extra_mask_msa, extra_mask_pair)
             #extra_msa_stack_inputs = checkpoint(l, extra_msa_stack_inputs, extra_mask)
+            msa_act, pair_act = l(msa_act, pair_act, extra_mask_msa, extra_mask_pair)
+
         return pair_act
 
 class EvoformerIteration(nn.Module):
     def __init__(self, config, global_config):
         super().__init__()
+        self.OuterProductMean = OuterProductMean(config['outer_product_mean'], global_config)
         self.RowAttentionWithPairBias = RowAttentionWithPairBias(config['msa_row_attention_with_pair_bias'], global_config)
         self.LigColumnAttention = LigColumnAttention(config['msa_column_attention'], global_config)
         self.RecTransition = Transition(config['msa_transition'], global_config)
-        self.OuterProductMean = OuterProductMean(config['outer_product_mean'], global_config)
         self.TriangleMultiplicationOutgoing = TriangleMultiplicationOutgoing(config['triangle_multiplication_outgoing'], global_config)
         self.TriangleMultiplicationIngoing = TriangleMultiplicationIngoing(config['triangle_multiplication_incoming'], global_config)
         self.TriangleAttentionStartingNode = TriangleAttentionStartingNode(config['triangle_attention_starting_node'], global_config)
@@ -888,7 +890,8 @@ class SingleTemplateEmbedding(nn.Module):
         act = act + self.template_pair_emb_8(query_embedding)
         act = torch.unsqueeze(act, dim=0)
         for iter_temp in self.TemplateEmbeddingIteration:
-            act = checkpoint(iter_temp, act.clone(), torch.unsqueeze(padding_mask_2d, dim=0))
+            # act = checkpoint(iter_temp, act.clone(), torch.unsqueeze(padding_mask_2d, dim=0))
+            act = iter_temp(act, torch.unsqueeze(padding_mask_2d, dim=0))
         act = torch.squeeze(act)
         act = self.output_layer_norm(act)
         return act
@@ -1090,7 +1093,7 @@ class Distogram(nn.Module):
 
 
 class DockerIteration(nn.Module):
-    def __init__(self, global_config):
+    def __init__(self, global_config, huber_delta=0.2):
         super().__init__()
         self.InputEmbedder = InputEmbedding(global_config)
         self.TemplateEmbedding1D = TemplateEmbedding1D(global_config)
@@ -1102,6 +1105,10 @@ class DockerIteration(nn.Module):
         self.PredictedAlignedError = PredictedAlignedError(global_config)
         self.ExperimentallyResolvedHead = ExperimentallyResolvedHead(global_config)
         self.MaskedMsaHead = MaskedMsaHead(global_config)
+
+        self.msa_scale = nn.Linear(global_config['model']['embeddings_and_evoformer']['msa_channel'], global_config['model']['embeddings_and_evoformer']['msa_channel'])
+        self.pair_scale = nn.Linear(global_config['model']['embeddings_and_evoformer']['pair_channel'], global_config['model']['embeddings_and_evoformer']['pair_channel'])
+        self.hl = nn.HuberLoss(delta=huber_delta)
 
         self.global_config = global_config
 
@@ -1132,6 +1139,10 @@ class DockerIteration(nn.Module):
 
         for evo_i, evo_iter in enumerate(self.Evoformer):
             msa_activations, pair_activations = checkpoint(evo_iter, msa_activations.clone(), pair_activations.clone(), msa_mask, pair_mask)
+            # msa_activations, pair_activations = evo_iter(msa_activations, pair_activations,msa_mask, pair_mask)
+
+        msa_activations = self.msa_scale(msa_activations)
+        pair_activations = self.pair_scale(pair_activations)
 
         single_activations = self.EvoformerExtractSingleRec(msa_activations[:,0])
         representations = {'single': single_activations, 'pair': pair_activations}
@@ -1174,9 +1185,9 @@ class DockerIteration(nn.Module):
         z_prev = pair_activations
         x_prev = atom37_pred_positions.unsqueeze(0)
         del struct_out
-        del msa_activations
-        del pair_activations
-        return representations, m_1_prev, z_prev, x_prev
+        # del msa_activations
+        # del pair_activations
+        return representations, m_1_prev, z_prev, x_prev, msa_activations
 
     def forward(self, init_batch, is_eval_mode):
         batch = self._preprocess_batch_msa(init_batch)
@@ -1187,7 +1198,7 @@ class DockerIteration(nn.Module):
             num_recycle = self.global_config['model']['max_num_recycle_eval']
             for recycle_iter in range(num_recycle):
                 with torch.set_grad_enabled(False):
-                    out, m_1_prev, z_prev, x_prev = self.iteration(batch, recycles)
+                    out, m_1_prev, z_prev, x_prev, msa_activations = self.iteration(batch, recycles)
                     plddt = compute_plddt(self.PredictedLddt(out))
                     mean_masked_plddt = ((plddt * batch['renum_mask']).sum() / batch['renum_mask'].sum())
                     if recycle_iter >= min_num_recycle and mean_masked_plddt >= confident_plddt:
@@ -1201,7 +1212,7 @@ class DockerIteration(nn.Module):
                         }
                         if self.global_config['model']['resample_msa_in_recycling']:
                             batch = self._preprocess_batch_msa(init_batch)
-                        del out, m_1_prev, z_prev, x_prev
+                        del out, m_1_prev, z_prev, x_prev, msa_activations
                     recycle_iter += 1
 
         else:
@@ -1209,15 +1220,13 @@ class DockerIteration(nn.Module):
             for recycle_iter in range(num_recycle):
                 is_final_iter = recycle_iter == (num_recycle - 1)
                 with torch.set_grad_enabled(is_final_iter):
-                    out, m_1_prev, z_prev, x_prev = self.iteration(batch, recycles)
+                    out, m_1_prev, z_prev, x_prev, msa_activations = self.iteration(batch, recycles)
                     if not is_final_iter:
                         recycles = {
                             'prev_msa_first_row': m_1_prev,
                             'prev_pair': z_prev,
                             'prev_pos': x_prev
                         }
-                        if self.global_config['model']['resample_msa_in_recycling']:
-                            batch = self._preprocess_batch_msa(batch)
                         del out, m_1_prev, z_prev, x_prev
 
 
@@ -1247,19 +1256,26 @@ class DockerIteration(nn.Module):
         plddt = compute_plddt(self.PredictedLddt(out))
 
         mean_masked_plddt = ((plddt * batch['renum_mask']).sum() / batch['renum_mask'].sum())
-        loss = sum([
-            0.01 * lddt_loss,
-            0.01 * resolved_loss,
-            0.3 * distogram_loss,
-            1.0 * structure_loss,
-            0.01 * pae_loss,
-            2.0 * masked_msa_loss,
-            0.02 * lddt_loop_loss,
-            0.02 * resolved_loop_loss,
-            0.6 * distogram_loop_loss,
-            2.0 * structure_loss_loop,
-            0.02 * pae_loop_loss
-        ])
+        # loss = sum([
+        #     0.01 * lddt_loss,
+        #     0.01 * resolved_loss,
+        #     0.3 * distogram_loss,
+        #     1.0 * structure_loss,
+        #     0.01 * pae_loss,
+        #     2.0 * masked_msa_loss,
+        #     0.02 * lddt_loop_loss,
+        #     0.02 * resolved_loop_loss,
+        #     0.6 * distogram_loop_loss,
+        #     2.0 * structure_loss_loop,
+        #     0.02 * pae_loop_loss
+        # ])
+
+        msa_act_loss = self.hl(msa_activations, batch['msa_activations'])
+        pair_act_loss = self.hl(z_prev, batch['pair_activations'])
+
+        loss = msa_act_loss + pair_act_loss
+
+
         loss_item = {
             'loss': loss,
             'resolved_loss': resolved_loss,
@@ -1276,7 +1292,9 @@ class DockerIteration(nn.Module):
             'loop_lddt': loop_lddt,
             'recycle_iter': float(recycle_iter),
             'loop_plddt': mean_masked_plddt,
-            'num_alignments': float(batch['num_alignments'].cpu().numpy()[0])
+            'num_alignments': float(batch['num_alignments'].item()),
+            'msa_act_loss': msa_act_loss,
+            'pair_act_loss': pair_act_loss,
         }
 
         groups = find_mask_groups(batch['renum_mask'].cpu().numpy()[0])
@@ -1288,7 +1306,7 @@ class DockerIteration(nn.Module):
             loss_item[f'plddt_{name}'] = np.mean(plddt.detach().cpu().numpy()[0][start:end])
 
         del distogram_logits, distogram_bin_edges, resovled_logits, pred_lddt
-        return out, loss_item
+        return out, loss_item#, msa_activations, z_prev
 
 
 

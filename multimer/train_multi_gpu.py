@@ -26,7 +26,7 @@ def crop_feature(features, crop_size):
     seq_len = features['seq_length']
     crop_size = min(seq_len, crop_size)
     start_crop = random.randint(0, seq_len - crop_size)
-    feat_skip = {'seq_length', 'resolution', 'num_alignments', 'assembly_num_chains', 'num_templates', 'cluster_bias_mask'}
+    feat_skip = {'seq_length', 'resolution', 'num_alignments', 'assembly_num_chains', 'num_templates', 'cluster_bias_mask', 'msa_activations', 'pair_activations', 'seed', 'sample_id'}
     feat_1 = {'aatype', 'residue_index', 'all_atom_positions', 'all_atom_mask', 'asym_id', 'sym_id', 'entity_id', 'deletion_mean', 'entity_mask', 'seq_mask', 'renum_mask'}
     for k in features.keys():
         if k not in feat_skip:
@@ -49,12 +49,13 @@ class MultimerDataset(Dataset):
         self.seeds = {}
         for i, single_dataset in enumerate(self.data):
             file_id = single_dataset['sample_id']
-            file_path = f'{self.preprocessed_data_dir}/{file_id}.npz'
+            file_path = f'{self.preprocessed_data_dir}/{file_id}/{single_dataset["seed"]}.npz'
             assert os.path.exists(file_path), f'File not found: {file_path}'
             self.processed_data[i] = file_id
-            if single_dataset['dataset'] == 'train':
-                self.seeds[i] = None
-            else:
+            # if single_dataset['dataset'] == 'train':
+            #     self.seeds[i] = None
+            # else:
+            if True:
                 self.seeds[i] = single_dataset['seed']
 
     def process(self, idx):
@@ -63,15 +64,17 @@ class MultimerDataset(Dataset):
         n_groups = 0
         count = 0
         while n_groups < 2:
-            np_example = dict(np.load(f'{self.preprocessed_data_dir}/{self.processed_data[idx]}.npz'))
-            np_example = crop_feature(np_example, self.crop_size)
+            np_example = dict(np.load(f'{self.preprocessed_data_dir}/{self.processed_data[idx]}/{self.seeds[idx]}.npz'))
+            np_example = {k: v[0] for k, v in np_example.items()}
+            # np_example = crop_feature(np_example, self.crop_size)
             n_groups = len(find_mask_groups(np_example['renum_mask']))
             count += 1
             if count == 100:
                 raise RuntimeError("Did not find a good crop")
 
-        if self.seeds[idx]:
-            np_example['seed'] = self.seeds[idx]
+        # np_example['sample_id'] = idx
+        # if self.seeds[idx] is not None:
+        #     np_example['seed'] = self.seeds[idx]
         np_example = {k: torch.tensor(v) for k, v in np_example.items()}
 
         return np_example
@@ -100,7 +103,8 @@ class TrainableFolding(pl.LightningModule):
     ):
         super(TrainableFolding, self).__init__()
         self.config_multimer = config_multimer.config_multimer
-        self.model = modules_multimer.DockerIteration(config_multimer.config_multimer)
+        self.config_multimer['model']['embeddings_and_evoformer']['evoformer_num_block'] = hparams['evoformer_num_block']
+        self.model = modules_multimer.DockerIteration(self.config_multimer, huber_delta=hparams['huber_delta'])
         load_param_multimer.import_jax_weights_(self.model, model_weights_path)
         self.train_data = train_data
         self.val_data = val_data
@@ -142,7 +146,8 @@ class TrainableFolding(pl.LightningModule):
     def forward(self, batch):
         return self.model(batch, is_eval_mode=self.trainer.evaluating)
    
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, _):
+        torch.manual_seed(batch['seed'])
         output, loss_items = self.forward(batch)
         for k, v in loss_items.items():
             self.log(k, v, on_step=True, on_epoch=False, logger=True)
@@ -153,14 +158,14 @@ class TrainableFolding(pl.LightningModule):
         sample_id = batch['sample_id'].item()
         sample_name = self.val_sample_names[sample_id]
         output, loss_items = self.forward(batch)
-        self._get_predicted_structure(batch, output, sample_name)
+        # self._get_predicted_structure(batch, output, sample_name)
 
         for k, v in loss_items.items():
             self.log(f'val_{k}', v, on_step=False, on_epoch=True, logger=True)
 
-        # for each sample
-        for k, v in loss_items.items():
-            self.log(f'val_{k}_{sample_name}', v, on_step=True, on_epoch=False, logger=True)
+        # # for each sample
+        # for k, v in loss_items.items():
+        #     self.log(f'val_{k}_{sample_name}', v, on_step=True, on_epoch=False, logger=True)
 
         return {'sample_name': sample_name, 'mask_size': batch['renum_mask'][0].sum(), **loss_items}
 
@@ -168,10 +173,21 @@ class TrainableFolding(pl.LightningModule):
         torch.manual_seed(batch['seed'])
         sample_id = batch['sample_id'].item()
         sample_name = self.val_sample_names[sample_id]
-        output, loss_items = self.forward(batch)
-        self._get_predicted_structure(batch, output, sample_name, mode=self.test_mode_name)
-        self._get_true_structure(batch, sample_name)
-        self._get_masked_true_structure(batch, sample_name)
+
+        output, loss_items, msa_activations, pair_activations = self.forward(batch)
+
+        filename = f"{self.output_data_path}/{sample_name}/{batch['seed'].item()}"
+
+        batch_data = {k: v.cpu().numpy() for k, v in batch.items()}
+        batch_data['msa_activations'] = msa_activations.cpu().numpy()
+        batch_data['pair_activations'] = pair_activations.cpu().numpy()
+
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        np.savez(filename, **batch_data)
+
+        # self._get_predicted_structure(batch, output, sample_name, mode=self.test_mode_name)
+        # self._get_true_structure(batch, sample_name)
+        # self._get_masked_true_structure(batch, sample_name)
 
         for k, v in loss_items.items():
             self.log(f'test_{k}', v, on_step=False, on_epoch=True, logger=True)

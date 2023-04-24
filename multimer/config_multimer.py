@@ -6,7 +6,7 @@ config_multimer= {
     'recycle': True,
     'model': {
         'embeddings_and_evoformer': {
-            'evoformer_num_block': 48,
+            'evoformer_num_block': 1,
             'evoformer': {
                 'msa_column_attention': {
                     'dropout_rate': 0.0,
@@ -39,7 +39,7 @@ config_multimer= {
                     'num_outer_channel': 32,
                     'orientation': 'per_row',
                     'shared_dropout': True,
-                    'num_output_channel':128, 
+                    'num_output_channel':128,
                     'norm_channel': 256
                 },
                 'pair_transition': {
@@ -319,9 +319,9 @@ config_multimer= {
             }
         },
         'num_ensemble_eval': 1,
-        'num_recycle': 5,
-        'max_num_recycle_eval': 5,
-        'min_num_recycle_eval': 5,
+        'num_recycle': 1,
+        'max_num_recycle_eval': 1,
+        'min_num_recycle_eval': 1,
         'confident_plddt': 85,
         'resample_msa_in_recycling': False
     }
