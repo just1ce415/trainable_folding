@@ -5,21 +5,16 @@ import argparse
 import json
 import os
 import random
-import re
-from collections import defaultdict
-
 import numpy as np
+import pandas as pd
 import pytorch_lightning as pl
 import torch
 from alphadock import residue_constants
 from multimer import config_multimer, load_param_multimer, modules_multimer, test_multimer
-from multimer.lr_schedulers import AlphaFoldLRScheduler
 from multimer.preprocess import find_mask_groups
 from pytorch_lightning.callbacks.lr_monitor import LearningRateMonitor
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning.plugins.environments import SLURMEnvironment
-from pytorch_lightning.plugins.training_type import DDPPlugin, DeepSpeedPlugin
 from torch.utils.data import Dataset
 from wandb import Molecule
 
@@ -63,7 +58,7 @@ class MultimerDataset(Dataset):
                 self.seeds[i] = single_dataset['seed']
 
     def process(self, idx):
-        if self.seeds[idx]:
+        if self.seeds[idx] is not None:
             random.seed(self.seeds[idx])  # to stable the crop procedure for val and test
         n_groups = 0
         count = 0
@@ -99,6 +94,9 @@ class TrainableFolding(pl.LightningModule):
             n_layers_in_lr_group,
             test_mode_name='test',
             crop_size=384,
+            learning_rate=0.0001,
+            output_data_path=None,
+            hparams=None,
     ):
         super(TrainableFolding, self).__init__()
         self.config_multimer = config_multimer.config_multimer
@@ -111,7 +109,10 @@ class TrainableFolding(pl.LightningModule):
         self.n_layers_in_lr_group = n_layers_in_lr_group
         self.test_mode_name = test_mode_name
         self.crop_size = crop_size
-   
+        self.learning_rate = learning_rate
+        self.output_data_path = output_data_path
+        self.save_hyperparameters(hparams)
+
     def train_dataloader(self):
         mul_dataset = MultimerDataset(
             json_data=self.train_data,
@@ -147,9 +148,10 @@ class TrainableFolding(pl.LightningModule):
             self.log(k, v, on_step=True, on_epoch=False, logger=True)
         return loss_items['loss']
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, _):
         torch.manual_seed(batch['seed'])
-        sample_name = self.val_sample_names[batch_idx]
+        sample_id = batch['sample_id'].item()
+        sample_name = self.val_sample_names[sample_id]
         output, loss_items = self.forward(batch)
         self._get_predicted_structure(batch, output, sample_name)
 
@@ -162,9 +164,10 @@ class TrainableFolding(pl.LightningModule):
 
         return {'sample_name': sample_name, 'mask_size': batch['renum_mask'][0].sum(), **loss_items}
 
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch, _):
         torch.manual_seed(batch['seed'])
-        sample_name = self.val_sample_names[batch_idx]
+        sample_id = batch['sample_id'].item()
+        sample_name = self.val_sample_names[sample_id]
         output, loss_items = self.forward(batch)
         self._get_predicted_structure(batch, output, sample_name, mode=self.test_mode_name)
         self._get_true_structure(batch, sample_name)
@@ -173,20 +176,20 @@ class TrainableFolding(pl.LightningModule):
         for k, v in loss_items.items():
             self.log(f'test_{k}', v, on_step=False, on_epoch=True, logger=True)
 
-        # for each sample
-        for k, v in loss_items.items():
-            self.log(f'test_{k}_{sample_name}', v, on_step=False, on_epoch=True, logger=True)
+        seed = batch['seed'].item()
+        metrics = {
+            'sample_name': sample_name,
+            'seed': seed,
+            **{
+                key: float(value.item()) if isinstance(value, torch.Tensor) else float(value)
+                for key, value in loss_items.items()
+            }
+        }
+
+        with open(f"{self.output_data_path}/json_metrics/{sample_name}_{seed:02d}_rank_{self.global_rank}.json", "w") as outfile:
+            outfile.write(json.dumps(metrics, indent=4))
 
         return {'sample_name': sample_name, 'mask_size': batch['renum_mask'][0].sum(), **loss_items}
-
-    def test_epoch_end(self, test_step_outputs):
-        columns = [key for key in test_step_outputs[0]]
-        values = [output.values() for output in test_step_outputs]
-        wdb_logger.log_table(
-                key=f'{self.test_mode_name}_metrics',
-                columns=columns,
-                data=values,
-            )
 
     def _get_predicted_structure(self, batch, output, sample_name, mode='val'):
         output['predicted_aligned_error']['asym_id'] = batch['asym_id'][0]
@@ -244,49 +247,20 @@ class TrainableFolding(pl.LightningModule):
             f.write(pdb_out)
         self.logger.experiment.log({f'masked_{sample_name}': Molecule(filename)})
         os.remove(filename)
-    
-    def configure_optimizers(self, 
-        learning_rate: float = 5e-5,
-        eps: float = 1e-6,
-    ):
-        # Ignored as long as a DeepSpeed optimizer is configured
-        param_groups = defaultdict(list)
-        for name, p in self.model.named_parameters():
-            # split Evoformer layers into groups
-            # more distant layers will have larger multiplier
-            if self.n_layers_in_lr_group and re.match('Evoformer\.\d+', name):
-                multiplier = int(name.split('.')[1]) // self.n_layers_in_lr_group + 1
-            else:
-                multiplier = 1
-            param_groups[multiplier].append(p)
-        optimizer = torch.optim.Adam(
-            [
-                {
-                    'name': multiplier,
-                    'multiplier': multiplier,
-                    'params': params,
-                    'lr': learning_rate,
-                } for multiplier, params in param_groups.items()
-            ],
-            eps=eps
-        )
-        lr_scheduler = AlphaFoldLRScheduler(
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        lr_scheduler = torch.optim.lr_scheduler.CyclicLR(
             optimizer,
-            max_lr=0.0001,
-            warmup_no_steps=50,
-            start_decay_after_n_steps=1000,
-            decay_every_n_steps=500
+            base_lr=self.learning_rate,
+            max_lr=self.learning_rate*10,
+            step_size_up=100,
+            mode="triangular",
+            gamma=0.85,
+            cycle_momentum=False,
         )
 
-        return {
-            "optimizer": optimizer,
-            "lr_scheduler": {
-                "scheduler": lr_scheduler,
-                "interval": "step",
-                "name": "AbFinetuneScheduler",
-            },
-        }
-
+        return [optimizer], [{"scheduler": lr_scheduler, "interval": "step", "frequency": 1}]
 
 def bool_type(bool_str: str):
     bool_str_lower = bool_str.lower()
@@ -317,6 +291,7 @@ if __name__ == '__main__':
         "--test_mode_name", type=str, default="test",
         help="Just a prefix for test table and structures like: test, validation, baseline"
     )
+    parser.add_argument("--wandb_offline", action="store_true")
     parser.add_argument("--wandb_output_dir", type=str, default=None)
     parser.add_argument("--wandb_project", type=str, default=None)
     parser.add_argument("--wandb_name", type=str, default=None)
@@ -327,13 +302,41 @@ if __name__ == '__main__':
     parser.add_argument("--val_json_path", type=str, default=None)
     parser.add_argument("--preprocessed_data_dir", type=str, default=None)
     parser.add_argument("--model_weights_path", type=str, default=None)
-    parser.add_argument("--accum_grad_batches", type=int, default=1)
+    parser.add_argument("--output_data_path", type=str, default=None)
+    parser.add_argument("--accumulate_grad_batches", type=int, default=1)
     parser.add_argument("--n_layers_in_lr_group", type=int, default=None)
     parser.add_argument("--crop_size", type=int, default=None)
+    parser.add_argument("--learning_rate", type=float, default=0.0001)
     parser.add_argument("--max_epochs", type=int, default=1)
+    parser.add_argument("--num_nodes", type=int, default=None)
+    parser.add_argument("--gpus", type=int, default=1)
     parser.add_argument("--step", type=str, default='train')
-    parser = pl.Trainer.add_argparse_args(parser)
+    parser.add_argument("--hyperparams_seed", type=int, default=None)
     args = parser.parse_args()
+
+    if args.step == 'search':
+        random.seed(args.hyperparams_seed)
+
+        search_config = {
+            'learning_rate': {'values': [0.01, 0.001, 0.0001, 0.00001, 0.000001]},
+            'accumulate_grad_batches': {'values': [1, 3, 6, 10]},
+            'huber_delta': {'values': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]},
+            'evoformer_num_block': {'values': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]},
+        }
+
+        config = {}
+
+        for key, value in search_config.items():
+            if 'values' in value:
+                config[key] = random.choice(value['values'])
+
+        print(config)
+
+    else:
+        config = {
+            'learning_rate': args.learning_rate,
+            'accumulate_grad_batches': args.accumulate_grad_batches,
+        }
 
     train_data = json.load(open(args.train_json_path))
     val_data = json.load(open(args.val_json_path))
@@ -346,9 +349,11 @@ if __name__ == '__main__':
         filename='{step:03d}-{val_structure_loop_loss:.2f}',
         save_last=True,
     )
+
     lr_monitor = LearningRateMonitor(logging_interval="step")
     callbacks = [checkpoint_callback, lr_monitor]
-    model_module = TrainableFolding(
+
+    model = TrainableFolding(
         config_multimer=config_multimer,
         train_data=train_data,
         val_data=val_data,
@@ -358,47 +363,63 @@ if __name__ == '__main__':
         n_layers_in_lr_group=args.n_layers_in_lr_group,
         test_mode_name=args.test_mode_name,
         crop_size=args.crop_size,
+        learning_rate=config['learning_rate'],
+        output_data_path=args.output_data_path,
+        hparams=config,
     )
-    if args.deepspeed_config_path is not None:
-        if "SLURM_JOB_ID" in os.environ:
-            cluster_environment = SLURMEnvironment()
-        else:
-            cluster_environment = None
-        strategy = DeepSpeedPlugin(
-            config=args.deepspeed_config_path,
-            cluster_environment=cluster_environment,
-        )
-    elif args.gpus > 1 or args.num_nodes > 1:
-        strategy = 'ddp'
-    else:
-        strategy = None
 
-    wdb_logger = WandbLogger(
+    logger = WandbLogger(
         save_dir=args.wandb_output_dir,
         project=args.wandb_project,
         name=args.wandb_name,
         id=args.wandb_id,
         resume='True',
-        offline=True,
+        offline=args.wandb_offline,
     )
 
-    trainer = pl.Trainer.from_argparse_args(
-        args,
-        strategy=strategy,
+    trainer = pl.Trainer(
         callbacks=callbacks,
-        logger=wdb_logger,
-        max_epochs=args.max_epochs,
-        default_root_dir=args.trainer_dir_path,
-        accumulate_grad_batches=args.accum_grad_batches,
+        logger=logger,
         log_every_n_steps=1,
-        accelerator='gpu',
-        val_check_interval=1.0,
-        num_sanity_val_steps=len(val_data),
+        accumulate_grad_batches=config['accumulate_grad_batches'],
+        max_epochs=args.max_epochs,
+        accelerator="gpu",
+        devices=args.gpus,
+        strategy="deepspeed_stage_2_offload",
+        num_sanity_val_steps=0,
     )
 
-    if args.step == 'train':
-        trainer.fit(model_module, ckpt_path=args.resume_from_ckpt)
+
+    # print([p[0] for p in model.named_modules()])
+    # import sys
+    # sys.exit()
+
+    # ### TO FREEZE
+    # for param in model.parameters():
+    #     param.requires_grad = False
+    #
+    # # learnable_layers_names = ['model.InputEmbedder.msa_summarization', 'model.InputEmbedder.msa_norm']
+    # learnable_layers_names = ['model.Evoformer', 'model.msa_scale', 'model.pair_scale']
+    # learnable_layers = [p[1] for p in model.named_modules() if p[0] in learnable_layers_names]
+    #
+    # for layer in learnable_layers:
+    #     for param in layer.parameters():
+    #         param.requires_grad = True
+
+    if (args.step == 'train') or (args.step == 'search'):
+        trainer.fit(model, ckpt_path=args.resume_from_ckpt)
+
     elif args.step == 'test':
-        trainer.test(model_module, ckpt_path=args.resume_from_ckpt)
+        os.makedirs(f'{args.output_data_path}/json_metrics', exist_ok=True)
+
+        trainer.test(model, ckpt_path=args.resume_from_ckpt)
+
+        folder_path = f"{args.output_data_path}/json_metrics/"
+        json_files = [file for file in os.listdir(folder_path) if file.endswith('.json')]
+        list_of_dicts = [json.load(open(os.path.join(folder_path, file))) for file in json_files]
+        df = pd.DataFrame(list_of_dicts)
+
+        df.to_csv(f'{args.output_data_path}/metrics.csv', index=False)
+
     else:
         print('Select "train" or "test" option for parameter "step"')
