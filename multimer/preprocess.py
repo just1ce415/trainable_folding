@@ -75,22 +75,7 @@ def make_mmcif_features(
         mmcif_object: mmcif_parsing.MmcifObject,
         chain_id: str
 ):
-    if(chain_id not in mmcif_object.chain_to_seqres):
-        input_sequence = '~'  # TODO: remove it after we get a good cif file
-    else:
-        input_sequence = mmcif_object.chain_to_seqres[chain_id]
-    description = "_".join([mmcif_object.file_id, chain_id])
-    num_res = len(input_sequence)
-
     mmcif_feats = {}
-
-    mmcif_feats.update(
-        pipeline_multimer.make_sequence_features(
-            sequence=input_sequence,
-            description=description,
-            num_res=num_res,
-        )
-    )
 
     all_atom_positions, all_atom_mask = pipeline_multimer._get_atom_positions(
         mmcif_object, chain_id, max_ca_ca_distance=15000.0
@@ -111,6 +96,8 @@ def make_mmcif_features(
     return mmcif_feats
 
 def process_single_chain(
+        input_sequence,
+        description,
         mmcif_object,
         chain_id,
         a3m_file,
@@ -118,8 +105,18 @@ def process_single_chain(
         mmcif_dir,
         hhr_file=None
 ):
-    mmcif_feat = make_mmcif_features(mmcif_object, chain_id)
-    chain_feat = mmcif_feat
+    chain_feat = {}
+
+    seq_features = pipeline_multimer.make_sequence_features(
+        sequence=input_sequence,
+        description=description,
+        num_res=len(input_sequence),
+    )
+    chain_feat.update(seq_features)
+
+    if mmcif_object is not None:
+        mmcif_feat = make_mmcif_features(mmcif_object, chain_id)
+        chain_feat.update(mmcif_feat)
     with open(a3m_file, "r") as fp:
         msa = pipeline_multimer.parse_a3m(fp.read())
     msa_feat = pipeline_multimer.make_msa_features((msa,))
@@ -240,10 +237,17 @@ def _preprocess_one(single_dataset):
         if (chain in mmcif_obj.chain_to_seqres):
             single_dataset['seq_len'] = len(mmcif_obj.chain_to_seqres[chain])
             a3m_file = os.path.join(pre_alignment_path, f'{pdb_id}_{chain}', 'mmseqs/aggregated.a3m')
+            sequence = mmcif_obj.chain_to_seqres[chain]
         else:
             a3m_file = new_res_a3m_path
+            sequence = '~'
         hhr_file = None
-        chain_features = process_single_chain(mmcif_obj, chain, a3m_file, is_homomer, hhr_file=hhr_file, mmcif_dir=mmcif_dir)
+        description = "_".join([mmcif_obj.file_id, chain])
+        chain_features = process_single_chain(
+            sequence, description,
+            mmcif_obj, chain, a3m_file,
+            is_homomer, hhr_file=hhr_file, mmcif_dir=mmcif_dir
+        )
         chain_features = pipeline_multimer.convert_monomer_features(chain_features, chain_id=chain)
 
         all_chain_features[chain] = chain_features
@@ -277,6 +281,24 @@ def _preprocess_one(single_dataset):
 
     return single_dataset
 
+def npz_files_are_equal(file1, file2):
+
+        npz1 = np.load(file1)
+        npz2 = np.load(file2)
+
+        # Check if the files have the same number of arrays
+        if set(npz1.files) != set(npz2.files):
+            return False
+
+        # Check if the arrays have the same shapes and values
+        for key in npz1.files:
+            array1 = npz1[key]
+            array2 = npz2[key]
+
+            if array1.shape != array2.shape or not np.allclose(array1, array2):
+                return False
+
+        return True
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -287,6 +309,7 @@ if __name__ == '__main__':
     parser.add_argument("--new_res_a3m_path", type=str, default=None)
     parser.add_argument("--verification_sdf", type=str, default=None)
     parser.add_argument("--n_jobs", type=int, default=8)
+    parser.add_argument("--test_mode", action="store_true")
     args = parser.parse_args()
 
     pre_alignment_path = args.pre_alignment_path
@@ -300,8 +323,24 @@ if __name__ == '__main__':
         for atom in mol:
             verification_atom_seq.append(atom.type)
 
+    if args.test_mode:
+        test_dir = '/storage/erglukhov/new_residue/test_code/'
+        json_data_path = f'{test_dir}/debug_val.json'
+        preprocessed_data_dir = '/storage/erglukhov/new_residue/test_code/new_version/'
+        json_data = json.load(open(json_data_path))
+        json_data = [{**j, 'seed': i} for i, j in enumerate(json_data)]
+        os.makedirs(preprocessed_data_dir, exist_ok=True)
+        _preprocess_one(json_data[0])
+        file1 = f'{test_dir}/init_version/6kpt_ligand_FAD_A_701_fragment_0000003_2.npz'
+        file2 = f'{test_dir}/new_version/6kpt_ligand_FAD_A_701_fragment_0000003_2.npz'
+        assert npz_files_are_equal(file1, file2), 'Files are not equal'
+        print('Test passed')
+        exit()
+
     json_data = json.load(open(args.json_data_path))
     json_data = [{**j, 'seed': i} for i, j in enumerate(json_data)]
+
+    os.makedirs(preprocessed_data_dir, exist_ok=True)
 
     res = []
 
@@ -324,8 +363,6 @@ if __name__ == '__main__':
         r['seed'] = i
         r['dataset'] = 'val'
     test_data = [r for r in res if r['dataset'] == 'test']
-
-    os.makedirs(preprocessed_data_dir, exist_ok=True)
 
     with open(f"{preprocessed_data_dir}/train.json", "w") as outfile:
         outfile.write(json.dumps(train_data, indent=4))
