@@ -277,7 +277,48 @@ def _preprocess_one(single_dataset):
         return
     np_example['loss_mask'] = (close_atoms.sum(axis=1) > 0.0) * 1.0
 
-    # np.savez(f'{preprocessed_data_dir}/{sample_id}', **np_example)
+    np.savez(f'{preprocessed_data_dir}/{sample_id}', **np_example)
+
+    return single_dataset
+
+
+def preprocess_for_inference(single_dataset):
+    sample_id = single_dataset['sample_id']
+    chains = list(single_dataset['sequences'].keys())
+    sequences = single_dataset['sequences']
+    is_homomer = len(set(sequences)) == 1
+    chains += ['Z']
+
+    single_dataset['seq_len'] = 0
+    all_chain_features = {}
+    for chain in chains:
+        if chain != 'Z':
+            sequence = sequences[chain]
+            single_dataset['seq_len'] += len(sequence)
+            a3m_file = os.path.join(pre_alignment_path, f'{sample_id}', 'mmseqs/aggregated.a3m')
+        else:
+            sequence = '~'
+            a3m_file = new_res_a3m_path
+        hhr_file = None
+        mmcif_obj = None
+        description = f'{chain}'
+        chain_features = process_single_chain(
+            sequence, description,
+            mmcif_obj, chain, a3m_file,
+            is_homomer, hhr_file=hhr_file, mmcif_dir=mmcif_dir
+        )
+        chain_features = pipeline_multimer.convert_monomer_features(chain_features, chain_id=chain)
+
+        all_chain_features[chain] = chain_features
+
+
+    all_chain_features = pipeline_multimer.add_assembly_features(all_chain_features)
+    np_example = pair_and_merge(all_chain_features, is_homomer)
+    np_example = pipeline_multimer.pad_msa(np_example, 512)
+
+    # np_example = crop_feature(np_example, 384)  # in this case it is fixed
+
+    np.savez(f'{preprocessed_data_dir}/{sample_id}', **np_example)
 
     return single_dataset
 
@@ -304,6 +345,30 @@ def npz_files_are_equal(file1, file2):
 
         return True
 
+def test_train_preprocess():
+    test_dir = '/storage/erglukhov/new_residue/test_code/'
+    json_data_path = f'{test_dir}/debug_val.json'
+    preprocessed_data_dir = '/storage/erglukhov/new_residue/test_code/new_version/'
+    os.makedirs(preprocessed_data_dir, exist_ok=True)
+    json_data = json.load(open(json_data_path))
+    json_data = [{**j, 'seed': i} for i, j in enumerate(json_data)]
+    _preprocess_one(json_data[0])
+    file1 = f'{test_dir}/init_version/6kpt_ligand_FAD_A_701_fragment_0000003_2.npz'
+    file2 = f'{test_dir}/new_version/6kpt_ligand_FAD_A_701_fragment_0000003_2.npz'
+    assert npz_files_are_equal(file1, file2), 'Files are not equal'
+
+def test_inference_preprocess():
+    test_dir = '/storage/erglukhov/new_residue/test_code/'
+    json_data_path = f'{test_dir}/debug_inference.json'
+    preprocessed_data_dir = '/storage/erglukhov/new_residue/test_code/new_version/'
+    os.makedirs(preprocessed_data_dir, exist_ok=True)
+    json_data = json.load(open(json_data_path))
+    json_data = [{**j, 'seed': i} for i, j in enumerate(json_data)]
+    preprocess_for_inference(json_data[0])
+    file1 = f'{test_dir}/init_version/6kpt_A.npz'
+    file2 = f'{test_dir}/new_version/6kpt_A.npz'
+    assert npz_files_are_equal(file1, file2), 'Files are not equal'
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--json_data_path", type=str, default=None)
@@ -328,16 +393,8 @@ if __name__ == '__main__':
             verification_atom_seq.append(atom.type)
 
     if args.test_mode:
-        test_dir = '/storage/erglukhov/new_residue/test_code/'
-        json_data_path = f'{test_dir}/debug_val.json'
-        preprocessed_data_dir = '/storage/erglukhov/new_residue/test_code/new_version/'
-        json_data = json.load(open(json_data_path))
-        json_data = [{**j, 'seed': i} for i, j in enumerate(json_data)]
-        os.makedirs(preprocessed_data_dir, exist_ok=True)
-        _preprocess_one(json_data[0])
-        file1 = f'{test_dir}/init_version/6kpt_ligand_FAD_A_701_fragment_0000003_2.npz'
-        file2 = f'{test_dir}/new_version/6kpt_ligand_FAD_A_701_fragment_0000003_2.npz'
-        assert npz_files_are_equal(file1, file2), 'Files are not equal'
+        test_train_preprocess()
+        test_inference_preprocess()
         print('Test passed')
         exit()
 
