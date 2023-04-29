@@ -1239,7 +1239,7 @@ class DockerIteration(nn.Module):
         del pair_activations
         return representations, m_1_prev, z_prev, x_prev
 
-    def forward(self, init_batch, is_eval_mode):
+    def forward(self, init_batch, is_eval_mode, is_inference_mode=False):
         recycles = None
         batch = self._preprocess_batch_msa(init_batch)
         if is_eval_mode:
@@ -1295,6 +1295,9 @@ class DockerIteration(nn.Module):
         out['predicted_aligned_error']['breaks'] = pae_breaks
         out['experimentally_resolved'] = resovled_logits
         out['msa_head'] = masked_msa_logits
+
+        if is_inference_mode:
+            return out, new_res_plddt.item()
 
         resolved_loss = loss_multimer.experimentally_resolved_loss(out, batch, self.global_config['model']['heads'])
         lddt_loss, new_res_lddt, new_res_dist_hl = loss_multimer.lddt_loss(
