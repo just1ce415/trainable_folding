@@ -288,6 +288,9 @@ def npz_files_are_equal(file1, file2):
 
         # Check if the files have the same number of arrays
         if set(npz1.files) != set(npz2.files):
+            # Get the difference in the sets
+            diff = set(npz1.files) ^ set(npz2.files)
+            print('Problem with keys:', diff)
             return False
 
         # Check if the arrays have the same shapes and values
@@ -296,6 +299,7 @@ def npz_files_are_equal(file1, file2):
             array2 = npz2[key]
 
             if array1.shape != array2.shape or not np.allclose(array1, array2):
+                print('Error with array: ', key)
                 return False
 
         return True
