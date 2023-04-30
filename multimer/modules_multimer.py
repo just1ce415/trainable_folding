@@ -1195,9 +1195,11 @@ class DockerIteration(nn.Module):
         batch['extra_msa_feat'], batch['extra_msa_mask'] = create_extra_msa_feature(
             batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['num_extra_msa']
         )
-        batch['pseudo_beta'], batch['pseudo_beta_mask'] = pseudo_beta_fn(
-            batch['aatype'], batch['all_atom_positions'], batch['all_atom_mask']
-        )
+        # We don't need to compute the pseudo_beta for the inference
+        if 'all_atom_positions' in batch:
+            batch['pseudo_beta'], batch['pseudo_beta_mask'] = pseudo_beta_fn(
+                batch['aatype'], batch['all_atom_positions'], batch['all_atom_mask']
+            )
         return batch
 
     def iteration(self, batch, recycle=None):

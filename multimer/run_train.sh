@@ -21,18 +21,16 @@ output_dir=$project_dir/output/$run_name/$run_version;
 python3 -m train_feature_process \
       --gpus 1 \
       --num_nodes 1 \
-      --train_json_path $data_dir/debug_train.json \
-      --val_json_path $data_dir/debug_inference.json \
+      --test_json_path /storage/erglukhov/new_residue/test_code/new_version/debug_inference_predict.json \
       --preprocessed_data_dir $data_dir/npz_files \
       --model_weights_path $af_params_dir/params_model_${model_version}_multimer_v2.npz \
-      --resume_from_ckpt $project_dir/output/$run_name/$restore_version/checkpoints/last.ckpt \
       --model_checkpoint_path $output_dir/checkpoints \
-      --output_data_path $output_dir/structures \
+      --output_data_path $output_dir \
       --wandb_offline \
       --wandb_output_dir $output_dir \
       --wandb_project $project \
       --wandb_name $run_name \
       --wandb_id $run_name \
-      --test_mode_name "val" \
+      --test_mode_name "test" \
       --max_epochs 1 \
       --step 'predict'
