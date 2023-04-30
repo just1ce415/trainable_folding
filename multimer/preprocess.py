@@ -378,7 +378,7 @@ if __name__ == '__main__':
     parser.add_argument("--new_res_a3m_path", type=str, default=None)
     parser.add_argument("--verification_sdf", type=str, default=None)
     parser.add_argument("--n_jobs", type=int, default=8)
-    parser.add_argument("--test_mode", action="store_true")
+    parser.add_argument("--mode", type=str)
     args = parser.parse_args()
 
     pre_alignment_path = args.pre_alignment_path
@@ -387,12 +387,13 @@ if __name__ == '__main__':
     new_res_a3m_path = args.new_res_a3m_path
     verification_sdf = args.verification_sdf
 
-    verification_atom_seq = []
-    for mol in pybel.readfile('sdf', verification_sdf):
-        for atom in mol:
-            verification_atom_seq.append(atom.type)
+    if args.mode != 'inference':
+        verification_atom_seq = []
+        for mol in pybel.readfile('sdf', verification_sdf):
+            for atom in mol:
+                verification_atom_seq.append(atom.type)
 
-    if args.test_mode:
+    if args.mode == 'check':
         test_train_preprocess()
         test_inference_preprocess()
         print('Test passed')
@@ -405,34 +406,39 @@ if __name__ == '__main__':
 
     res = []
 
+    function = _preprocess_one
+    if args.mode == 'inference':
+        function = preprocess_for_inference
+
     pool = Pool(processes=args.n_jobs)
-    for r in tqdm(pool.imap_unordered(_preprocess_one, json_data), total=len(json_data)):
+    for r in tqdm(pool.imap_unordered(function, json_data), total=len(json_data)):
         if r:
             res.append(r)
     pool.close()
     pool.join()
 
-    _train_data = [r for r in res if r['dataset'] == 'train']
-    _sorted_train_data = sorted(_train_data, key=lambda x: x['release_date'])
-    train_data = _sorted_train_data[:-276]
-    val_data = _sorted_train_data[-276:]
-    test_data = [r for r in res if r['dataset'] == 'test']
-    for i, r in enumerate(train_data):
-        r['seed'] = i
-        r['dataset'] = 'train'
-    for i, r in enumerate(val_data):
-        r['seed'] = i
-        r['dataset'] = 'val'
-    test_data = [r for r in res if r['dataset'] == 'test']
+    if args.mode == 'train':
+        _train_data = [r for r in res if r['dataset'] == 'train']
+        _sorted_train_data = sorted(_train_data, key=lambda x: x['release_date'])
+        train_data = _sorted_train_data[:-276]
+        val_data = _sorted_train_data[-276:]
+        test_data = [r for r in res if r['dataset'] == 'test']
+        for i, r in enumerate(train_data):
+            r['seed'] = i
+            r['dataset'] = 'train'
+        for i, r in enumerate(val_data):
+            r['seed'] = i
+            r['dataset'] = 'val'
+        test_data = [r for r in res if r['dataset'] == 'test']
 
-    with open(f"{preprocessed_data_dir}/train.json", "w") as outfile:
-        outfile.write(json.dumps(train_data, indent=4))
+        with open(f"{preprocessed_data_dir}/train.json", "w") as outfile:
+            outfile.write(json.dumps(train_data, indent=4))
 
-    with open(f"{preprocessed_data_dir}/val.json", "w") as outfile:
-        outfile.write(json.dumps(val_data, indent=4))
+        with open(f"{preprocessed_data_dir}/val.json", "w") as outfile:
+            outfile.write(json.dumps(val_data, indent=4))
 
-    with open(f"{preprocessed_data_dir}/test.json", "w") as outfile:
-        outfile.write(json.dumps(test_data, indent=4))
+        with open(f"{preprocessed_data_dir}/test.json", "w") as outfile:
+            outfile.write(json.dumps(test_data, indent=4))
 
     print('Init:', len(json_data))
     print('Done:', len(res))
