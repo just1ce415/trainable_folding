@@ -352,6 +352,8 @@ if __name__ == '__main__':
         config = {
             'learning_rate': args.learning_rate,
             'accumulate_grad_batches': args.accumulate_grad_batches,
+            'evoformer_num_block': 1,
+            'huber_delta': 0.2,
         }
 
     train_data = json.load(open(args.train_json_path))
