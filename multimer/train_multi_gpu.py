@@ -4,6 +4,7 @@ sys.path.insert(1, '../')
 import argparse
 import json
 import os
+import shutil
 import random
 import numpy as np
 import pandas as pd
@@ -174,25 +175,29 @@ class TrainableFolding(pl.LightningModule):
         sample_id = batch['sample_id'].item()
         sample_name = self.val_sample_names[sample_id]
 
-        output, loss_items, msa_activations, pair_activations = self.forward(batch)
+        output, loss_items = self.forward(batch)
 
-        filename = f"{self.output_data_path}/{sample_name}/{batch['seed'].item()}"
+        # output, loss_items, msa_activations, pair_activations = self.forward(batch)
 
-        batch_data = {k: v.cpu().numpy() for k, v in batch.items()}
-        batch_data['msa_activations'] = msa_activations.cpu().numpy()
-        batch_data['pair_activations'] = pair_activations.cpu().numpy()
+        # filename = f"{self.output_data_path}/{sample_name}/{batch['seed'].item()}"
 
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-        np.savez(filename, **batch_data)
-
-        # self._get_predicted_structure(batch, output, sample_name, mode=self.test_mode_name)
-        # self._get_true_structure(batch, sample_name)
-        # self._get_masked_true_structure(batch, sample_name)
-
-        for k, v in loss_items.items():
-            self.log(f'test_{k}', v, on_step=False, on_epoch=True, logger=True)
+        # batch_data = {k: v.cpu().numpy() for k, v in batch.items()}
+        # batch_data['msa_activations'] = msa_activations.cpu().numpy()
+        # batch_data['pair_activations'] = pair_activations.cpu().numpy()
+        #
+        # os.makedirs(os.path.dirname(filename), exist_ok=True)
+        # np.savez(filename, **batch_data)
 
         seed = batch['seed'].item()
+
+        self._get_predicted_structure(batch, output, sample_name, seed, mode=self.test_mode_name)
+        self._get_true_structure(batch, output, sample_name, seed)
+        self._get_masked_true_structure(batch, sample_name, seed)
+
+        # for k, v in loss_items.items():
+        #     self.log(f'test_{k}', v, on_step=False, on_epoch=True, logger=True)
+
+
         metrics = {
             'sample_name': sample_name,
             'seed': seed,
@@ -207,7 +212,7 @@ class TrainableFolding(pl.LightningModule):
 
         return {'sample_name': sample_name, 'mask_size': batch['renum_mask'][0].sum(), **loss_items}
 
-    def _get_predicted_structure(self, batch, output, sample_name, mode='val'):
+    def _get_predicted_structure(self, batch, output, sample_name, seed, mode='val'):
         output['predicted_aligned_error']['asym_id'] = batch['asym_id'][0]
         confidences = test_multimer.get_confidence_metrics(output, True)
 
@@ -223,13 +228,14 @@ class TrainableFolding(pl.LightningModule):
             output['final_atom_mask'].cpu().numpy(), plddt_b_factors[0]
         )
 
-        filename = f"{mode}_pred_{sample_name}_{np.random.randint(1000000, 10000000)}.pdb"
+        filename = f"{self.output_data_path}/structures/{sample_name}/{mode}_s_{seed:02d}_r_{self.global_rank}.pdb"
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w') as f:
             f.write(pdb_out)
-        self.logger.experiment.log({f'{mode}_pred_{sample_name}': Molecule(filename)})
-        os.remove(filename)
 
-    def _get_true_structure(self, batch, sample_name):
+        return filename
+
+    def _get_true_structure(self, batch, output, sample_name, seed):
         # a temp solution for b_factors
         b_factors = np.ones((len(batch['aatype'][0]), residue_constants.atom_type_num)) * 100.0
         pdb_out = test_multimer.protein_to_pdb(
@@ -237,16 +243,17 @@ class TrainableFolding(pl.LightningModule):
             batch['all_atom_positions'][0].cpu().numpy(),
             batch['residue_index'][0].cpu().numpy() + 1,
             batch['asym_id'][0].cpu().numpy(),
-            batch['all_atom_mask'][0].cpu().numpy(), b_factors
+            output['final_atom_mask'].cpu().numpy(), b_factors
         )
 
-        filename = f"true_{sample_name}_{np.random.randint(1000000, 10000000)}.pdb"
+        filename = f"{self.output_data_path}/structures/{sample_name}/true_s_{seed:02d}_r_{self.global_rank}.pdb"
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w') as f:
             f.write(pdb_out)
-        self.logger.experiment.log({f'true_{sample_name}': Molecule(filename)})
-        os.remove(filename)
 
-    def _get_masked_true_structure(self, batch, sample_name):
+        return filename
+
+    def _get_masked_true_structure(self, batch, sample_name, seed):
         # a temp solution for b_factors
         b_factors = np.ones((len(batch['aatype'][0]), residue_constants.atom_type_num)) * 100.0
         pdb_out = test_multimer.protein_to_pdb(
@@ -258,11 +265,11 @@ class TrainableFolding(pl.LightningModule):
             batch['renum_mask'][0].cpu().numpy()
         )
 
-        filename = f"masked_{sample_name}_{np.random.randint(1000000, 10000000)}.pdb"
+        filename = f"{self.output_data_path}/structures/{sample_name}/masked_s_{seed:02d}_r_{self.global_rank}.pdb"
         with open(filename, 'w') as f:
             f.write(pdb_out)
-        self.logger.experiment.log({f'masked_{sample_name}': Molecule(filename)})
-        os.remove(filename)
+
+        return filename
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
@@ -426,6 +433,11 @@ if __name__ == '__main__':
 
     if (args.step == 'train') or (args.step == 'search'):
         trainer.fit(model, ckpt_path=args.resume_from_ckpt)
+
+        if trainer.global_rank == 0:
+            best_model_path = checkpoint_callback.best_model_path
+            destination_path = f"{args.model_checkpoint_path}/best.ckpt"
+            shutil.copytree(best_model_path, destination_path)
 
     elif args.step == 'test':
         os.makedirs(f'{args.output_data_path}/json_metrics', exist_ok=True)

@@ -29,9 +29,10 @@ for model_version in {1..5}; do
             --wandb_name $run_name \
             --wandb_id $run_name \
             --model_weights_path /projectnb2/sc3dm/eglukhov/af_params/params_model_${model_version}_multimer_v2.npz \
+            --resume_from_ckpt $output_dir/checkpoints/best.ckpt \
             --model_checkpoint_path $output_dir/checkpoints \
             --preprocessed_data_dir $project_dir/datasets/v4/npz_data \
-            --output_data_path $output_dir/data \
+            --output_data_path $output_dir/val_3_resycles \
             --train_json_path $data_dir/train.json \
             --val_json_path $data_dir/val.json \
             --test_mode_name "val_metrics" \
@@ -41,7 +42,7 @@ for model_version in {1..5}; do
             --hyperparams_seed $run \
             --learning_rate 0.001 \
             --accumulate_grad_batches 1 \
-            --step 'train'
+            --step 'test'
   sleep 1
 
 done
