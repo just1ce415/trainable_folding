@@ -18,7 +18,7 @@ for model_version in {1..5}; do
   project_dir="/projectnb2/sc3dm/eglukhov/compress/";
   data_dir=$project_dir/datasets/v4;
   project="compress_final";
-  run_name="train_${run}_${model_version}";
+  run_name="init_5_${run}_${model_version}";
   output_dir=$project_dir/output/$run_name/;
   mkdir -p $output_dir;
   python train_multi_gpu.py \
@@ -29,10 +29,9 @@ for model_version in {1..5}; do
             --wandb_name $run_name \
             --wandb_id $run_name \
             --model_weights_path /projectnb2/sc3dm/eglukhov/af_params/params_model_${model_version}_multimer_v2.npz \
-            --resume_from_ckpt $output_dir/checkpoints/best.ckpt \
             --model_checkpoint_path $output_dir/checkpoints \
             --preprocessed_data_dir $project_dir/datasets/v4/npz_data \
-            --output_data_path $output_dir/val_3_resycles \
+            --output_data_path $output_dir/val_init_5 \
             --train_json_path $data_dir/train.json \
             --val_json_path $data_dir/val.json \
             --test_mode_name "val_metrics" \

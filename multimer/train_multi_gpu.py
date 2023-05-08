@@ -194,8 +194,8 @@ class TrainableFolding(pl.LightningModule):
         self._get_true_structure(batch, output, sample_name, seed)
         self._get_masked_true_structure(batch, sample_name, seed)
 
-        # for k, v in loss_items.items():
-        #     self.log(f'test_{k}', v, on_step=False, on_epoch=True, logger=True)
+        for k, v in loss_items.items():
+            self.log(f'test_{k}', v, on_step=False, on_epoch=True, logger=True)
 
 
         metrics = {
@@ -359,7 +359,7 @@ if __name__ == '__main__':
         config = {
             'learning_rate': args.learning_rate,
             'accumulate_grad_batches': args.accumulate_grad_batches,
-            'evoformer_num_block': 1,
+            'evoformer_num_block': 48,
             'huber_delta': 0.2,
         }
 

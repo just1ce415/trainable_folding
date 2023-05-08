@@ -1106,8 +1106,8 @@ class DockerIteration(nn.Module):
         self.ExperimentallyResolvedHead = ExperimentallyResolvedHead(global_config)
         self.MaskedMsaHead = MaskedMsaHead(global_config)
 
-        self.msa_scale = nn.Linear(global_config['model']['embeddings_and_evoformer']['msa_channel'], global_config['model']['embeddings_and_evoformer']['msa_channel'])
-        self.pair_scale = nn.Linear(global_config['model']['embeddings_and_evoformer']['pair_channel'], global_config['model']['embeddings_and_evoformer']['pair_channel'])
+        # self.msa_scale = nn.Linear(global_config['model']['embeddings_and_evoformer']['msa_channel'], global_config['model']['embeddings_and_evoformer']['msa_channel'])
+        # self.pair_scale = nn.Linear(global_config['model']['embeddings_and_evoformer']['pair_channel'], global_config['model']['embeddings_and_evoformer']['pair_channel'])
         self.hl = nn.HuberLoss(delta=huber_delta)
 
         self.global_config = global_config
@@ -1141,8 +1141,8 @@ class DockerIteration(nn.Module):
             msa_activations, pair_activations = checkpoint(evo_iter, msa_activations.clone(), pair_activations.clone(), msa_mask, pair_mask)
             # msa_activations, pair_activations = evo_iter(msa_activations, pair_activations,msa_mask, pair_mask)
 
-        msa_activations = self.msa_scale(msa_activations)
-        pair_activations = self.pair_scale(pair_activations)
+        # msa_activations = self.msa_scale(msa_activations)
+        # pair_activations = self.pair_scale(pair_activations)
 
         single_activations = self.EvoformerExtractSingleRec(msa_activations[:,0])
         representations = {'single': single_activations, 'pair': pair_activations}
