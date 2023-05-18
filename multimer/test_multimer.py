@@ -1,16 +1,15 @@
 import sys
 sys.path.insert(1, '../')
 from alphadock import all_atom, residue_constants
-import pickle
 import numpy as np
 import torch
 import json, codecs
-from multimer import modules_multimer, config_multimer, load_param_multimer, pipeline_multimer, pdb_to_template
+from multimer import modules_multimer, config_multimer, load_param_multimer, load_param_multimer_v3, pipeline_multimer, pdb_to_template, new_confidence_score
 import io
-import os
 from Bio.PDB import PDBParser
-from multimer import rigid
 from typing import Dict, Optional, Tuple
+import argparse
+
 
 def pred_to_pdb(out_pdb, input_dict, out_dict):
     with open(out_pdb, 'w') as f:
@@ -208,6 +207,7 @@ def get_confidence_metrics(
 
     return confidence_metrics
 
+
 def from_pdb_string(pdb_str: str) :
     pdb_fh = io.StringIO(pdb_str)
     parser = PDBParser(QUIET=True)
@@ -269,107 +269,82 @@ def from_pdb_string(pdb_str: str) :
 
     return atom_positions
 
-# def add_template_feature(feats, template, template_chain, seq_length):
-#     with open(template, "r") as fp:
-#         pdb_string = fp.read()
-#     protein_object_A = pdb_to_template.from_pdb_string(pdb_string, template_chain)
-#     has_ca = protein_object_A.atom_mask[:, 0] == 1
-#     template_aatype = np.expand_dims(np.concatenate((protein_object_A.aatype[has_ca], np.zeros((seq_length,),dtype=int)), axis=0), axis=0)
-#     template_all_atom_pos = np.expand_dims(np.concatenate((protein_object_A.atom_positions[has_ca],  np.zeros((seq_length, 37, 3))), axis=0), axis=0)
-#     template_all_atom_mask = np.expand_dims(np.concatenate((protein_object_A.atom_mask[has_ca], np.zeros((seq_length,37))), axis=0), axis=0)
-#     feats['template_aatype'] =  torch.unsqueeze(torch.tensor(template_aatype, device='cuda:0'),0)
-#     feats['template_all_atom_mask'] =  torch.unsqueeze(torch.tensor(template_all_atom_mask, device='cuda:0'),0)
-#     feats['template_all_atom_positions'] =  torch.unsqueeze(torch.tensor(template_all_atom_pos, device='cuda:0'),0)
+def main(FLAGS):
+    processed_feature_dict = {}
+    # with np.load('/data/thu/colabfold_batch_multiseed/feat.npz') as data:
+    #     for k in list(data.keys()):
+    #         processed_feature_dict[k] = data[k]
 
-if __name__ == '__main__':
-    #with open('../../af2_wrapper/multimer_feat_6A77.pkl', 'rb') as f:
-    #    processed_feature_dict = pickle.load(f)
-    #for k, v in processed_feature_dict.items():
-    #    print(k, v)
-    # for k, v in processed_feature_dict.items():
-    #     print(k, v.shape)
-    # print(processed_feature_dict['entity_id'])
-    # print(processed_feature_dict['asym_id'])
-    # print(processed_feature_dict['sym_id'])
-
-    #with open('/home/thu/Downloads/5FWY_with_features/features.pkl', 'rb') as f:
-    #   heteromer = pickle.load(f)
-    #with open('./H1137_V6_v1/H1137_V6_v1_model_1_multimer_v2_0.pdb') as f:
-    #    atom_pos = from_pdb_string(f.read())
-    #atom_pos = torch.tensor(np.asarray(atom_pos), dtype=torch.double, device='cuda:0')
-    #print(atom_pos.shape)
-    #orig_rigids = rigid.Rigid.make_transform_from_reference(
-    #    n_xyz=atom_pos[..., 0, :],
-    #    ca_xyz=atom_pos[..., 1, :],
-    #    c_xyz=atom_pos[..., 2, :],
-    #)
-    processed_feature_dict = pipeline_multimer.process('./test/H1141/H1141.json', config_multimer)
-    #with open('6A77/model.000.07.pdb', "r") as fp:
-    #    pdb_string = fp.read()
-    #protein_object_A = pdb_to_template.from_pdb_string(pdb_string, 'A')
-    #protein_object_H = pdb_to_template.from_pdb_string(pdb_string, 'H')
-    #protein_object_L = pdb_to_template.from_pdb_string(pdb_string, 'L')
-    #template_aatype = np.expand_dims(np.concatenate((protein_object_A.aatype, protein_object_H.aatype, protein_object_L.aatype), axis=0), axis=0)
-    #template_all_atom_pos = np.expand_dims(np.concatenate((protein_object_A.atom_positions, protein_object_H.atom_positions, protein_object_L.atom_positions), axis=0), axis=0)
-    #template_all_atom_mask = np.expand_dims(np.concatenate((protein_object_A.atom_mask, protein_object_H.atom_mask, protein_object_L.atom_mask), axis=0), axis=0)
-    #asym_id_values_set = set(processed_feature_dict['asym_id'])
-    #tot_chain_len = 0
-    #origin_res_index = processed_feature_dict['residue_index'].copy()
-    #origin_asym_id = processed_feature_dict['asym_id'].copy()
-    #residue_index_modif = processed_feature_dict['residue_index'].copy()
-    #for i in sorted(list(asym_id_values_set)):
-    #    chain_len = np.sum(processed_feature_dict['asym_id'][:] == i)
-    #    tot_chain_len += chain_len
-    #    residue_index_modif[tot_chain_len:] += chain_len + 200
-    #processed_feature_dict['residue_index'] = residue_index_modif
-
-    #processed_feature_dict['template_aatype'] = template_aatype
-    #processed_feature_dict['template_all_atom_mask'] = template_all_atom_mask
-    #processed_feature_dict['template_all_atom_positions'] = template_all_atom_pos
-    #processed_feature_dict['entity_id'] = np.ones(processed_feature_dict['entity_id'].shape)
-    #processed_feature_dict['sym_id'] = np.ones(processed_feature_dict['sym_id'].shape)
-    #processed_feature_dict['asym_id'] = np.ones(processed_feature_dict['asym_id'].shape)
+    processed_feature_dict = pipeline_multimer.process(FLAGS.input_file, config_multimer, FLAGS.use_mock_template, FLAGS.allow_duplicate_msa)
 
     for k, v in processed_feature_dict.items():
         print(k, v.shape)
-
-    #features_output_path = 'multimer_feat.pkl'
-    #with open(features_output_path, 'wb') as f:
-    #    pickle.dump(processed_feature_dict, f, protocol=4)
-    feats = {k: torch.unsqueeze(torch.tensor(v, device='cuda:0'),0) for k,v in processed_feature_dict.items()}
-    feats['msa_profile'] = modules_multimer.make_msa_profile(feats)
-    feats = modules_multimer.sample_msa(feats, config_multimer.config_multimer['model']['embeddings_and_evoformer']['num_msa'])
-    feats = modules_multimer.make_masked_msa(feats, config_multimer.config_multimer['model']['embeddings_and_evoformer']['masked_msa'])
-    (feats['cluster_profile'], feats['cluster_deletion_mean']) = modules_multimer.nearest_neighbor_clusters(feats)
-    feats['msa_feat'] = modules_multimer.create_msa_feat(feats)
-    feats['extra_msa_feat'], feats['extra_msa_mask'] = modules_multimer.create_extra_msa_feature(feats, config_multimer.config_multimer['model']['embeddings_and_evoformer']['num_extra_msa'])
-
-    model = modules_multimer.DockerIteration(config_multimer.config_multimer)
-    load_param_multimer.import_jax_weights_(model)
-    # add_template_feature(feats, './test/6n31/6n31.pdb', 'A', 10)
-    #for name, param in model.named_parameters():
-    #    print(name)
-    #num_recycle = 4
-    #with torch.no_grad():
-    #    for recycle_iter in range(num_recycle):
-    output = model(feats)
-    #feats['asym_id'] = torch.unsqueeze(torch.tensor(origin_asym_id, device='cuda:0'),0)
-    #feats['residue_index'] = torch.unsqueeze(torch.tensor(origin_res_index, device='cuda:0'),0)
+    if FLAGS.model_version != 'v3':
+        config_multimer.config_multimer['model']['embeddings_and_evoformer']['evoformer']['triangle_multiplication_incoming']['fuse_projection_weights'] = False
+        config_multimer.config_multimer['model']['embeddings_and_evoformer']['evoformer']['triangle_multiplication_outgoing']['fuse_projection_weights'] = False
+        config_multimer.config_multimer['model']['embeddings_and_evoformer']['extra_msa']['triangle_multiplication_incoming']['fuse_projection_weights'] = False
+        config_multimer.config_multimer['model']['embeddings_and_evoformer']['extra_msa']['triangle_multiplication_outgoing']['fuse_projection_weights'] = False
+        config_multimer.config_multimer['model']['embeddings_and_evoformer']['template']['template_pair_stack']['triangle_multiplication_incoming']['fuse_projection_weights'] = False
+        config_multimer.config_multimer['model']['embeddings_and_evoformer']['template']['template_pair_stack']['triangle_multiplication_outgoing']['fuse_projection_weights'] = False
+        config_multimer.config_multimer['model']['embeddings_and_evoformer']['num_msa'] = 252
+        config_multimer.config_multimer['model']['embeddings_and_evoformer']['num_extra_msa'] = 1152
+    if FLAGS.resample_msa:
+        config_multimer.config_multimer['model']['resample_msa_in_recycling'] = True
+    config_multimer.config_multimer['model']['embeddings_and_evoformer']['masked_msa']['replace_fraction'] = FLAGS.msa_replace_frac
+    feats = {k: torch.unsqueeze(torch.tensor(v, device='cuda:0'), 0) for k, v in processed_feature_dict.items()}
+    model = modules_multimer.DockerIteration(config_multimer.config_multimer).to('cuda:0')
+    if FLAGS.model_version == 'v3':
+        load_param_multimer_v3.import_jax_weights_(model, FLAGS.model_weight_path)
+    else:
+        load_param_multimer.import_jax_weights_(model, FLAGS.model_weight_path)
+    output = model(feats, FLAGS.is_validation, FLAGS.msa_indices_prefix)
     output['predicted_aligned_error']['asym_id'] = feats['asym_id'][0]
-    confidences = get_confidence_metrics(output, True)
+    if FLAGS.use_new_score:
+        with torch.no_grad():
+            confidences = new_confidence_score.get_confidence_metrics(output, output['predicted_aligned_error']['asym_id'], True)
+        no_score_out = ['plddt', 'aligned_confidence_probs', 'predicted_aligned_error', 'raw_pae', 'interfaces']
+    else:
+        confidences = get_confidence_metrics(output, True)
+        no_score_out = ['plddt', 'aligned_confidence_probs', 'predicted_aligned_error', 'raw_pae', 'interfaces']
     out_converted = {}
     for k, v in confidences.items():
-        if(k!="plddt" and k!="aligned_confidence_probs" and k!="predicted_aligned_error"):
+        if (k not in no_score_out):
             out_converted[k] = confidences[k].detach().cpu().numpy().tolist()
+        if k == 'interfaces':
+            out_converted[k] = {}
+            for l,h in confidences[k].items():
+                out_converted[k][str(l[0].item())+'_'+str(l[1].item())] = {}
+                for h1, h2 in h.items():
+                    out_converted[k][str(l[0].item())+'_'+str(l[1].item())][h1] = h2.detach().cpu().numpy().tolist()
     out_json = out_converted
-    #torch.save(get_confidence_metrics(output, True), './6A77/confidence_score.txt')
-    json.dump(out_json, codecs.open('confidence_score_model1.txt', 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True, indent=4)
-    
+    json.dump(out_json, codecs.open(FLAGS.output_dir+'confidence_score_model1.txt', 'w', encoding='utf-8'), separators=(',', ':'),
+              sort_keys=True, indent=4)
+
     plddt = confidences['plddt'].detach().cpu().numpy()
     plddt_b_factors = np.repeat(
-            plddt[..., None], residue_constants.atom_type_num, axis=-1
-        )
-    
-    pdb_out = protein_to_pdb(feats['aatype'][0].cpu().numpy(), output['final_all_atom'].detach().cpu().numpy(), feats['residue_index'][0].cpu().numpy() + 1, feats['asym_id'][0].cpu().numpy(), output['final_atom_mask'].cpu().numpy(), plddt_b_factors[0])
-    with open('model1.pdb', 'w') as f:
+        plddt[..., None], residue_constants.atom_type_num, axis=-1
+    )
+
+    pdb_out = protein_to_pdb(feats['aatype'][0].cpu().numpy(), output['final_all_atom'].detach().cpu().numpy(),
+                             feats['residue_index'][0].cpu().numpy() + 1, feats['asym_id'][0].cpu().numpy(),
+                             output['final_atom_mask'].cpu().numpy(), plddt_b_factors[0])
+    with open(FLAGS.output_dir+'model1.pdb', 'w') as f:
         f.write(pdb_out)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--input_file', type=str, help="Input json file")
+    parser.add_argument('--use_mock_template', type=bool, default=True, help="Use mock template")
+    parser.add_argument('--allow_duplicate_msa', type=bool, default=True, help="Allow duplicate msa or not")
+    parser.add_argument('--resample_msa', type=bool, default=True, help="Allow resampling msa every recycle")
+    parser.add_argument('--model_version', type=str, default='v3', help="Version of model, v1, v2 or v3")
+    parser.add_argument('--msa_replace_frac', type=float, default=0.15, help="how much to mask msa for bert")
+    parser.add_argument('--model_weight_path', type=str, help="Path to model weight")
+    parser.add_argument('--msa_indices_prefix', type=str, help="Prefix to msa index files")
+    parser.add_argument('--is_validation', type=bool, default=True, help="Run in validation mode")
+    parser.add_argument('--output_dir', type=str, help="Output directory")
+    parser.add_argument('--use_new_score', type=bool, default=True, help="Use new confidence scoring function")
+    FLAGS = parser.parse_args()
+    main(FLAGS)

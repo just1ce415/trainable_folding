@@ -263,6 +263,34 @@ def make_msa_features(msas: Sequence[Msa]) -> FeatureDict:
   features['msa_species_identifiers'] = np.array(species_ids, dtype=np.object_)
   return features
 
+def make_msa_features_colab(msas: Sequence[Msa]) -> FeatureDict:
+  """Constructs a feature dict of MSA features."""
+  if not msas:
+    raise ValueError('At least one MSA must be provided.')
+
+  int_msa = []
+  deletion_matrix = []
+  species_ids = []
+  for msa_index, msa in enumerate(msas):
+    if not msa:
+      raise ValueError(f'MSA {msa_index} must contain at least one sequence.')
+    for sequence_index, sequence in enumerate(msa.sequences):
+      int_msa.append(
+          [residue_constants.HHBLITS_AA_TO_ID[res] for res in sequence])
+      deletion_matrix.append(msa.deletion_matrix[sequence_index])
+      identifiers = get_identifiers(
+          msa.descriptions[sequence_index])
+      species_ids.append(identifiers.species_id.encode('utf-8'))
+
+  num_res = len(msas[0].sequences[0])
+  num_alignments = len(int_msa)
+  features = {}
+  features['deletion_matrix_int'] = np.array(deletion_matrix, dtype=np.int32)
+  features['msa'] = np.array(int_msa, dtype=np.int32)
+  features['num_alignments'] = np.array(
+      [num_alignments] * num_res, dtype=np.int32)
+  features['msa_species_identifiers'] = np.array(species_ids, dtype=np.object_)
+  return features
 
 def int_id_to_str_id(num: int) -> str:
   """Encodes a number as a string, using reverse spreadsheet style naming.
@@ -361,9 +389,43 @@ def convert_monomer_features(
     converted[feature_name] = feature
   return converted
 
+def mk_mock_template(
+    query_sequence: Union[List[str], str], num_temp: int = 1
+) -> Dict[str, Any]:
+    ln = (
+        len(query_sequence)
+        if isinstance(query_sequence, str)
+        else sum(len(s) for s in query_sequence)
+    )
+    output_templates_sequence = "A" * ln
+    output_confidence_scores = np.full(ln, 1.0)
 
+    templates_all_atom_positions = np.zeros(
+        (ln, residue_constants.atom_type_num, 3)
+    )
+    templates_all_atom_masks = np.zeros((ln, residue_constants.atom_type_num))
+    templates_aatype = residue_constants.sequence_to_onehot(
+        output_templates_sequence, residue_constants.HHBLITS_AA_TO_ID
+    )
+    template_features = {
+        "template_all_atom_positions": np.tile(
+            templates_all_atom_positions[None], [num_temp, 1, 1, 1]
+        ),
+        "template_all_atom_masks": np.tile(
+            templates_all_atom_masks[None], [num_temp, 1, 1]
+        ),
+        "template_sequence": [f"none".encode()] * num_temp,
+        "template_aatype": np.tile(np.array(templates_aatype)[None], [num_temp, 1, 1]),
+        "template_confidence_scores": np.tile(
+            output_confidence_scores[None], [num_temp, 1]
+        ),
+        "template_domain_names": [f"none".encode()] * num_temp,
+        "template_release_date": [f"none".encode()] * num_temp,
+        "template_sum_probs": np.zeros([num_temp], dtype=np.float32),
+    }
+    return template_features
 
-def process_single_chain(chain_id, sequence, description, a3m_file, is_homomer_or_monomer, hhr_file=None):
+def process_single_chain(chain_id, sequence, description, a3m_file, is_homomer_or_monomer, use_mock_temp, dup_msa, hhr_file=None, mmcif_dir='/pool-data/data/thu/mmcif_files/'):
     with open(a3m_file, "r") as fp:
         msa = parse_a3m(fp.read())
     data = {"msa": msa.sequences, "deletion_matrix": msa.deletion_matrix}
@@ -371,13 +433,18 @@ def process_single_chain(chain_id, sequence, description, a3m_file, is_homomer_o
     num_res = len(sequence)
     msas, deletion_matrices = zip(*[(data["msa"], data["deletion_matrix"])])
     chain_features = make_sequence_features(sequence=sequence, description="none",num_res=num_res)
-    chain_features.update(make_msa_features((msa,)))
+    if dup_msa:
+        chain_features.update(make_msa_features_colab((msa,)))
+    else:
+        chain_features.update(make_msa_features((msa,)))
     if hhr_file is not None:
         with open (hhr_file) as f:
             hhr = f.read()
         pdb_temp = get_template_hits(output_string=hhr)
-        templates_result = get_templates(query_sequence=sequence, hits=pdb_temp)
+        templates_result = get_templates(query_sequence=sequence, hits=pdb_temp, mmcif_dir=mmcif_dir)
         chain_features.update(templates_result.features)
+    if use_mock_temp:
+        chain_features.update(mk_mock_template(sequence, 4))
 
     if not is_homomer_or_monomer:
         all_seq_features = make_msa_features([msa])
@@ -1088,7 +1155,7 @@ def get_templates(
     return TemplateSearchResult(
         features=template_features, errors=errors, warnings=warnings)
 
-def process(input_file, config_multimer):
+def process(input_file, config_multimer, use_mock_temp, dup_msa):
     f = open(input_file)
     inputs = json.load(f)
     sequences = []
@@ -1109,13 +1176,16 @@ def process(input_file, config_multimer):
             hhr = inputs[chain]['hhr']
         else:
             hhr = None
-        chain_features = process_single_chain(chain, inputs[chain]['sequence'], inputs[chain]['description'], inputs[chain]['a3m'],  is_homomer_or_monomer, hhr)
+        chain_features = process_single_chain(chain, inputs[chain]['sequence'], inputs[chain]['description'], inputs[chain]['a3m'],  is_homomer_or_monomer, use_mock_temp, dup_msa, hhr, mmcif_dir='/pool-data/data/thu/mmcif_files/')
         chain_features = convert_monomer_features(chain_features, chain_id=chain)
         all_chain_features[chain] = chain_features
         sequence_features[inputs[chain]['sequence']] = chain_features
     
     all_chain_features = add_assembly_features(all_chain_features)
-    np_example = feature_processing.pair_and_merge(all_chain_features=all_chain_features)
+    if dup_msa:
+        np_example = feature_processing.pair_and_merge_colab(all_chain_features=all_chain_features)
+    else:
+        np_example = feature_processing.pair_and_merge(all_chain_features=all_chain_features)
     np_example = pad_msa(np_example, 512)
 
     return np_example

@@ -73,7 +73,8 @@ config_multimer= {
                     'num_intermediate_channel': 128,
                     'orientation': 'per_row',
                     'shared_dropout': True,
-                    'norm_channel': 128
+                    'norm_channel': 128,
+                    'fuse_projection_weights': True
                 },
                 'triangle_multiplication_outgoing': {
                     'dropout_rate': 0.25,
@@ -81,7 +82,8 @@ config_multimer= {
                     'num_intermediate_channel': 128,
                     'orientation': 'per_row',
                     'shared_dropout': True,
-                    'norm_channel': 128
+                    'norm_channel': 128,
+                    'fuse_projection_weights': True
                 }
             },
             'extra_msa': {
@@ -150,7 +152,8 @@ config_multimer= {
                     'num_intermediate_channel': 128,
                     'orientation': 'per_row',
                     'shared_dropout': True,
-                    'norm_channel': 128
+                    'norm_channel': 128,
+                    'fuse_projection_weights': True
                 },
                 'triangle_multiplication_outgoing': {
                     'dropout_rate': 0.25,
@@ -158,13 +161,14 @@ config_multimer= {
                     'num_intermediate_channel': 128,
                     'orientation': 'per_row',
                     'shared_dropout': True,
-                    'norm_channel': 128
+                    'norm_channel': 128,
+                    'fuse_projection_weights': True
                 }
             },
             'extra_msa_channel': 64,
             'extra_msa_stack_num_block': 4,
-            'num_msa': 252,
-            'num_extra_msa': 1152,
+            'num_msa': 508,
+            'num_extra_msa': 2048,
             'masked_msa': {
                 'profile_prob': 0.1,
                 'replace_fraction': 0.15,
@@ -231,7 +235,8 @@ config_multimer= {
                         'num_intermediate_channel': 64,
                         'orientation': 'per_row',
                         'shared_dropout': True,
-                        'norm_channel': 64
+                        'norm_channel': 64,
+                        'fuse_projection_weights': True
                     },
                     'triangle_multiplication_outgoing': {
                         'dropout_rate': 0.25,
@@ -239,7 +244,8 @@ config_multimer= {
                         'num_intermediate_channel': 64,
                         'orientation': 'per_row',
                         'shared_dropout': True,
-                        'norm_channel': 64
+                        'norm_channel': 64,
+                        'fuse_projection_weights': True
                     }
                 }
             },
@@ -319,10 +325,10 @@ config_multimer= {
             }
         },
         'num_ensemble_eval': 1,
-        'num_recycle': 5,
-        'max_num_recycle_eval': 5,
-        'min_num_recycle_eval': 5,
+        'num_recycle': 4,
+        'max_num_recycle_eval': 4,
+        'min_num_recycle_eval': 4,
         'confident_plddt': 85,
-        'resample_msa_in_recycling': False
+        'resample_msa_in_recycling': True
     }
 }

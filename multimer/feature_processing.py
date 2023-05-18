@@ -28,6 +28,38 @@ def _is_homomer_or_monomer(chains: Iterable[FeatureDict]) -> bool:
        chain in chains])))
   return num_unique_chains == 1
 
+def pair_and_merge_colab(
+    all_chain_features: MutableMapping[str, FeatureDict]
+    ) -> FeatureDict:
+  """Runs processing on features to augment, pair and merge.
+
+  Args:
+    all_chain_features: A MutableMap of dictionaries of features for each chain.
+
+  Returns:
+    A dictionary of features.
+  """
+
+  process_unmerged_features(all_chain_features)
+
+  np_chains_list = list(all_chain_features.values())
+
+  pair_msa_sequences = not _is_homomer_or_monomer(np_chains_list)
+
+  if pair_msa_sequences:
+    np_chains_list = msa_pairing.create_paired_features(
+        chains=np_chains_list)
+  np_chains_list = crop_chains(
+      np_chains_list,
+      msa_crop_size=MSA_CROP_SIZE,
+      pair_msa_sequences=pair_msa_sequences,
+      max_templates=MAX_TEMPLATES)
+  np_example = msa_pairing.merge_chain_features(
+      np_chains_list=np_chains_list, pair_msa_sequences=pair_msa_sequences,
+      max_templates=MAX_TEMPLATES)
+  np_example = process_final(np_example)
+  return np_example
+
 
 def pair_and_merge(
     all_chain_features: MutableMapping[str, FeatureDict]

@@ -46,7 +46,11 @@ def make_msa_profile(batch):
   return masked_mean(
       batch['msa_mask'][...,:, :, None], torch.nn.functional.one_hot(batch['msa'].long(), 22), dim=1)
 
-def sample_msa(batch, max_seq):
+def sample_msa(batch, max_seq, index, msa_indices_prefix):
+    with open(msa_indices_prefix+str(index)+'.txt', 'r') as f:
+        index_order = [int(l.strip()) for l in f.readlines()]
+        index_order = torch.tensor(index_order, device='cuda:0')
+
     logits = (torch.clip(torch.sum(batch['msa_mask'], -1), 0., 1.) - 1.) * 1e6
   # The cluster_bias_mask can be used to preserve the first row (target
   # sequence) for each chain, for example.
@@ -56,8 +60,8 @@ def sample_msa(batch, max_seq):
         cluster_bias_mask = batch['cluster_bias_mask']
 
     # logits += cluster_bias_mask * 1e6
-    rand_ind = torch.randperm(logits.shape[-1] - 1) + 1
-    index_order = torch.cat((torch.tensor([0]), rand_ind))
+    #rand_ind = torch.randperm(logits.shape[-1] - 1) + 1
+    #index_order = torch.cat((torch.tensor([0]), rand_ind))
     # index_order = gumbel_argsort_sample_idx(key.get(), logits)
     #index_order = torch.arange(logits.shape[-1])
     sel_idx = index_order[:max_seq]
@@ -116,6 +120,9 @@ def make_masked_msa(batch, config):
   batch['bert_mask'] = mask_position.type(torch.float32)
   batch['true_msa'] = batch['msa']
   batch['msa'] = bert_msa
+  # with np.load('./msa_indices/bert_0_'+str(index)+'.npz') as data:
+  #     batch['bert_mask'] = torch.unsqueeze(torch.tensor(data['bert_mask'],device=batch['msa'].device),0)
+  #     batch['msa'] = torch.unsqueeze(torch.tensor(data['bert_msa'],device=batch['msa'].device),0)
 
   return batch
 
@@ -452,24 +459,40 @@ class TriangleMultiplicationOutgoing(nn.Module):
         super().__init__()
         in_c = config['norm_channel']
         mid_c = config['num_intermediate_channel']
-        self.layer_norm_input = nn.LayerNorm(in_c)
+        self.mid_c = mid_c
+        self.fused_projection = config['fuse_projection_weights']
+        if config['fuse_projection_weights']:
+            self.left_norm_input = nn.LayerNorm(in_c)
+            self.projection = nn.Linear(in_c, 2*mid_c)
+            self.gate = nn.Linear(in_c, 2*mid_c)
+        else:
+            self.layer_norm_input = nn.LayerNorm(in_c)
+            self.left_projection = nn.Linear(in_c, mid_c)
+            self.right_projection = nn.Linear(in_c, mid_c)
+            self.left_gate = nn.Linear(in_c, mid_c)
+            self.right_gate = nn.Linear(in_c, mid_c)
         self.center_layer_norm = nn.LayerNorm(mid_c)
-        self.left_projection = nn.Linear(in_c, mid_c)
-        self.right_projection = nn.Linear(in_c, mid_c)
-        self.left_gate = nn.Linear(in_c, mid_c)
-        self.right_gate = nn.Linear(in_c, mid_c)
         self.output_projection = nn.Linear(mid_c, in_c)
         self.gating_linear = nn.Linear(in_c, in_c)
 
     def forward(self, act, mask):
-        act = self.layer_norm_input(act)
-        mask = mask[..., None]
-        left_proj = mask*self.left_projection(act) * torch.sigmoid(self.left_gate(act))
-        right_proj = mask*self.right_projection(act) * torch.sigmoid(self.right_gate(act))
+        if self.fused_projection:
+            left_act = self.left_norm_input(act)
+            mask = mask[..., None]
+            proj_act = mask*self.projection(left_act) * torch.sigmoid(self.gate(left_act))
+            left_proj = proj_act[...,:self.mid_c]
+            right_proj = proj_act[...,self.mid_c:]
+            gate_values = self.gating_linear(left_act)
+        else:
+            act = self.layer_norm_input(act)
+            mask = mask[..., None]
+            left_proj = mask*self.left_projection(act) * torch.sigmoid(self.left_gate(act))
+            right_proj = mask*self.right_projection(act) * torch.sigmoid(self.right_gate(act))
+            gate_values = self.gating_linear(act)
         out = torch.einsum('bikc,bjkc->bijc', left_proj, right_proj)
         out = self.center_layer_norm(out)
         out = self.output_projection(out)
-        out = out * torch.sigmoid(self.gating_linear(act))
+        out = out * torch.sigmoid(gate_values)
         return out
 
 class TriangleMultiplicationIngoing(nn.Module):
@@ -477,24 +500,40 @@ class TriangleMultiplicationIngoing(nn.Module):
         super().__init__()
         in_c = config['norm_channel']
         mid_c = config['num_intermediate_channel']
-        self.layer_norm_input = nn.LayerNorm(in_c)
+        self.mid_c = mid_c
+        self.fused_projection = config['fuse_projection_weights']
+        if config['fuse_projection_weights']:
+            self.left_norm_input = nn.LayerNorm(in_c)
+            self.projection = nn.Linear(in_c, 2*mid_c)
+            self.gate = nn.Linear(in_c, 2*mid_c)
+        else:
+            self.layer_norm_input = nn.LayerNorm(in_c)
+            self.left_projection = nn.Linear(in_c, mid_c)
+            self.right_projection = nn.Linear(in_c, mid_c)
+            self.left_gate = nn.Linear(in_c, mid_c)
+            self.right_gate = nn.Linear(in_c, mid_c)
         self.center_layer_norm = nn.LayerNorm(mid_c)
-        self.left_projection = nn.Linear(in_c, mid_c)
-        self.right_projection = nn.Linear(in_c, mid_c)
-        self.left_gate = nn.Linear(in_c, mid_c)
-        self.right_gate = nn.Linear(in_c, mid_c)
         self.output_projection = nn.Linear(mid_c, in_c)
         self.gating_linear = nn.Linear(in_c, in_c)
 
     def forward(self, act, mask):
-        act = self.layer_norm_input(act)
-        mask = mask[..., None]
-        left_proj = mask*self.left_projection(act) * torch.sigmoid(self.left_gate(act))
-        right_proj = mask*self.right_projection(act) * torch.sigmoid(self.right_gate(act))    
+        if self.fused_projection:
+            left_act = self.left_norm_input(act)
+            mask = mask[..., None]
+            proj_act = mask*self.projection(left_act) * torch.sigmoid(self.gate(left_act))
+            left_proj = proj_act[...,:self.mid_c]
+            right_proj = proj_act[...,self.mid_c:]
+            gate_values = self.gating_linear(left_act)
+        else:
+            act = self.layer_norm_input(act)
+            mask = mask[..., None]
+            left_proj = mask*self.left_projection(act) * torch.sigmoid(self.left_gate(act))
+            right_proj = mask*self.right_projection(act) * torch.sigmoid(self.right_gate(act))
+            gate_values = self.gating_linear(act)
         out = torch.einsum('bkjc,bkic->bijc', left_proj, right_proj)
         out = self.center_layer_norm(out)
         out = self.output_projection(out)
-        out = out * torch.sigmoid(self.gating_linear(act))
+        out = out * torch.sigmoid(gate_values)
         return out
 
 class TriangleAttentionStartingNode(nn.Module):
@@ -973,16 +1012,11 @@ class InputEmbedding(nn.Module):
 
     def forward(self, batch, recycle):
         num_batch, num_res = batch['aatype'].shape[0], batch['aatype'].shape[1]
-        # batch_profile = torch.sum(batch['msa_mask'][...,None] * nn.functional.one_hot(batch['msa'].long(), 22), 1)/(torch.sum(batch['msa_mask'][...,None], 1)+ 1e-10)
         target_feat = nn.functional.one_hot(batch['aatype'].long(), 21).float()
         preprocessed_1d = self.preprocessing_1d(target_feat)
         left_single = self.left_single(target_feat)
         right_single = self.right_single(target_feat)
         pair_activations = left_single.unsqueeze(2) + right_single.unsqueeze(1)
-        # batch_sp = sample_msa(batch, self.max_seq)
-        # batch_sp = make_masked_msa(batch_sp)
-        # (batch_sp['cluster_profile'], batch_sp['cluster_deletion_mean']) = nearest_neighbor_clusters(batch_sp)
-        # msa_feat = create_msa_feat(batch_sp)
         preprocess_msa = self.preprocess_msa(batch['msa_feat'])
         msa_activations = preprocess_msa + preprocessed_1d
         mask_2d = batch['seq_mask'][..., None] * batch['seq_mask'][...,None, :]
@@ -993,7 +1027,6 @@ class InputEmbedding(nn.Module):
                     'prev_msa_first_row': torch.zeros(num_batch, num_res, self.msa_channel).to(batch['aatype'].device),
                     'prev_pair': torch.zeros(num_batch, num_res, num_res, self.pair_channel).to(batch['aatype'].device)
                     }
-            #recycle['prev_pos'][0] = orig_atom
 
         if(recycle is not None):
             prev_msa_first_row, pair_activation_update = self.RecyclingEmbedder(batch, recycle)
@@ -1012,16 +1045,7 @@ class InputEmbedding(nn.Module):
             pair_activations = pair_activations + template_act
             del template_batch
 
-        # extra_msa_feat, extra_msa_mask = create_extra_msa_feature(batch, self.num_extra_msa)
         extra_msa_activations = self.extra_msa_activations(batch['extra_msa_feat'])
-        #extra_msa_stack_inputs = {
-        #        'msa': extra_msa_activations,
-        #        'pair': pair_activations
-        #        }
-        #extra_masks = {
-        #        'msa': extra_msa_mask.type(torch.float32),
-        #        'pair': mask_2d
-        #        }
         pair_activations = self.FragExtraStack(extra_msa_activations, pair_activations, batch['extra_msa_mask'].type(torch.float32), mask_2d)
         msa_mask = batch['msa_mask']
         del target_feat
@@ -1106,18 +1130,14 @@ class DockerIteration(nn.Module):
         self.global_config = global_config
 
 
-    def _preprocess_batch_msa(self, batch):
-        batch['full_msa'] = torch.nn.functional.one_hot(batch['msa'].long(), 23).float()
+    def _preprocess_batch_msa(self, batch, index, msa_indices_prefix):
         batch['msa_profile'] = make_msa_profile(batch)
-        batch = sample_msa(batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['num_msa'])
+        batch = sample_msa(batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['num_msa'], index, msa_indices_prefix)
         batch = make_masked_msa(batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['masked_msa'])
         batch['cluster_profile'], batch['cluster_deletion_mean'] = nearest_neighbor_clusters(batch)
         batch['msa_feat'] = create_msa_feat(batch)
         batch['extra_msa_feat'], batch['extra_msa_mask'] = create_extra_msa_feature(
             batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['num_extra_msa']
-        )
-        batch['pseudo_beta'], batch['pseudo_beta_mask'] = pseudo_beta_fn(
-            batch['aatype'], batch['all_atom_positions'], batch['all_atom_mask']
         )
         return batch
 
@@ -1129,7 +1149,7 @@ class DockerIteration(nn.Module):
             msa_activations = torch.cat((msa_activations, template_features), dim=1).type(torch.float32)
             msa_mask = torch.cat((msa_mask, template_masks), dim=1).type(torch.float32)
             del template_features
-
+        
         for evo_i, evo_iter in enumerate(self.Evoformer):
             msa_activations, pair_activations = checkpoint(evo_iter, msa_activations.clone(), pair_activations.clone(), msa_mask, pair_mask)
 
@@ -1139,36 +1159,15 @@ class DockerIteration(nn.Module):
         struct_out = self.StructureModule(single_activations, pair_activations, batch)
 
         representations['structure_module'] = struct_out['act']
-        # distogram_logits, distogram_bin_edges = self.Distogram(representations)
-        # pred_lddt = self.PredictedLddt(representations)
-        # pae_logits, pae_breaks = self.PredictedAlignedError(representations)
-        #masked_msa = self.MaskedMsaHead(representations)
-        #experimentally_resolved = self.ExperimentallyResolvedHead(representations)
 
         atom14_pred_positions = struct_out['atom_pos'][-1]
         atom37_pred_positions = all_atom_multimer.atom14_to_atom37(atom14_pred_positions.squeeze(0), batch['aatype'].squeeze(0).long())
         atom37_mask = all_atom_multimer.atom_37_mask(batch['aatype'][0].long())
          
-        # out_dict = {}
         representations['final_atom14_positions'] = atom14_pred_positions.squeeze(0)
         representations['final_all_atom'] = atom37_pred_positions
         representations['struct_out'] = struct_out
         representations['final_atom_mask'] = atom37_mask
-        #out_dict['masked_msa'] = masked_msa
-        #out_dict['experimentally_resolved'] = experimentally_resolved
-        # out_dict['distogram'] = {}
-        # out_dict['predicted_lddt'] = {}
-        # out_dict['predicted_aligned_error'] = {}
-        # out_dict['distogram']['logits'] = distogram_logits
-        # out_dict['distogram']['bin_edges'] = distogram_bin_edges
-        # out_dict['predicted_lddt']['logits'] = pred_lddt
-        # out_dict['predicted_aligned_error']['logits'] = pae_logits
-        # out_dict['predicted_aligned_error']['breaks'] = pae_breaks
-        # out_dict['recycling_input'] = {
-        #     'prev_msa_first_row': msa_activations[:,0],
-        #     'prev_pair': pair_activations,
-        #     'prev_pos': atom37_pred_positions.unsqueeze(0)
-        # }
 
         m_1_prev = msa_activations[:,0]
         z_prev = pair_activations
@@ -1178,8 +1177,8 @@ class DockerIteration(nn.Module):
         del pair_activations
         return representations, m_1_prev, z_prev, x_prev
 
-    def forward(self, init_batch, is_eval_mode):
-        batch = self._preprocess_batch_msa(init_batch)
+    def forward(self, init_batch, is_eval_mode, msa_indices_prefix):
+        batch = self._preprocess_batch_msa(init_batch,0, msa_indices_prefix)
         recycles = None
         if is_eval_mode:
             min_num_recycle = self.global_config['model']['min_num_recycle_eval']
@@ -1189,8 +1188,8 @@ class DockerIteration(nn.Module):
                 with torch.set_grad_enabled(False):
                     out, m_1_prev, z_prev, x_prev = self.iteration(batch, recycles)
                     plddt = compute_plddt(self.PredictedLddt(out))
-                    mean_masked_plddt = ((plddt * batch['renum_mask']).sum() / batch['renum_mask'].sum())
-                    if recycle_iter >= min_num_recycle and mean_masked_plddt >= confident_plddt:
+                    # mean_masked_plddt = ((plddt * batch['renum_mask']).sum() / batch['renum_mask'].sum())
+                    if recycle_iter >= min_num_recycle:# and mean_masked_plddt >= confident_plddt:
                         break
                     # check if we are on the final iteration: if not - recycle
                     elif recycle_iter < (num_recycle - 1):
@@ -1200,7 +1199,7 @@ class DockerIteration(nn.Module):
                             'prev_pos': x_prev
                         }
                         if self.global_config['model']['resample_msa_in_recycling']:
-                            batch = self._preprocess_batch_msa(init_batch)
+                            batch = self._preprocess_batch_msa(init_batch, recycle_iter + 1, msa_indices_prefix)
                         del out, m_1_prev, z_prev, x_prev
                     recycle_iter += 1
 
@@ -1217,7 +1216,7 @@ class DockerIteration(nn.Module):
                             'prev_pos': x_prev
                         }
                         if self.global_config['model']['resample_msa_in_recycling']:
-                            batch = self._preprocess_batch_msa(batch)
+                            batch = self._preprocess_batch_msa(init_batch, recycle_iter+1, msa_indices_prefix)
                         del out, m_1_prev, z_prev, x_prev
 
 
@@ -1238,57 +1237,57 @@ class DockerIteration(nn.Module):
         out['predicted_aligned_error']['breaks'] = pae_breaks
         out['experimentally_resolved'] = resovled_logits
         out['msa_head'] = masked_msa_logits
-        resolved_loss, resolved_loop_loss = loss_multimer.experimentally_resolved_loss(out, batch, self.global_config['model']['heads'])
-        lddt_loss, lddt_loop_loss, loop_lddt, full_lddt = loss_multimer.lddt_loss(out, batch, self.global_config['model']['heads'])
-        distogram_loss, distogram_loop_loss = loss_multimer.distogram_loss(out, batch, self.global_config['model']['heads'])
-        structure_loss, structure_loss_loop, gt_rigid, gt_affine_mask = loss_multimer.structure_loss(out, batch, self.global_config['model']['heads'])
-        pae_loss, pae_loop_loss = loss_multimer.tm_loss(pae_logits, pae_breaks, out['struct_out']['frames'][-1], gt_rigid, batch['renum_mask'], gt_affine_mask, batch['resolution'], self.global_config['model']['heads'])
-        masked_msa_loss = loss_multimer.masked_msa_loss(out, batch)
-        plddt = compute_plddt(self.PredictedLddt(out))
+        #resolved_loss, resolved_loop_loss = loss_multimer.experimentally_resolved_loss(out, batch, self.global_config['model']['heads'])
+        #lddt_loss, lddt_loop_loss, loop_lddt, full_lddt = loss_multimer.lddt_loss(out, batch, self.global_config['model']['heads'])
+        #distogram_loss, distogram_loop_loss = loss_multimer.distogram_loss(out, batch, self.global_config['model']['heads'])
+        #structure_loss, structure_loss_loop, gt_rigid, gt_affine_mask = loss_multimer.structure_loss(out, batch, self.global_config['model']['heads'])
+        #pae_loss, pae_loop_loss = loss_multimer.tm_loss(pae_logits, pae_breaks, out['struct_out']['frames'][-1], gt_rigid, batch['renum_mask'], gt_affine_mask, batch['resolution'], self.global_config['model']['heads'])
+        #masked_msa_loss = loss_multimer.masked_msa_loss(out, batch)
+        #plddt = compute_plddt(self.PredictedLddt(out))
 
-        mean_masked_plddt = ((plddt * batch['renum_mask']).sum() / batch['renum_mask'].sum())
-        loss = sum([
-            0.01 * lddt_loss,
-            0.01 * resolved_loss,
-            0.3 * distogram_loss,
-            1.0 * structure_loss,
-            0.01 * pae_loss,
-            2.0 * masked_msa_loss,
-            0.02 * lddt_loop_loss,
-            0.02 * resolved_loop_loss,
-            0.6 * distogram_loop_loss,
-            2.0 * structure_loss_loop,
-            0.02 * pae_loop_loss
-        ])
-        loss_item = {
-            'loss': loss,
-            'resolved_loss': resolved_loss,
-            'resolved_loop_loss': resolved_loop_loss,
-            'lddt_loss': lddt_loss,
-            'lddt_loop_loss': lddt_loop_loss,
-            'distogram_loss': distogram_loss,
-            'distogram_loop_loss': distogram_loop_loss,
-            'structure_loss': structure_loss,
-            'structure_loop_loss': structure_loss_loop,
-            'pae_loss': pae_loss,
-            'pae_loop_loss': pae_loop_loss,
-            'maksed_msa_loss': masked_msa_loss,
-            'loop_lddt': loop_lddt,
-            'recycle_iter': float(recycle_iter),
-            'loop_plddt': mean_masked_plddt,
-            'num_alignments': float(batch['num_alignments'].cpu().numpy()[0])
-        }
+        #mean_masked_plddt = ((plddt * batch['renum_mask']).sum() / batch['renum_mask'].sum())
+        #loss = sum([
+        #    0.01 * lddt_loss,
+        #    0.01 * resolved_loss,
+        #    0.3 * distogram_loss,
+        #    1.0 * structure_loss,
+        #    0.01 * pae_loss,
+        #    2.0 * masked_msa_loss,
+        #    0.02 * lddt_loop_loss,
+        #    0.02 * resolved_loop_loss,
+        #    0.6 * distogram_loop_loss,
+        #    2.0 * structure_loss_loop,
+        #    0.02 * pae_loop_loss
+        #])
+        #loss_item = {
+        #    'loss': loss,
+        #    'resolved_loss': resolved_loss,
+        #    'resolved_loop_loss': resolved_loop_loss,
+        #    'lddt_loss': lddt_loss,
+        #    'lddt_loop_loss': lddt_loop_loss,
+        #    'distogram_loss': distogram_loss,
+        #    'distogram_loop_loss': distogram_loop_loss,
+        #    'structure_loss': structure_loss,
+        #    'structure_loop_loss': structure_loss_loop,
+        #    'pae_loss': pae_loss,
+        #    'pae_loop_loss': pae_loop_loss,
+        #    'maksed_msa_loss': masked_msa_loss,
+        #    'loop_lddt': loop_lddt,
+        #    'recycle_iter': float(recycle_iter),
+        #    'loop_plddt': mean_masked_plddt,
+        #    'num_alignments': float(batch['num_alignments'].cpu().numpy()[0])
+        #}
 
-        groups = find_mask_groups(batch['renum_mask'].cpu().numpy()[0])
+        #groups = find_mask_groups(batch['renum_mask'].cpu().numpy()[0])
         # names = ['H1', 'H2', 'H3', 'L1', 'L2', 'L3']
-        names = ['H3', 'L3']
-        for name, (start, end) in zip(names, groups):
-            end = end + 1
-            loss_item[f'lddt_{name}'] = np.mean(full_lddt.detach().cpu().numpy()[0][start:end]) * 100
-            loss_item[f'plddt_{name}'] = np.mean(plddt.detach().cpu().numpy()[0][start:end])
+        #names = ['H3', 'L3']
+        #for name, (start, end) in zip(names, groups):
+        #    end = end + 1
+        #    loss_item[f'lddt_{name}'] = np.mean(full_lddt.detach().cpu().numpy()[0][start:end]) * 100
+        #    loss_item[f'plddt_{name}'] = np.mean(plddt.detach().cpu().numpy()[0][start:end])
 
         del distogram_logits, distogram_bin_edges, resovled_logits, pred_lddt
-        return out, loss_item
+        return out#, loss_item
 
 
 
