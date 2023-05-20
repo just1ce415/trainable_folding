@@ -104,7 +104,7 @@ def lddt_loss(out, batch, config):
     pred_all_atom_pos = out['final_all_atom']
     true_all_atom_pos = batch['all_atom_positions']
     all_atom_mask = batch['all_atom_mask']
-    mask_renum = batch['renum_mask']
+    mask_renum = batch['loss_mask']
     score = lddt(pred_all_atom_pos[...,1,:], true_all_atom_pos[..., 1, :], all_atom_mask[...,1:2])
     score = score.detach()
     no_bins = config['predicted_lddt']['num_bins']
@@ -151,7 +151,7 @@ def distogram_loss(out, batch, config):
     bin_edges = out['distogram']['bin_edges']
     positions = batch['pseudo_beta']
     mask = batch['pseudo_beta_mask']
-    mask_renum = batch['renum_mask']
+    mask_renum = batch['loss_mask']
     sq_breaks = bin_edges ** 2
     dists = torch.sum(
         (positions[..., None, :] - positions[..., None, :, :]) ** 2,
@@ -186,7 +186,7 @@ def experimentally_resolved_loss(out, batch, config):
     logits = out['experimentally_resolved']
     atom_exists = out['final_atom_mask'] * batch['seq_mask'][0][:,None]
     all_atom_mask = batch['all_atom_mask']
-    mask_renum = batch['renum_mask']
+    mask_renum = batch['loss_mask']
     errors = sigmoid_cross_entropy(logits, all_atom_mask)
     loss = torch.sum(errors * atom_exists, dim=-1)
     loss = loss / (1e-8 + torch.sum(atom_exists, dim=(-1, -2)))
@@ -1170,11 +1170,11 @@ def structure_loss(out, batch, config):
     intra_chain_mask = asym_id[:, None] == asym_id[None, :]
     traj = out['struct_out']['frames'][:,0,...]
 
-    intra_chain_bb_loss, intra_chain_bb_loss_loop = backbone_loss(gt_rigid, gt_affine_mask, traj, intra_chain_mask, batch['renum_mask'][0], config['structure_module']['intra_chain_fape'])
-    interface_bb_loss, interface_bb_loss_loop = backbone_loss(gt_rigid, gt_affine_mask, traj, ~intra_chain_mask, batch['renum_mask'][0], config['structure_module']['interface_fape'])
+    intra_chain_bb_loss, intra_chain_bb_loss_loop = backbone_loss(gt_rigid, gt_affine_mask, traj, intra_chain_mask, batch['loss_mask'][0], config['structure_module']['intra_chain_fape'])
+    interface_bb_loss, interface_bb_loss_loop = backbone_loss(gt_rigid, gt_affine_mask, traj, ~intra_chain_mask, batch['loss_mask'][0], config['structure_module']['interface_fape'])
     rigidgroups_gt_frames, rigidgroups_gt_exists, rigidgroups_group_exists, rigidgroups_group_is_ambiguous, rigidgroups_alt_gt_frames = all_atom_multimer.atom37_to_frames(aatype.long(), all_atom_positions, all_atom_mask)
 
-    sc_loss, sc_loss_loop = sidechain_loss(out['struct_out']['sc_frames'][:,0,...],out['struct_out']['atom_pos'][:,0,...],rigidgroups_gt_frames, rigidgroups_alt_gt_frames, rigidgroups_gt_exists, gt_positions, gt_mask, alt_naming_is_better, batch['renum_mask'][0], config['structure_module']['sidechain'])
+    sc_loss, sc_loss_loop = sidechain_loss(out['struct_out']['sc_frames'][:,0,...],out['struct_out']['atom_pos'][:,0,...],rigidgroups_gt_frames, rigidgroups_alt_gt_frames, rigidgroups_gt_exists, gt_positions, gt_mask, alt_naming_is_better, batch['loss_mask'][0], config['structure_module']['sidechain'])
 
     gt_chi_angles = get_renamed_chi_angles(aatype.long(), chi_angles, alt_naming_is_better)
 
@@ -1184,7 +1184,7 @@ def structure_loss(out, batch, config):
                                         gt_chi_angles,
                                         out['struct_out']['angles_sin_cos'][:,0,...],
                                         out['struct_out']['unnormalized_angles_sin_cos'][:,0,...],
-                                        batch['renum_mask'][0],
+                                        batch['loss_mask'][0],
                                         config['structure_module'],)
 
     violations = find_structural_violations(
@@ -1193,9 +1193,9 @@ def structure_loss(out, batch, config):
             pred_mask,
             pred_positions,
             asym_id,
-            batch['renum_mask'][0],
+            batch['loss_mask'][0],
             config['structure_module'])
-    violation_loss, violation_loss_loop = structural_violation_loss(pred_mask, batch['renum_mask'][0], violations, config['structure_module'])
+    violation_loss, violation_loss_loop = structural_violation_loss(pred_mask, batch['loss_mask'][0], violations, config['structure_module'])
     structure_loss = 0.5*(intra_chain_bb_loss + interface_bb_loss) + 0.5*sc_loss + sup_chi_loss + violation_loss
     structure_loop_loss = 0.5*(intra_chain_bb_loss_loop + interface_bb_loss_loop) + 0.5*sc_loss_loop + sup_chi_loss_loop + violation_loss_loop
     return structure_loss, structure_loop_loss, gt_rigid, gt_affine_mask

@@ -22,69 +22,26 @@ from wandb import Molecule
 import warnings
 warnings.filterwarnings("ignore", "None of the inputs have requires_grad=True. Gradients will be None")
 
-
-def crop_feature(features, crop_size):
-    seq_len = features['seq_length']
-    crop_size = min(seq_len, crop_size)
-    start_crop = random.randint(0, seq_len - crop_size)
-    feat_skip = {'seq_length', 'resolution', 'num_alignments', 'assembly_num_chains', 'num_templates', 'cluster_bias_mask', 'msa_activations', 'pair_activations', 'seed', 'sample_id'}
-    feat_1 = {'aatype', 'residue_index', 'all_atom_positions', 'all_atom_mask', 'asym_id', 'sym_id', 'entity_id', 'deletion_mean', 'entity_mask', 'seq_mask', 'renum_mask'}
-    for k in features.keys():
-        if k not in feat_skip:
-            if k in feat_1:
-                features[k] = features[k][start_crop: start_crop+crop_size]
-            else:
-                features[k] = features[k][:, start_crop: start_crop+crop_size]
-    features['seq_length'] = crop_size
-    return features
-
 class MultimerDataset(Dataset):
-    def __init__(self, json_data, preprocessed_data_dir, crop_size):
+    def __init__(self, json_data, preprocessed_data_dir):
         self.data = json_data
         self.preprocessed_data_dir = preprocessed_data_dir
-        self.crop_size = crop_size
-        self._preprocess_all()
 
-    def _preprocess_all(self):
-        self.processed_data = {}
-        self.seeds = {}
-        for i, single_dataset in enumerate(self.data):
-            file_id = single_dataset['sample_id']
-            file_path = f'{self.preprocessed_data_dir}/{file_id}/{single_dataset["seed"]}.npz'
-            assert os.path.exists(file_path), f'File not found: {file_path}'
-            self.processed_data[i] = file_id
-            # if single_dataset['dataset'] == 'train':
-            #     self.seeds[i] = None
-            # else:
-            if True:
-                self.seeds[i] = single_dataset['seed']
+    def __getitem__(self, idx):
+        sample = self.data[idx]
+        sample_id = sample['sample_id']
+        features = dict(np.load(f'{self.preprocessed_data_dir}/{sample_id}.npz'))
+        features = {k: torch.tensor(v) for k, v in features.items()}
+        meta_info = {
+            'sample_id': sample_id,
+            'seed': sample['seed'],
+            'id': idx
+        }
 
-    def process(self, idx):
-        if self.seeds[idx] is not None:
-            random.seed(self.seeds[idx])  # to stable the crop procedure for val and test
-        n_groups = 0
-        count = 0
-        while n_groups < 2:
-            np_example = dict(np.load(f'{self.preprocessed_data_dir}/{self.processed_data[idx]}/{self.seeds[idx]}.npz'))
-            np_example = {k: v[0] for k, v in np_example.items()}
-            # np_example = crop_feature(np_example, self.crop_size)
-            n_groups = len(find_mask_groups(np_example['renum_mask']))
-            count += 1
-            if count == 100:
-                raise RuntimeError("Did not find a good crop")
-
-        # np_example['sample_id'] = idx
-        # if self.seeds[idx] is not None:
-        #     np_example['seed'] = self.seeds[idx]
-        np_example = {k: torch.tensor(v) for k, v in np_example.items()}
-
-        return np_example
+        return meta_info, features
 
     def __len__(self):
         return len(self.data)
-    def __getitem__(self, idx):
-        exp = self.process(idx)
-        return exp
 
 class TrainableFolding(pl.LightningModule):
     def __init__(
@@ -122,7 +79,6 @@ class TrainableFolding(pl.LightningModule):
         mul_dataset = MultimerDataset(
             json_data=self.train_data,
             preprocessed_data_dir=self.preprocessed_data_dir,
-            crop_size=self.crop_size,
         )
         return torch.utils.data.DataLoader(mul_dataset, batch_size=self.batch_size, shuffle=True, drop_last=True)
 
@@ -130,65 +86,46 @@ class TrainableFolding(pl.LightningModule):
         mul_dataset = MultimerDataset(
             json_data=self.val_data,
             preprocessed_data_dir=self.preprocessed_data_dir,
-            crop_size=self.crop_size,
         )
-        self.val_sample_names = mul_dataset.processed_data
         return torch.utils.data.DataLoader(mul_dataset, batch_size=self.batch_size, shuffle=False)
 
     def test_dataloader(self):
         mul_dataset = MultimerDataset(
             json_data=self.val_data,
             preprocessed_data_dir=self.preprocessed_data_dir,
-            crop_size=self.crop_size,
         )
-        self.val_sample_names = mul_dataset.processed_data
         return torch.utils.data.DataLoader(mul_dataset, batch_size=self.batch_size, shuffle=False)
 
     def forward(self, batch):
         return self.model(batch, is_eval_mode=self.trainer.evaluating)
    
     def training_step(self, batch, _):
-        torch.manual_seed(batch['seed'])
-        output, loss_items = self.forward(batch)
+        meta_info, features = batch
+        output, loss_items = self.forward(features)
         for k, v in loss_items.items():
-            self.log(k, v, on_step=True, on_epoch=False, logger=True)
+            self.log(f'train_{k}', v, on_step=True, on_epoch=True, logger=True)
         return loss_items['loss']
 
     def validation_step(self, batch, _):
-        torch.manual_seed(batch['seed'])
-        sample_id = batch['sample_id'].item()
-        sample_name = self.val_sample_names[sample_id]
+        meta_info, features = batch
+        seed = meta_info['seed'].item()
+        torch.manual_seed(seed)
         output, loss_items = self.forward(batch)
+        # sample_name = meta_info['sample_id'][0]
         # self._get_predicted_structure(batch, output, sample_name)
 
         for k, v in loss_items.items():
             self.log(f'val_{k}', v, on_step=False, on_epoch=True, logger=True)
 
-        # # for each sample
-        # for k, v in loss_items.items():
-        #     self.log(f'val_{k}_{sample_name}', v, on_step=True, on_epoch=False, logger=True)
-
-        return {'sample_name': sample_name, 'mask_size': batch['renum_mask'][0].sum(), **loss_items}
+        return {'sample_name': sample_name, **loss_items}
 
     def test_step(self, batch, _):
-        torch.manual_seed(batch['seed'])
-        sample_id = batch['sample_id'].item()
-        sample_name = self.val_sample_names[sample_id]
+        meta_info, features = batch
+        seed = meta_info['seed'].item()
+        torch.manual_seed(seed)
+        sample_name = meta_info['sample_id'][0]
 
         output, loss_items = self.forward(batch)
-
-        # output, loss_items, msa_activations, pair_activations = self.forward(batch)
-
-        # filename = f"{self.output_data_path}/{sample_name}/{batch['seed'].item()}"
-
-        # batch_data = {k: v.cpu().numpy() for k, v in batch.items()}
-        # batch_data['msa_activations'] = msa_activations.cpu().numpy()
-        # batch_data['pair_activations'] = pair_activations.cpu().numpy()
-        #
-        # os.makedirs(os.path.dirname(filename), exist_ok=True)
-        # np.savez(filename, **batch_data)
-
-        seed = batch['seed'].item()
 
         self._get_predicted_structure(batch, output, sample_name, seed, mode=self.test_mode_name)
         self._get_true_structure(batch, output, sample_name, seed)
@@ -210,7 +147,28 @@ class TrainableFolding(pl.LightningModule):
         with open(f"{self.output_data_path}/json_metrics/{sample_name}_{seed:02d}_rank_{self.global_rank}.json", "w") as outfile:
             outfile.write(json.dumps(metrics, indent=4))
 
-        return {'sample_name': sample_name, 'mask_size': batch['renum_mask'][0].sum(), **loss_items}
+        return {'sample_name': sample_name, **loss_items}
+
+    def get_structure_state(self, batch, _):
+        """
+        A function for compression, is not used now.
+        """
+        meta_info, features = batch
+        seed = meta_info['seed'].item()
+        torch.manual_seed(seed)
+        sample_name = meta_info['sample_id'][0]
+
+        output, loss_items, msa_activations, pair_activations = self.forward(batch)
+
+        filename = f"{self.output_data_path}/{sample_name}/{batch['seed'].item()}"
+
+        batch_data = {k: v.cpu().numpy() for k, v in batch.items()}
+        batch_data['msa_activations'] = msa_activations.cpu().numpy()
+        batch_data['pair_activations'] = pair_activations.cpu().numpy()
+
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        np.savez(filename, **batch_data)
+
 
     def _get_predicted_structure(self, batch, output, sample_name, seed, mode='val'):
         output['predicted_aligned_error']['asym_id'] = batch['asym_id'][0]
@@ -262,7 +220,7 @@ class TrainableFolding(pl.LightningModule):
             batch['residue_index'][0].cpu().numpy() + 1,
             batch['asym_id'][0].cpu().numpy(),
             batch['all_atom_mask'][0].cpu().numpy(), b_factors,
-            batch['renum_mask'][0].cpu().numpy()
+            batch['loss_mask'][0].cpu().numpy()
         )
 
         filename = f"{self.output_data_path}/structures/{sample_name}/masked_s_{seed:02d}_r_{self.global_rank}.pdb"
@@ -284,15 +242,6 @@ class TrainableFolding(pl.LightningModule):
         )
 
         return [optimizer], [{"scheduler": lr_scheduler, "interval": "step", "frequency": 1}]
-
-def bool_type(bool_str: str):
-    bool_str_lower = bool_str.lower()
-    if bool_str_lower in ('false', 'f', 'no', 'n', '0'):
-        return False
-    elif bool_str_lower in ('true', 't', 'yes', 'y', '1'):
-        return True
-    else:
-        raise ValueError(f'Cannot interpret {bool_str} as bool')
 
 
 if __name__ == '__main__':
@@ -338,6 +287,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.step == 'search':
+        # Mainly for compression
         random.seed(args.hyperparams_seed)
 
         search_config = {
@@ -370,8 +320,8 @@ if __name__ == '__main__':
         dirpath=args.model_checkpoint_path,
         save_top_k=5,
         mode='min',
-        monitor='val_structure_loop_loss',
-        filename='{step:03d}-{val_structure_loop_loss:.2f}',
+        monitor='val_structure_loss',
+        filename='{step:03d}-{val_structure_loss:.2f}',
         save_last=True,
     )
 
@@ -410,7 +360,8 @@ if __name__ == '__main__':
         max_epochs=args.max_epochs,
         accelerator="gpu",
         devices=args.gpus,
-        strategy="deepspeed_stage_2_offload",
+        # TODO: fix the setup to enable this
+        # strategy="deepspeed_stage_1",
         num_sanity_val_steps=0,
     )
 

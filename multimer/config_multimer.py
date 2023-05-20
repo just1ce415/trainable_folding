@@ -194,7 +194,7 @@ config_multimer= {
                     'min_bin': 3.25,
                     'num_bins': 39
                 },
-                'enabled': True,
+                'enabled': False,
                 'max_templates': 4,
                 'num_channels': 64,
                 'subbatch_size': 128,

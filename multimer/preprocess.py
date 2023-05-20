@@ -221,12 +221,13 @@ def _preprocess_one(single_dataset):
         print(f'No mmcif object found for {pdb_id}')
         return None
 
-    dataset = 'train'
+    dataset, is_val = 'train', 0
     if deposition_date >= '2020-01-01':
-        dataset = 'val'
+        dataset, is_val = 'val', 1
     if deposition_date >= '2021-01-01':
-        dataset = 'test'
+        dataset, is_val = 'test', 1
     single_dataset['dataset'] = dataset
+    single_dataset['is_val'] = is_val
 
     is_homomer = len(set(chains)) == 1
 
@@ -263,6 +264,9 @@ def _preprocess_one(single_dataset):
         print(f'Issue with {pdb_id}')
         return
     np_example = pipeline_multimer.pad_msa(np_example, 512)
+
+    # specifically for this project
+    np_example['loss_mask'] = (np_example['entity_id'] == 2) * 1.0
 
     np.savez(f'{preprocessed_data_dir}/npz_data/{sample_id}', **np_example)
 

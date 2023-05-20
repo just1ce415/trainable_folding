@@ -1200,7 +1200,7 @@ class DockerIteration(nn.Module):
                 with torch.set_grad_enabled(False):
                     out, m_1_prev, z_prev, x_prev, msa_activations = self.iteration(batch, recycles)
                     plddt = compute_plddt(self.PredictedLddt(out))
-                    mean_masked_plddt = ((plddt * batch['renum_mask']).sum() / batch['renum_mask'].sum())
+                    mean_masked_plddt = ((plddt * batch['loss_mask']).sum() / batch['loss_mask'].sum())
                     if recycle_iter >= min_num_recycle and mean_masked_plddt >= confident_plddt:
                         break
                     # check if we are on the final iteration: if not - recycle
@@ -1247,63 +1247,55 @@ class DockerIteration(nn.Module):
         out['predicted_aligned_error']['breaks'] = pae_breaks
         out['experimentally_resolved'] = resovled_logits
         out['msa_head'] = masked_msa_logits
-        resolved_loss, resolved_loop_loss = loss_multimer.experimentally_resolved_loss(out, batch, self.global_config['model']['heads'])
-        lddt_loss, lddt_loop_loss, loop_lddt, full_lddt = loss_multimer.lddt_loss(out, batch, self.global_config['model']['heads'])
-        distogram_loss, distogram_loop_loss = loss_multimer.distogram_loss(out, batch, self.global_config['model']['heads'])
-        structure_loss, structure_loss_loop, gt_rigid, gt_affine_mask = loss_multimer.structure_loss(out, batch, self.global_config['model']['heads'])
-        pae_loss, pae_loop_loss = loss_multimer.tm_loss(pae_logits, pae_breaks, out['struct_out']['frames'][-1], gt_rigid, batch['renum_mask'], gt_affine_mask, batch['resolution'], self.global_config['model']['heads'])
+        resolved_loss, resolved_masked_loss = loss_multimer.experimentally_resolved_loss(out, batch, self.global_config['model']['heads'])
+        lddt_loss, lddt_masked_loss, masked_lddt, full_lddt = loss_multimer.lddt_loss(out, batch, self.global_config['model']['heads'])
+        distogram_loss, distogram_masked_loss = loss_multimer.distogram_loss(out, batch, self.global_config['model']['heads'])
+        structure_loss, structure_loss_masked, gt_rigid, gt_affine_mask = loss_multimer.structure_loss(out, batch, self.global_config['model']['heads'])
+        pae_loss, pae_masked_loss = loss_multimer.tm_loss(pae_logits, pae_breaks, out['struct_out']['frames'][-1], gt_rigid, batch['loss_mask'], gt_affine_mask, batch['resolution'], self.global_config['model']['heads'])
         masked_msa_loss = loss_multimer.masked_msa_loss(out, batch)
         plddt = compute_plddt(self.PredictedLddt(out))
 
-        mean_masked_plddt = ((plddt * batch['renum_mask']).sum() / batch['renum_mask'].sum())
-        # loss = sum([
-        #     0.01 * lddt_loss,
-        #     0.01 * resolved_loss,
-        #     0.3 * distogram_loss,
-        #     1.0 * structure_loss,
-        #     0.01 * pae_loss,
-        #     2.0 * masked_msa_loss,
-        #     0.02 * lddt_loop_loss,
-        #     0.02 * resolved_loop_loss,
-        #     0.6 * distogram_loop_loss,
-        #     2.0 * structure_loss_loop,
-        #     0.02 * pae_loop_loss
-        # ])
+        mean_masked_plddt = ((plddt * batch['loss_mask']).sum() / batch['loss_mask'].sum())
+        loss = sum([
+            0.01 * lddt_loss,
+            0.01 * resolved_loss,
+            0.3 * distogram_loss,
+            1.0 * structure_loss,
+            0.01 * pae_loss,
+            2.0 * masked_msa_loss,
+            0.02 * lddt_masked_loss,
+            0.02 * resolved_masked_loss,
+            0.6 * distogram_masked_loss,
+            2.0 * structure_loss_masked,
+            0.02 * pae_masked_loss
+        ])
 
-        msa_act_loss = self.hl(msa_activations, batch['msa_activations'])
-        pair_act_loss = self.hl(z_prev, batch['pair_activations'])
-
-        loss = msa_act_loss + pair_act_loss
+        ## This is for compression
+        # msa_act_loss = self.hl(msa_activations, batch['msa_activations'])
+        # pair_act_loss = self.hl(z_prev, batch['pair_activations'])
+        # loss = msa_act_loss + pair_act_loss
 
 
         loss_item = {
             'loss': loss,
             'resolved_loss': resolved_loss,
-            'resolved_loop_loss': resolved_loop_loss,
+            'resolved_masked_loss': resolved_masked_loss,
             'lddt_loss': lddt_loss,
-            'lddt_loop_loss': lddt_loop_loss,
+            'lddt_masked_loss': lddt_masked_loss,
             'distogram_loss': distogram_loss,
-            'distogram_loop_loss': distogram_loop_loss,
+            'distogram_masked_loss': distogram_masked_loss,
             'structure_loss': structure_loss,
-            'structure_loop_loss': structure_loss_loop,
+            'structure_masked_loss': structure_loss_masked,
             'pae_loss': pae_loss,
-            'pae_loop_loss': pae_loop_loss,
-            'maksed_msa_loss': masked_msa_loss,
-            'loop_lddt': loop_lddt,
+            'pae_masked_loss': pae_masked_loss,
+            'masked_msa_loss': masked_msa_loss,
+            'masked_lddt': masked_lddt,
             'recycle_iter': float(recycle_iter),
-            'loop_plddt': mean_masked_plddt,
+            'masked_plddt': mean_masked_plddt,
             'num_alignments': float(batch['num_alignments'].item()),
-            'msa_act_loss': msa_act_loss,
-            'pair_act_loss': pair_act_loss,
+            # 'msa_act_loss': msa_act_loss,
+            # 'pair_act_loss': pair_act_loss,
         }
-
-        groups = find_mask_groups(batch['renum_mask'].cpu().numpy()[0])
-        # names = ['H1', 'H2', 'H3', 'L1', 'L2', 'L3']
-        names = ['H3', 'L3']
-        for name, (start, end) in zip(names, groups):
-            end = end + 1
-            loss_item[f'lddt_{name}'] = np.mean(full_lddt.detach().cpu().numpy()[0][start:end]) * 100
-            loss_item[f'plddt_{name}'] = np.mean(plddt.detach().cpu().numpy()[0][start:end])
 
         del distogram_logits, distogram_bin_edges, resovled_logits, pred_lddt
         return out, loss_item#, msa_activations, z_prev
