@@ -110,9 +110,9 @@ class TrainableFolding(pl.LightningModule):
         meta_info, features = batch
         seed = meta_info['seed'].item()
         torch.manual_seed(seed)
-        output, loss_items = self.forward(batch)
-        # sample_name = meta_info['sample_id'][0]
-        # self._get_predicted_structure(batch, output, sample_name)
+        output, loss_items = self.forward(features)
+        sample_name = meta_info['sample_id'][0]
+        # self._get_predicted_structure(features, output, sample_name)
 
         for k, v in loss_items.items():
             self.log(f'val_{k}', v, on_step=False, on_epoch=True, logger=True)
@@ -125,11 +125,11 @@ class TrainableFolding(pl.LightningModule):
         torch.manual_seed(seed)
         sample_name = meta_info['sample_id'][0]
 
-        output, loss_items = self.forward(batch)
+        output, loss_items = self.forward(features)
 
-        self._get_predicted_structure(batch, output, sample_name, seed, mode=self.test_mode_name)
-        self._get_true_structure(batch, output, sample_name, seed)
-        self._get_masked_true_structure(batch, sample_name, seed)
+        self._get_predicted_structure(features, output, sample_name, seed, mode=self.test_mode_name)
+        self._get_true_structure(features, output, sample_name, seed)
+        self._get_masked_true_structure(features, sample_name, seed)
 
         for k, v in loss_items.items():
             self.log(f'test_{k}', v, on_step=False, on_epoch=True, logger=True)
