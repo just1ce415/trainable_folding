@@ -9,6 +9,7 @@ import io
 from Bio.PDB import PDBParser
 from typing import Dict, Optional, Tuple
 import argparse
+from multimer.loss_multimer import lddt
 
 
 def pred_to_pdb(out_pdb, input_dict, out_dict):
@@ -330,6 +331,16 @@ def main(FLAGS):
                              output['final_atom_mask'].cpu().numpy(), plddt_b_factors[0])
     with open(FLAGS.output_dir+'model1.pdb', 'w') as f:
         f.write(pdb_out)
+
+    pred_all_atom_pos = output['final_all_atom']
+    true_all_atom_pos = feats['all_atom_positions']
+    all_atom_mask = feats['all_atom_mask']
+    score = lddt(pred_all_atom_pos[..., 1, :], true_all_atom_pos[..., 1, :], all_atom_mask[..., 1:2])
+    # TODO: fix the name
+    np.savez(FLAGS.output_dir+'conf_data', **{
+        'structure_module': output['structure_module'].detach().cpu().numpy(),
+        'lddt': score.detach().cpu().numpy(),
+    })
 
 
 if __name__ == '__main__':
