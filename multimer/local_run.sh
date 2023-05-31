@@ -39,8 +39,8 @@ python train_multi_gpu.py \
     --learning_rate 0.001 \
     --accumulate_grad_batches 1 \
     --evoformer_num_block 0 \
-    --step 'test' \
-    --wandb_offline
+    --step 'test' 
+    # --wandb_offline
     sleep 1
 done
 # val_ds="val";
