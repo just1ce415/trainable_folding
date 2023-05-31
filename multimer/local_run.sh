@@ -5,24 +5,27 @@
 #          --mmcif_dir /home/kikodze/projects/mmcif_files/ \
 #          --n_jobs 32
 
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=0,1
 
-run=1;
-model_version=5;
+# model_version=5;
 
-project_dir="/home/eglukhov/projects/mhc/";
-data_dir=$project_dir/datasets/v1;
-project="mhc_test";
-run_name="init_5_${run}_${model_version}";
-output_dir=$project_dir/output/$run_name/;
+NOW=$(date +"%Y%m%d%H%M$S");
+
+project_dir="/home/yimzhu/workspace/mhc/";
+data_dir="/home/eglukhov/projects/mhc/datasets/v1";
+project="mhc_inference";
+# output_dir=$project_dir/output/$run_name/;
+for model_version in {1..5}; do
+run_name="init_5_${model_version}";
+output_dir=$project_dir/output/${run_name}_${NOW}/;
 mkdir -p $output_dir;
 python train_multi_gpu.py \
-    --gpus 1 \
+    --gpus 2 \
     --num_nodes 1 \
     --wandb_output_dir $output_dir \
     --wandb_project $project \
     --wandb_name $run_name \
-    --wandb_id $run_name \
+    --wandb_id ${run_name}_${NOW} \
     --model_weights_path /home/eglukhov/projects/af_params/params_model_${model_version}_multimer_v2.npz \
     --model_checkpoint_path $output_dir/checkpoints \
     --preprocessed_data_dir $data_dir/npz_data \
@@ -33,44 +36,51 @@ python train_multi_gpu.py \
     --n_layers_in_lr_group 10 \
     --crop_size 384 \
     --max_epochs 10 \
-    --hyperparams_seed $run \
     --learning_rate 0.001 \
     --accumulate_grad_batches 1 \
-    --step 'train'
-
-
-#for model_version in {1..5}; do
-#  echo "Starting training model version: $model_version"
-#  run=18;
-#  project_dir="/projectnb2/sc3dm/eglukhov/compress/";
-#  data_dir=$project_dir/datasets/v4;
-#  project="compress_final";
-#  run_name="init_5_${run}_${model_version}";
+    --evoformer_num_block 0 \
+    --step 'test' \
+    --wandb_offline
+    sleep 1
+done
+# val_ds="val";
+# # run=1;
+# model_version=1;
+# for run in {1..10}; do
+# # for model_version in {1}; do
+#  echo "Starting run: $run"
+#  echo "Starting model version: $model_version"
+#  project_dir="/home/yimzhu/workspace/mhc/";
+#  data_dir="/home/eglukhov/projects/mhc/datasets/v1";
+#  project="mhc_search";
+#  run_name="search_${run}_${model_version}";
 #  output_dir=$project_dir/output/$run_name/;
 #  mkdir -p $output_dir;
 #  python train_multi_gpu.py \
-#            --gpus 10 \
-#            --num_nodes 1 \
-#            --wandb_output_dir $output_dir \
-#            --wandb_project $project \
-#            --wandb_name $run_name \
-#            --wandb_id $run_name \
-#            --model_weights_path /projectnb2/sc3dm/eglukhov/af_params/params_model_${model_version}_multimer_v2.npz \
-#            --model_checkpoint_path $output_dir/checkpoints \
-#            --preprocessed_data_dir $project_dir/datasets/v4/npz_data \
-#            --output_data_path $output_dir/val_init_5 \
-#            --train_json_path $data_dir/train.json \
-#            --val_json_path $data_dir/val.json \
-#            --test_mode_name "val_metrics" \
-#            --n_layers_in_lr_group 10 \
-#            --crop_size 384 \
-#            --max_epochs 10 \
-#            --hyperparams_seed $run \
-#            --learning_rate 0.001 \
-#            --accumulate_grad_batches 1 \
-#            --step 'test'
+#     --gpus 3 \
+#     --num_nodes 1 \
+#     --wandb_output_dir $output_dir \
+#     --wandb_project $project \
+#     --wandb_name $run_name \
+#     --wandb_id ${run_name}_${NOW} \
+#     --model_weights_path /home/eglukhov/projects/af_params/params_model_${model_version}_multimer_v2.npz \
+#     --model_checkpoint_path $output_dir/checkpoints \
+#     --preprocessed_data_dir $data_dir/npz_data \
+#     --output_data_path $output_dir \
+#     --train_json_path $data_dir/train.json \
+#     --val_json_path $data_dir/${val_ds}.json \
+#     --test_mode_name "val_metrics" \
+#     --n_layers_in_lr_group 10 \
+#     --crop_size 384 \
+#     --max_epochs 5 \
+#     --hyperparams_seed $run \
+#     --learning_rate 0.001 \
+#     --accumulate_grad_batches 1 \
+#     --step 'search'
+#     # --wandb_offline
 #  sleep 1
+
+# # done
+# done
 #
-#done
-#
-#echo "All jobs submitted."
+echo "All jobs submitted."

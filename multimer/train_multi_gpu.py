@@ -61,7 +61,7 @@ class TrainableFolding(pl.LightningModule):
     ):
         super(TrainableFolding, self).__init__()
         self.config_multimer = config_multimer.config_multimer
-        self.config_multimer['model']['embeddings_and_evoformer']['evoformer_num_block'] = hparams['evoformer_num_block']
+        self.config_multimer['model']['embeddings_and_evoformer']['evoformer_num_block'] += hparams['evoformer_num_block']
         self.model = modules_multimer.DockerIteration(self.config_multimer, huber_delta=hparams['huber_delta'])
         load_param_multimer.import_jax_weights_(self.model, model_weights_path)
         self.train_data = train_data
@@ -80,7 +80,7 @@ class TrainableFolding(pl.LightningModule):
             json_data=self.train_data,
             preprocessed_data_dir=self.preprocessed_data_dir,
         )
-        return torch.utils.data.DataLoader(mul_dataset, batch_size=self.batch_size, shuffle=True, drop_last=True)
+        return torch.utils.data.DataLoader(mul_dataset, batch_size=self.batch_size, shuffle=True, drop_last=Truem)
 
     def val_dataloader(self):
         mul_dataset = MultimerDataset(
@@ -103,7 +103,7 @@ class TrainableFolding(pl.LightningModule):
         meta_info, features = batch
         output, loss_items = self.forward(features)
         for k, v in loss_items.items():
-            self.log(f'train_{k}', v, on_step=True, on_epoch=True, logger=True)
+            self.log(f'train_{k}', v, on_step=True, on_epoch=True, logger=True, sync_dist=True)
         return loss_items['loss']
 
     def validation_step(self, batch, _):
@@ -279,6 +279,7 @@ if __name__ == '__main__':
     parser.add_argument("--n_layers_in_lr_group", type=int, default=None)
     parser.add_argument("--crop_size", type=int, default=None)
     parser.add_argument("--learning_rate", type=float, default=0.0001)
+    parser.add_argument("--evoformer_num_block", type=int, default=0)
     parser.add_argument("--max_epochs", type=int, default=1)
     parser.add_argument("--num_nodes", type=int, default=None)
     parser.add_argument("--gpus", type=int, default=1)
@@ -293,6 +294,7 @@ if __name__ == '__main__':
         search_config = {
             'learning_rate': {'values': [0.01, 0.001, 0.0001, 0.00001, 0.000001]},
             'accumulate_grad_batches': {'values': [1, 3, 6, 10]},
+            # the following are for compression
             'huber_delta': {'values': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]},
             'evoformer_num_block': {'values': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]},
         }
@@ -309,7 +311,7 @@ if __name__ == '__main__':
         config = {
             'learning_rate': args.learning_rate,
             'accumulate_grad_batches': args.accumulate_grad_batches,
-            'evoformer_num_block': 48,
+            'evoformer_num_block': args.evoformer_num_block,
             'huber_delta': 0.2,
         }
 
@@ -350,6 +352,7 @@ if __name__ == '__main__':
         id=args.wandb_id,
         resume='True',
         offline=args.wandb_offline,
+        entity='abc_sbu',
     )
 
     trainer = pl.Trainer(
@@ -361,7 +364,8 @@ if __name__ == '__main__':
         accelerator="gpu",
         devices=args.gpus,
         # TODO: fix the setup to enable this
-        # strategy="deepspeed_stage_1",
+        strategy="deepspeed_stage_1",
+        # strategy="ddp",
         num_sanity_val_steps=0,
     )
 

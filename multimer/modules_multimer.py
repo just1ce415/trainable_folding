@@ -1248,7 +1248,7 @@ class DockerIteration(nn.Module):
         out['experimentally_resolved'] = resovled_logits
         out['msa_head'] = masked_msa_logits
         resolved_loss, resolved_masked_loss = loss_multimer.experimentally_resolved_loss(out, batch, self.global_config['model']['heads'])
-        lddt_loss, lddt_masked_loss, masked_lddt, full_lddt = loss_multimer.lddt_loss(out, batch, self.global_config['model']['heads'])
+        lddt_loss, lddt_masked_loss, masked_lddt, lddt_full, lddt_protein = loss_multimer.lddt_loss(out, batch, self.global_config['model']['heads'])
         distogram_loss, distogram_masked_loss = loss_multimer.distogram_loss(out, batch, self.global_config['model']['heads'])
         structure_loss, structure_loss_masked, gt_rigid, gt_affine_mask = loss_multimer.structure_loss(out, batch, self.global_config['model']['heads'])
         pae_loss, pae_masked_loss = loss_multimer.tm_loss(pae_logits, pae_breaks, out['struct_out']['frames'][-1], gt_rigid, batch['loss_mask'], gt_affine_mask, batch['resolution'], self.global_config['model']['heads'])
@@ -1295,7 +1295,15 @@ class DockerIteration(nn.Module):
             'num_alignments': float(batch['num_alignments'].item()),
             # 'msa_act_loss': msa_act_loss,
             # 'pair_act_loss': pair_act_loss,
+            'lddt_full': lddt_full,
+            'lddt_protein': lddt_protein
         }
+
+        # for item in loss_item:
+        #     print(item)
+        #     print(loss_item[item])
+        # import sys
+        # sys.exit()
 
         del distogram_logits, distogram_bin_edges, resovled_logits, pred_lddt
         return out, loss_item#, msa_activations, z_prev

@@ -319,7 +319,7 @@ config_multimer= {
             }
         },
         'num_ensemble_eval': 1,
-        'num_recycle': 1,
+        'num_recycle': 3,
         'max_num_recycle_eval': 5,
         'min_num_recycle_eval': 5,
         'confident_plddt': 85,

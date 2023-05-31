@@ -144,7 +144,11 @@ def lddt_loss(out, batch, config):
     ))[0]
 
     del errors
-    return loss, loss_renum_loop, loop_lddt, score
+
+    # print(score.size())
+    # print(all_atom_mask.size())
+    # print(mask_renum.size())
+    return loss, loss_renum_loop, loop_lddt, torch.mean(score), torch.mean(score * (1- mask_renum))
 
 def distogram_loss(out, batch, config):
     logits = out['distogram']['logits']
