@@ -115,7 +115,7 @@ class TrainableFolding(pl.LightningModule):
         # self._get_predicted_structure(features, output, sample_name)
 
         for k, v in loss_items.items():
-            self.log(f'val_{k}', v, on_step=False, on_epoch=True, logger=True)
+            self.log(f'val_{k}', v, on_step=False, on_epoch=True, logger=True, sync_dist=True)
 
         return {'sample_name': sample_name, **loss_items}
 
@@ -132,7 +132,7 @@ class TrainableFolding(pl.LightningModule):
         self._get_masked_true_structure(features, sample_name, seed)
 
         for k, v in loss_items.items():
-            self.log(f'test_{k}', v, on_step=False, on_epoch=True, logger=True)
+            self.log(f'test_{k}', v, on_step=False, on_epoch=True, logger=True, sync_dist=True)
 
 
         metrics = {
