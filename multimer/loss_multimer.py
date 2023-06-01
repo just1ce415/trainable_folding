@@ -148,7 +148,14 @@ def lddt_loss(out, batch, config):
     # print(score.size())
     # print(all_atom_mask.size())
     # print(mask_renum.size())
-    return loss, loss_renum_loop, loop_lddt, torch.mean(score), torch.mean(score * (1- mask_renum))
+
+    mask_renum_inverse = 1 - mask_renum
+    lddt_full = torch.mean(score * 100)
+    lddt_protein = torch.round(torch.sum(score * mask_renum_inverse * 100, dim=-1) / (
+            1e-10 + torch.sum(mask_renum_inverse, dim=-1)
+    ))[0]
+
+    return loss, loss_renum_loop, loop_lddt, lddt_full, lddt_protein
 
 def distogram_loss(out, batch, config):
     logits = out['distogram']['logits']
