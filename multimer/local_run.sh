@@ -64,6 +64,7 @@ project="mhc_inference";
 ############
 # Best #
 ############
+model_version=1;
 run_name="best_${model_version}";
 output_dir=$project_dir/output/${run_name}_${NOW}/;
 mkdir -p $output_dir;
