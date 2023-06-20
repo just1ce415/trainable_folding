@@ -1208,7 +1208,7 @@ class DockerIteration(nn.Module):
                             'prev_pos': x_prev
                         }
                         if self.global_config['model']['resample_msa_in_recycling']:
-                            batch = self._preprocess_batch_msa(init_batch, recycle_iter + 1, msa_indices_prefix)
+                            batch = self._preprocess_batch_msa(init_batch, recycle_iter + 1, msa_indices_prefix, bert_indices_prefix)
                         del out, m_1_prev, z_prev, x_prev
                     recycle_iter += 1
 
