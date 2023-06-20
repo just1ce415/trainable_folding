@@ -291,13 +291,16 @@ def main(FLAGS):
     if FLAGS.resample_msa:
         config_multimer.config_multimer['model']['resample_msa_in_recycling'] = True
     config_multimer.config_multimer['model']['embeddings_and_evoformer']['masked_msa']['replace_fraction'] = FLAGS.msa_replace_frac
+    config_multimer.config_multimer['model']['num_recycle'] = FLAGS.num_iter
+    config_multimer.config_multimer['model']['max_num_recycle_eval'] = FLAGS.num_iter
+    config_multimer.config_multimer['model']['min_num_recycle_eval'] = FLAGS.num_iter
     feats = {k: torch.unsqueeze(torch.tensor(v, device='cuda:0'), 0) for k, v in processed_feature_dict.items()}
     model = modules_multimer.DockerIteration(config_multimer.config_multimer).to('cuda:0')
     if FLAGS.model_version == 'v3':
         load_param_multimer_v3.import_jax_weights_(model, FLAGS.model_weight_path)
     else:
         load_param_multimer.import_jax_weights_(model, FLAGS.model_weight_path)
-    output = model(feats, FLAGS.is_validation, FLAGS.msa_indices_prefix)
+    output = model(feats, FLAGS.is_validation, FLAGS.msa_indices_prefix, FLAGS.bert_indices_prefix)
     output['predicted_aligned_error']['asym_id'] = feats['asym_id'][0]
     if FLAGS.use_new_score:
         with torch.no_grad():
@@ -343,8 +346,10 @@ if __name__ == '__main__':
     parser.add_argument('--msa_replace_frac', type=float, default=0.15, help="how much to mask msa for bert")
     parser.add_argument('--model_weight_path', type=str, help="Path to model weight")
     parser.add_argument('--msa_indices_prefix', type=str, help="Prefix to msa index files")
+    parser.add_argument('--bert_indices_prefix', type=str, default=None, help="Prefix to bert index files")
     parser.add_argument('--is_validation', type=bool, default=True, help="Run in validation mode")
     parser.add_argument('--output_dir', type=str, help="Output directory")
     parser.add_argument('--use_new_score', type=bool, default=True, help="Use new confidence scoring function")
+    parser.add_argument('--num_iter', type=int, default=4)
     FLAGS = parser.parse_args()
     main(FLAGS)

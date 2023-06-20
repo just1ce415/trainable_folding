@@ -126,6 +126,12 @@ def make_masked_msa(batch, config):
 
   return batch
 
+def make_masked_msa_idx(batch, index, bert_indices_prefix):
+    batch['true_msa'] = batch['msa']
+    with np.load(bert_indices_prefix+str(index)+'.npz') as data:
+        batch['bert_mask'] = torch.unsqueeze(torch.tensor(data['bert_mask'],device=batch['msa'].device),0)
+        batch['msa'] = torch.unsqueeze(torch.tensor(data['bert_msa'],device=batch['msa'].device),0)
+    return batch
 
 def nearest_neighbor_clusters(batch, gap_agreement_weight=0.):
   """Assign each extra MSA sequence to its nearest neighbor in sampled MSA."""
@@ -1130,10 +1136,13 @@ class DockerIteration(nn.Module):
         self.global_config = global_config
 
 
-    def _preprocess_batch_msa(self, batch, index, msa_indices_prefix):
+    def _preprocess_batch_msa(self, batch, index, msa_indices_prefix, bert_indices_prefix):
         batch['msa_profile'] = make_msa_profile(batch)
         batch = sample_msa(batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['num_msa'], index, msa_indices_prefix)
-        batch = make_masked_msa(batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['masked_msa'])
+        if bert_indices_prefix == None:
+            batch = make_masked_msa(batch, config_multimer.config_multimer['model']['embeddings_and_evoformer']['masked_msa'])
+        else:
+            batch = make_masked_msa_idx(batch, index, bert_indices_prefix)
         batch['cluster_profile'], batch['cluster_deletion_mean'] = nearest_neighbor_clusters(batch)
         batch['msa_feat'] = create_msa_feat(batch)
         batch['extra_msa_feat'], batch['extra_msa_mask'] = create_extra_msa_feature(
@@ -1177,8 +1186,8 @@ class DockerIteration(nn.Module):
         del pair_activations
         return representations, m_1_prev, z_prev, x_prev
 
-    def forward(self, init_batch, is_eval_mode, msa_indices_prefix):
-        batch = self._preprocess_batch_msa(init_batch,0, msa_indices_prefix)
+    def forward(self, init_batch, is_eval_mode, msa_indices_prefix, bert_indices_prefix=None):
+        batch = self._preprocess_batch_msa(init_batch,0, msa_indices_prefix, bert_indices_prefix)
         recycles = None
         if is_eval_mode:
             min_num_recycle = self.global_config['model']['min_num_recycle_eval']
