@@ -275,11 +275,6 @@ def main(FLAGS):
     # with np.load('/data/thu/colabfold_batch_multiseed/feat.npz') as data:
     #     for k in list(data.keys()):
     #         processed_feature_dict[k] = data[k]
-
-    processed_feature_dict = pipeline_multimer.process(FLAGS.input_file, config_multimer, FLAGS.use_mock_template, FLAGS.allow_duplicate_msa)
-
-    for k, v in processed_feature_dict.items():
-        print(k, v.shape)
     if FLAGS.model_version != 'v3':
         config_multimer.config_multimer['model']['embeddings_and_evoformer']['evoformer']['triangle_multiplication_incoming']['fuse_projection_weights'] = False
         config_multimer.config_multimer['model']['embeddings_and_evoformer']['evoformer']['triangle_multiplication_outgoing']['fuse_projection_weights'] = False
@@ -295,6 +290,10 @@ def main(FLAGS):
     config_multimer.config_multimer['model']['num_recycle'] = FLAGS.num_iter
     config_multimer.config_multimer['model']['max_num_recycle_eval'] = FLAGS.num_iter
     config_multimer.config_multimer['model']['min_num_recycle_eval'] = FLAGS.num_iter
+
+    processed_feature_dict = pipeline_multimer.process(FLAGS.input_file, config_multimer, FLAGS.use_mock_template, FLAGS.allow_duplicate_msa)
+    for k, v in processed_feature_dict.items():
+        print(k, v.shape)
     feats = {k: torch.unsqueeze(torch.tensor(v, device='cuda:0'), 0) for k, v in processed_feature_dict.items()}
     model = modules_multimer.DockerIteration(config_multimer.config_multimer).to('cuda:0')
     if FLAGS.model_version == 'v3':

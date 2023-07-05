@@ -142,22 +142,6 @@ def import_jax_weights_(model, model_weights_path):
         "scale": Param(l.weight),
         "offset": Param(l.bias),
     }
-    GlobalColMSAAttParams = lambda matt: {
-        "query_norm": LayerNormParams(matt.query_norm),
-        "attention":
-            {
-                "query_w": LinearWeightMHA(matt.q.weight),
-                "key_w": LinearWeight(matt.k.weight),
-                "value_w": LinearWeight(matt.v.weight),
-                "gating_w": LinearWeightMHA(matt.gate.weight),
-                "gating_b": LinearBiasMHA(matt.gate.bias),
-                "output_w": Param(
-                    matt.output.weight,
-                    param_type=ParamType.LinearMHAOutputWeight,
-                ),
-                "output_b": LinearBias(matt.output.bias),
-            }
-    }
 
     AttentionParams = lambda att: {
         "query_w": LinearWeightMHA(att.linear_q.weight),
@@ -177,6 +161,27 @@ def import_jax_weights_(model, model_weights_path):
             "gating_b": LinearBiasMHA(att.linear_g.bias),
         },
     )
+
+    GlobalColMSAAttParams = lambda matt: dict(
+        AttentionGatedParams(matt),
+        key_w=LinearWeight(matt.linear_k.weight),
+        value_w=LinearWeight(matt.linear_v.weight)
+        # "query_norm": LayerNormParams(matt.query_norm),
+        # "attention":
+        #     {
+        #         "query_w": LinearWeightMHA(matt.q.weight),
+        #         "key_w": LinearWeight(matt.k.weight),
+        #         "value_w": LinearWeight(matt.v.weight),
+        #         "gating_w": LinearWeightMHA(matt.gate.weight),
+        #         "gating_b": LinearBiasMHA(matt.gate.bias),
+        #         "output_w": Param(
+        #             matt.output.weight,
+        #             param_type=ParamType.LinearMHAOutputWeight,
+        #         ),
+        #         "output_b": LinearBias(matt.output.bias),
+        #     }
+    )
+
     MSAAttParams = lambda matt: {
         "query_norm": LayerNormParams(matt.query_norm),
         "attention": AttentionGatedParams(matt.mha)
@@ -192,6 +197,10 @@ def import_jax_weights_(model, model_weights_path):
             #    ),
             #    "output_b": LinearBias(matt.output.bias),
             #}
+    }
+    MSAGlobalAttParams = lambda matt: {
+        "query_norm": LayerNormParams(matt.query_norm),
+        "attention": GlobalColMSAAttParams(matt.mha),
     }
     MSAAttPairBiasParams = lambda matt: dict(
         **MSAAttParams(matt),
@@ -319,7 +328,7 @@ def import_jax_weights_(model, model_weights_path):
     def EvoformerBlockParams(b, is_extra_msa=False):
         if is_extra_msa:
             col_att_name = "msa_column_global_attention"
-            msa_col_att_params = GlobalColMSAAttParams(b.ExtraColumnGlobalAttention)
+            msa_col_att_params = MSAGlobalAttParams(b.ExtraColumnGlobalAttention)
         else:
             col_att_name = "msa_column_attention"
             msa_col_att_params = MSAAttParams(b.LigColumnAttention)

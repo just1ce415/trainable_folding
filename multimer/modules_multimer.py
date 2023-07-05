@@ -8,7 +8,7 @@ from alphadock import residue_constants as rc
 from alphadock import  all_atom
 from torch.utils.checkpoint import checkpoint
 from utils.chunk_utils import chunk_layer
-from primitives import Attention
+from primitives import Attention, GlobalAttention
 from typing import Optional, List
 from functools import partialmethod, partial, reduce 
 from operator import add 
@@ -286,6 +286,8 @@ class RowAttentionWithPairBias(nn.Module):
                 biases=biases,
                 use_memory_efficient_kernel=use_memory_efficient_kernel,
                 use_lma=use_lma,
+                q_chunk_size = 64,
+                kv_chunk_size = 128
             )
 
         return chunk_layer(
@@ -328,7 +330,7 @@ class RowAttentionWithPairBias(nn.Module):
                 biases, 
                 64,
                 use_memory_efficient_kernel=False, 
-                use_lma=False,
+                use_lma=True,
             )
 
         #q = self.q(msa_act).view(*msa_act.shape[:-1], self.num_heads, self.attn_num_c)
@@ -348,28 +350,56 @@ class ExtraColumnGlobalAttention(nn.Module):
         super().__init__()
         self.attn_num_c = config['attention_channel']
         self.num_heads = config['num_head']
+        in_num_c = global_config['extra_msa_channel']
 
         self.query_norm = nn.LayerNorm(global_config['extra_msa_channel'])
-        self.q = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c*self.num_heads, bias=False)
-        self.k = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c, bias=False)
-        self.v = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c, bias=False)
-        self.gate = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c * self.num_heads)
-        self.output = nn.Linear(self.attn_num_c * self.num_heads, global_config['extra_msa_channel'])
+        # self.q = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c*self.num_heads, bias=False)
+        # self.k = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c, bias=False)
+        # self.v = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c, bias=False)
+        # self.gate = nn.Linear(global_config['extra_msa_channel'], self.attn_num_c * self.num_heads)
+        # self.output = nn.Linear(self.attn_num_c * self.num_heads, global_config['extra_msa_channel'])
+        self.mha = GlobalAttention(in_num_c, self.attn_num_c, self.num_heads, 1e9, 1e-10)
+
+    @torch.jit.ignore
+    def _chunk(self,
+               m: torch.Tensor,
+               mask: torch.Tensor,
+               chunk_size: int,
+               use_lma: bool,
+               ) -> torch.Tensor:
+        def fn(m, mask):
+            m = self.query_norm(m)
+            return self.mha(
+                m,
+                mask,
+                use_lma=use_lma,
+            )
+
+        return chunk_layer(
+            fn,
+            {
+                "m": m,
+                "mask": mask,
+            },
+            chunk_size=chunk_size,
+            no_batch_dims=len(m.shape[:-2])
+        )
 
     def forward(self, msa_act, msa_mask):
         msa_act = msa_act.transpose(-2,-3)
         msa_mask = msa_mask.transpose(-1,-2)
-        msa_act = self.query_norm(msa_act)
-        q_avg = torch.sum(msa_act, dim=-2)/msa_act.shape[-2]
-        q = self.q(q_avg).view(*q_avg.shape[:-1], self.num_heads, self.attn_num_c)
-        q = q*(self.attn_num_c ** (-0.5))
-        k = self.k(msa_act)
-        v = self.v(msa_act)
-        gate =  torch.sigmoid(self.gate(msa_act).view(*msa_act.shape[:-1], self.num_heads, self.attn_num_c))
-        w = torch.softmax(torch.einsum('bihc,bikc->bihk', q, k), dim=-1)
-        out_1d = torch.einsum('bmhk,bmkc->bmhc', w, v)
-        out_1d = out_1d.unsqueeze(-3) * gate
-        out = self.output(out_1d.view(*out_1d.shape[:-2], self.attn_num_c * self.num_heads))
+        # msa_act = self.query_norm(msa_act)
+        # q_avg = torch.sum(msa_act, dim=-2)/msa_act.shape[-2]
+        # q = self.q(q_avg).view(*q_avg.shape[:-1], self.num_heads, self.attn_num_c)
+        # q = q*(self.attn_num_c ** (-0.5))
+        # k = self.k(msa_act)
+        # v = self.v(msa_act)
+        # gate =  torch.sigmoid(self.gate(msa_act).view(*msa_act.shape[:-1], self.num_heads, self.attn_num_c))
+        # w = torch.softmax(torch.einsum('bihc,bikc->bihk', q, k), dim=-1)
+        # out_1d = torch.einsum('bmhk,bmkc->bmhc', w, v)
+        # out_1d = out_1d.unsqueeze(-3) * gate
+        # out = self.output(out_1d.view(*out_1d.shape[:-2], self.attn_num_c * self.num_heads))
+        out = self._chunk(msa_act, msa_mask, 64, use_lma=False)
         return out.transpose(-2,-3)
 
 class LigColumnAttention(nn.Module):
@@ -407,6 +437,8 @@ class LigColumnAttention(nn.Module):
                 biases=biases,
                 use_memory_efficient_kernel=use_memory_efficient_kernel,
                 use_lma=use_lma,
+                q_chunk_size=64,
+                kv_chunk_size=128
             )
 
         return chunk_layer(
@@ -440,7 +472,7 @@ class LigColumnAttention(nn.Module):
                 biases,
                 64,
                 use_memory_efficient_kernel=False,
-                use_lma=False,
+                use_lma=True,
             )
 
         out_1d = out_1d.transpose(-2,-3)
@@ -583,7 +615,9 @@ class TriangleAttentionStartingNode(nn.Module):
             partial(
                 self.mha,
                 use_memory_efficient_kernel=use_memory_efficient_kernel,
-                use_lma=use_lma
+                use_lma=use_lma,
+                q_chunk_size=64,
+                kv_chunk_size=128
             ),
             mha_inputs,
             chunk_size=chunk_size,
@@ -603,7 +637,7 @@ class TriangleAttentionStartingNode(nn.Module):
                 biases,
                 4,
                 use_memory_efficient_kernel=False,
-                use_lma=False,
+                use_lma=True,
                 inplace_safe=False,
             )
 
@@ -662,7 +696,9 @@ class TriangleAttentionEndingNode(nn.Module):
             partial(
                 self.mha,
                 use_memory_efficient_kernel=use_memory_efficient_kernel,
-                use_lma=use_lma
+                use_lma=use_lma,
+                q_chunk_size=64,
+                kv_chunk_size=128
             ),
             mha_inputs,
             chunk_size=chunk_size,
@@ -684,7 +720,7 @@ class TriangleAttentionEndingNode(nn.Module):
                 biases,
                 4,
                 use_memory_efficient_kernel=False,
-                use_lma=False,
+                use_lma=True,
                 inplace_safe=False,
             )
 
