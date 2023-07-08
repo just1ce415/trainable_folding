@@ -61,7 +61,7 @@ class TrainableFolding(pl.LightningModule):
     ):
         super(TrainableFolding, self).__init__()
         self.config_multimer = config_multimer.config_multimer
-        self.config_multimer['model']['embeddings_and_evoformer']['evoformer_num_block'] = hparams['evoformer_num_block']
+        self.config_multimer['model']['embeddings_and_evoformer']['evoformer_num_block'] += hparams['evoformer_num_block']
         self.model = modules_multimer.DockerIteration(self.config_multimer, huber_delta=hparams['huber_delta'])
         load_param_multimer.import_jax_weights_(self.model, model_weights_path)
         self.train_data = train_data
@@ -291,10 +291,11 @@ if __name__ == '__main__':
         random.seed(args.hyperparams_seed)
 
         search_config = {
-            'learning_rate': {'values': [0.01, 0.001, 0.0001, 0.00001, 0.000001]},
+            'learning_rate': {'values': [0.00001, 0.000001, 0.0000001]},
             'accumulate_grad_batches': {'values': [1, 3, 6, 10]},
-            'huber_delta': {'values': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]},
-            'evoformer_num_block': {'values': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]},
+            # 'huber_delta': {'values': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]},
+            'huber_delta': {'values': [0.0]},
+            'evoformer_num_block': {'values': [0]},
         }
 
         config = {}
@@ -309,8 +310,8 @@ if __name__ == '__main__':
         config = {
             'learning_rate': args.learning_rate,
             'accumulate_grad_batches': args.accumulate_grad_batches,
-            'evoformer_num_block': 48,
-            'huber_delta': 0.2,
+            'evoformer_num_block': 0,
+            'huber_delta': 0.0,
         }
 
     train_data = json.load(open(args.train_json_path))
@@ -348,7 +349,7 @@ if __name__ == '__main__':
         project=args.wandb_project,
         name=args.wandb_name,
         id=args.wandb_id,
-        resume='True',
+        resume='False',
         offline=args.wandb_offline,
     )
 
@@ -360,8 +361,7 @@ if __name__ == '__main__':
         max_epochs=args.max_epochs,
         accelerator="gpu",
         devices=args.gpus,
-        # TODO: fix the setup to enable this
-        # strategy="deepspeed_stage_1",
+        strategy="deepspeed_stage_1",
         num_sanity_val_steps=0,
     )
 
