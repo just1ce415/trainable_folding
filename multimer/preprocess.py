@@ -9,7 +9,6 @@ import numpy as np
 from multiprocessing import Pool
 from tqdm import tqdm
 
-
 from multimer import mmcif_parsing, msa_pairing, pdb_to_template, pipeline_multimer, feature_processing
 
 
@@ -178,7 +177,7 @@ def crop_feature(features, crop_size, random=True):
         'aatype', 'residue_index', 'all_atom_positions',
         'all_atom_mask', 'asym_id', 'sym_id', 'entity_id',
         'deletion_mean', 'entity_mask', 'seq_mask', 'loss_mask',
-        'between_segment_residues'
+        'between_segment_residues', 'phophorylation'
     }
     for k in features.keys():
         if k not in feat_skip:
@@ -199,9 +198,11 @@ def _preprocess_one(single_dataset):
     sample_id = single_dataset['sample_id']
     protein_chain = single_dataset['protein_chain']
     peptide_chain = single_dataset['peptide_chain']
-    deposition_date = single_dataset['deposition_date']
+    ptr = single_dataset['PTR']
+    sep = single_dataset['SEP']
+    tpo = single_dataset['TPO']
 
-    cif_path = single_dataset.get('cif_file', -1)
+    cif_path = -1 #single_dataset.get('cif_file', -1)
     # download cif from pdb
     if cif_path == -1:
         cif_path = f'{preprocessed_data_dir}/cif_files/{pdb_id}.cif'
@@ -221,6 +222,8 @@ def _preprocess_one(single_dataset):
         print(f'No mmcif object found for {pdb_id}')
         return None
 
+    deposition_date = mmcif_obj.header['release_date']
+
     dataset, is_val = 'train', 0
     if deposition_date >= '2020-01-01':
         dataset, is_val = 'val', 1
@@ -234,7 +237,7 @@ def _preprocess_one(single_dataset):
     all_chain_features = {}
 
     # preprocess protein chain
-    a3m_file = os.path.join(pre_alignment_path, f'{pdb_id.upper()}_{protein_chain}', 'mmseqs/aggregated.a3m')
+    a3m_file = os.path.join(pre_alignment_path, f'{pdb_id}_{protein_chain}', 'mmseqs/aggregated.a3m')
     hhr_file = None
     if not os.path.exists(a3m_file):
         print(f'No a3m file found for {pdb_id}_{protein_chain}')
@@ -242,7 +245,7 @@ def _preprocess_one(single_dataset):
 
     chain_features = process_single_chain(mmcif_obj, protein_chain, a3m_file, is_homomer, hhr_file=hhr_file, mmcif_dir=mmcif_dir)
     chain_features = pipeline_multimer.convert_monomer_features(chain_features, chain_id=protein_chain)
-    chain_features = crop_feature(chain_features, 182, random=False)
+    chain_features = crop_feature(chain_features, 256, random=False)
     all_chain_features[protein_chain] = chain_features
 
     # preprocess peptide chain
@@ -254,6 +257,10 @@ def _preprocess_one(single_dataset):
             f.write(f'>dummy_msa_{pdb_id.upper()}_{peptide_chain}\n{mmcif_obj.chain_to_seqres[peptide_chain]}\n')
 
     chain_features = process_single_chain(mmcif_obj, peptide_chain, a3m_file, is_homomer, hhr_file=hhr_file, mmcif_dir=mmcif_dir)
+    peptide_phosphorylation = [0] * chain_features['aatype'].shape[0]
+    for position in filter(None, [ptr, sep, tpo]):
+        for pos in position:
+            peptide_phosphorylation[pos] = 1
     chain_features = pipeline_multimer.convert_monomer_features(chain_features, chain_id=peptide_chain)
     all_chain_features[peptide_chain] = chain_features
 
@@ -267,6 +274,7 @@ def _preprocess_one(single_dataset):
 
     # specifically for this project
     np_example['loss_mask'] = (np_example['entity_id'] == 2) * 1.0
+    np_example['phophorylation'] = np.array([0] * sum(np_example['entity_id'] == 1) + peptide_phosphorylation)
 
     np.savez(f'{preprocessed_data_dir}/npz_data/{sample_id}', **np_example)
 
@@ -287,6 +295,8 @@ if __name__ == '__main__':
     mmcif_dir = args.mmcif_dir
     with open(args.json_data_path) as f:
         json_data = json.load(f)
+
+    json_data = [{**j, 'seed': i} for i, j in enumerate(json_data)]
 
     res = []
 
