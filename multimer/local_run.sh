@@ -39,12 +39,12 @@
 #    --step 'train'
 
 
-for model_version in {1..5}; do
+for model_version in {1..2}; do
   echo "Starting training model version: $model_version"
   run=14;
-  project_dir="/home/kikodze/projects/phospho/";
-  data_dir=$project_dir/datasets/v2;
-  project="phospho";
+  project_dir="/home/averkova_nika/projects/phospho/";
+  data_dir=/home/kikodze/projects/phospho/datasets/v2;
+  project="phospho_test_2";
   run_name="test_${model_version}_${run}";
   output_dir=$project_dir/output/$run_name/;
   mkdir -p $output_dir;
@@ -54,8 +54,7 @@ for model_version in {1..5}; do
           --wandb_output_dir $output_dir \
           --wandb_project $project \
           --wandb_name $run_name \
-          --wandb_id $run_name \
-          --wandb_offline \
+          --wandb_id ${run_name} \
           --model_weights_path /home/kikodze/projects/af_params/params_model_${model_version}_multimer_v2.npz \
           --model_checkpoint_path $output_dir/checkpoints \
           --preprocessed_data_dir $data_dir/npz_data \
@@ -63,7 +62,7 @@ for model_version in {1..5}; do
           --train_json_path $data_dir/train.json \
           --val_json_path $data_dir/val.json \
           --test_mode_name "val" \
-          --max_epochs 10 \
+          --max_epochs 5 \
           --hyperparams_seed 0 \
           --step 'test'
   sleep 1
