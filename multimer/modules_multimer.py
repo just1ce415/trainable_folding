@@ -1257,13 +1257,13 @@ class DockerIteration(nn.Module):
 
         mean_masked_plddt = ((plddt * batch['loss_mask']).sum() / batch['loss_mask'].sum())
         loss = sum([
-            0.01 * lddt_loss,
+            0.05 * lddt_loss,
             0.01 * resolved_loss,
             0.3 * distogram_loss,
             1.0 * structure_loss,
             0.01 * pae_loss,
             2.0 * masked_msa_loss,
-            0.02 * lddt_masked_loss,
+            0.1 * lddt_masked_loss,
             0.02 * resolved_masked_loss,
             0.6 * distogram_masked_loss,
             2.0 * structure_loss_masked,
