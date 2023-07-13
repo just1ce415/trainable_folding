@@ -39,12 +39,12 @@
 #    --step 'train'
 
 
-for model_version in {1..2}; do
+for model_version in {1..5}; do
   echo "Starting training model version: $model_version"
   run=14;
   project_dir="/home/averkova_nika/projects/phospho/";
   data_dir=/home/kikodze/projects/phospho/datasets/v2;
-  project="phospho_test_2";
+  project="phospho_nika_test";
   run_name="test_${model_version}_${run}";
   output_dir=$project_dir/output/$run_name/;
   mkdir -p $output_dir;
@@ -62,7 +62,7 @@ for model_version in {1..2}; do
           --train_json_path $data_dir/train.json \
           --val_json_path $data_dir/val.json \
           --test_mode_name "val" \
-          --max_epochs 5 \
+          --max_epochs 10 \
           --hyperparams_seed 0 \
           --step 'test'
   sleep 1
