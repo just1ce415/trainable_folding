@@ -766,9 +766,9 @@ class FragExtraStack(nn.Module):
     
     def forward(self, msa_act, pair_act, extra_mask_msa, extra_mask_pair):
         for l in self.layers:
-            # msa_act, pair_act = checkpoint(l, msa_act.clone(), pair_act.clone(), extra_mask_msa, extra_mask_pair)
+            msa_act, pair_act = checkpoint(l, msa_act.clone(), pair_act.clone(), extra_mask_msa, extra_mask_pair)
             #extra_msa_stack_inputs = checkpoint(l, extra_msa_stack_inputs, extra_mask)
-            msa_act, pair_act = l(msa_act, pair_act, extra_mask_msa, extra_mask_pair)
+            #msa_act, pair_act = l(msa_act, pair_act, extra_mask_msa, extra_mask_pair)
 
         return pair_act
 
