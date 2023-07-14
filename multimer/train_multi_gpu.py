@@ -274,6 +274,7 @@ if __name__ == '__main__':
     parser.add_argument("--val_json_path", type=str, default=None)
     parser.add_argument("--preprocessed_data_dir", type=str, default=None)
     parser.add_argument("--model_weights_path", type=str, default=None)
+    parser.add_argument("--pt_weights_path", type=str, default=None)
     parser.add_argument("--output_data_path", type=str, default=None)
     parser.add_argument("--accumulate_grad_batches", type=int, default=1)
     parser.add_argument("--n_layers_in_lr_group", type=int, default=None)
@@ -364,6 +365,13 @@ if __name__ == '__main__':
         strategy="deepspeed_stage_1",
         num_sanity_val_steps=0,
     )
+
+    if args.pt_weights_path is not None:
+        checkpoint = torch.load(args.pt_weights_path, map_location='cpu')['module']
+        new_weights = model.state_dict()
+        for k, v in checkpoint.items():
+            new_weights[k.replace("module.", "")] = v
+        model.load_state_dict(new_weights)
 
 
     # print([p[0] for p in model.named_modules()])

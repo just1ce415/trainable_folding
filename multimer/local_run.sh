@@ -57,6 +57,7 @@ for model_version in {1..5}; do
           --wandb_id $run_name \
           --wandb_offline \
           --model_weights_path /home/kikodze/projects/af_params/params_model_${model_version}_multimer_v2.npz \
+          --pt_weights_path /home/kikodze/projects/phospho/output/step_one/model_states_${model_version}.pt \
           --model_checkpoint_path $output_dir/checkpoints \
           --preprocessed_data_dir $data_dir/npz_data \
           --output_data_path $output_dir/data \
