@@ -13,13 +13,12 @@ import torch
 from alphadock import residue_constants
 from multimer import (config_multimer, load_param_multimer, modules_multimer,
                       test_multimer)
-#from utils.crop_features import crop_feature
-#from utils.pdb_utils import reconstruct_residue, get_normalised_rmsd
+from multimer.loss_multimer import lddt
+
 from pytorch_lightning.callbacks.lr_monitor import LearningRateMonitor
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
-from torch import optim
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset
 import prody
 
 import warnings
@@ -37,12 +36,14 @@ class MultimerDataset(Dataset):
     def __getitem__(self, idx):
         sample = self.data[idx]
         sample_id = sample['sample_id']
+        peptide_chain = sample['peptide_chain']
         features = dict(np.load(f'{self.preprocessed_data_dir}/{sample_id}.npz'))
         features = {k: torch.tensor(v) for k, v in features.items()}
         meta_info = {
             'sample_id': sample_id,
             'seed': sample['seed'],
-            'id': idx
+            'id': idx,
+            'peptide_chain': peptide_chain
         }
 
         return meta_info, features
@@ -103,6 +104,14 @@ class TrainableFolding(pl.LightningModule):
         )
         return torch.utils.data.DataLoader(mul_dataset, batch_size=self.batch_size, shuffle=False)
 
+    def predict_dataloader(self):
+        mul_dataset = MultimerDataset(
+            json_data=self.val_data,
+            preprocessed_data_dir=self.preprocessed_data_dir,
+        )
+        return torch.utils.data.DataLoader(mul_dataset, batch_size=self.batch_size, shuffle=False)
+
+
     def forward(self, batch):
         return self.model(batch, is_eval_mode=self.trainer.evaluating)
    
@@ -112,6 +121,73 @@ class TrainableFolding(pl.LightningModule):
         for k, v in loss_items.items():
             self.log(f'train_{k}', v, on_step=True, on_epoch=True, logger=True)
         return loss_items['loss']
+
+    def validation_step(self, batch, _):
+        meta_info, features = batch
+        seed = meta_info['seed'].item()
+        sample_id = meta_info['sample_id'][0]
+        peptide_chain = meta_info['peptide_chain'][0]
+        torch.manual_seed(seed)
+        output, loss_items = self.forward(features)
+        rmsd = self._align_structures(features, output, peptide_chain, sample_id, seed, mode='val')
+        loss_items['second_chain_rmsd'] = rmsd
+        
+        for k, v in loss_items.items():
+            self.log(f'val_{k}', v, on_step=False, on_epoch=True, logger=True)
+
+        return {'sample_id': sample_id, **loss_items}
+
+
+    def test_step(self, batch, batch_idx):
+        meta_info, features = batch
+        seed = meta_info['seed'].item()
+        sample_id = meta_info['sample_id'][0]
+        peptide_chain = meta_info['peptide_chain'][0]
+        torch.manual_seed(seed)
+        output, loss_items = self.forward(features)
+        rmsd = self._align_structures(
+            features, output, peptide_chain, sample_id, seed, mode=self.test_mode_name,  save_pdb=True
+        )
+        loss_items['second_chain_rmsd'] = rmsd
+        
+        metrics = {
+            'sample_id': sample_id,
+            'seed': seed,
+            **{
+                key: value.item() if isinstance(value, torch.Tensor) else value
+                for key, value in loss_items.items()
+            }
+        }
+        
+        with open(f"{self.output_data_path}/json_metrics/{sample_id}_{seed:02d}.json", "w") as outfile:
+            outfile.write(json.dumps(metrics, indent=4))
+
+        return {'sample_id': sample_id, **loss_items}
+
+    def predict_step(self, batch, batch_idx):
+        meta_info, features = batch
+        seed = meta_info['seed'].item()
+        sample_id = meta_info['sample_id'][0]
+        torch.manual_seed(seed)
+        output, loss_items = self.forward(features)
+        
+        pred_all_atom_pos = output['final_all_atom']
+        true_all_atom_pos = features['all_atom_positions']
+        all_atom_mask = features['all_atom_mask']
+        score = lddt(pred_all_atom_pos[..., 1, :], true_all_atom_pos[..., 1, :], all_atom_mask[..., 1:2])
+
+        filename = f"{self.output_data_path}/conf_data"
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        
+        #TODO: fix the name
+        np.savez(filename, **{
+           'structure_module': output['structure_module'].detach().cpu().numpy(),
+            'final_all_atom': output['final_all_atom'].detach().cpu().numpy(),
+            'all_atom_positions': features['all_atom_positions'].detach().cpu().numpy(),
+            'all_atom_mask': features['all_atom_mask'].detach().cpu().numpy(),
+            'resolution': features['resolution'].detach().cpu().numpy(),
+           'lddt': score.detach().cpu().numpy(),
+        })
 
 
     def get_structure_state(self, batch, _):
@@ -135,7 +211,7 @@ class TrainableFolding(pl.LightningModule):
         np.savez(filename, **batch_data)
 
 
-    def _get_predicted_structure(self, batch, output, sample_id, seed, mode='val'):
+    def _get_predicted_structure(self, batch, output, sample_name, seed, mode='val'):
         output['predicted_aligned_error']['asym_id'] = batch['asym_id'][0]
         confidences = test_multimer.get_confidence_metrics(output, True)
 
@@ -151,12 +227,10 @@ class TrainableFolding(pl.LightningModule):
             output['final_atom_mask'].cpu().numpy(), plddt_b_factors[0]
         )
 
-        filename = f"{self.output_data_path}/structures/{sample_id}/{mode}_s_{seed:02d}_r_{self.global_rank}.pdb"
+        filename = f"{self.output_data_path}/structures/{sample_name}/{mode}_s_{seed:02d}_r_{self.global_rank}.pdb"
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w') as f:
             f.write(pdb_out)
-
-        #reconstruct_residue(filename, filename)
 
         return filename
 
@@ -175,23 +249,21 @@ class TrainableFolding(pl.LightningModule):
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w') as f:
             f.write(pdb_out)
-
-        #reconstruct_residue(filename, filename)
-
+            
         return filename
 
-    def _align_structures(self, batch, output, sample_id, seed, mode='val', save_pdb=False):
+    def _align_structures(self, batch, output, peptide_chain, sample_id, seed, mode='val', save_pdb=False):
         pred_filename = self._get_predicted_structure(batch, output, sample_id, seed, mode=mode)
         true_filename = self._get_true_structure(batch, output, sample_id, seed)
-
+        
         # Load the PDB files using the parsePDB function
         true = prody.parsePDB(true_filename)
         pred = prody.parsePDB(pred_filename)
 
         # Identify the second chain ID
-        second_chain_id_true = true.getChids()[1]
-        second_chain_id_pred = pred.getChids()[1]
-
+        second_chain_id_true = true.getChids()[-1]
+        second_chain_id_pred = pred.getChids()[-1]
+        
         # Clean up pdbs:
         os.remove(pred_filename)
         os.remove(true_filename)
@@ -199,22 +271,14 @@ class TrainableFolding(pl.LightningModule):
         # Align the two structures
         prody.superpose(true.select('calpha'), pred.select('calpha'))
 
-        # Select residues from the second chain and calculate distance
-        ca_true = true.select(f'protein and chain {second_chain_id_true}')[-1]
-        ca_pred = pred.select(f'protein and chain {second_chain_id_pred}')[-1]
-        distance = prody.calcDistance(ca_true, ca_pred)
-
-        res_true = true.select(f'protein and chain {second_chain_id_true}')
-        res_pred = pred.select(f'protein and chain {second_chain_id_pred}')
+        #TODO better solution with peptide_chain exctracted from json file (dont work, res_true = None)
+        #res_true = true.select(f"chain {peptide_chain}")
+        #res_pred = pred.select(f"chain {peptide_chain}")
+        
+        # Select residues from the second chain and calculate RMSD
+        res_true = true.select(f'chain {second_chain_id_true}')
+        res_pred = pred.select(f'chain {second_chain_id_pred}')
         rmsd = prody.calcRMSD(res_true, res_pred)
-
-        #normalised_rmsd = get_normalised_rmsd(
-         #   res_true, res_pred,
-          #  self.config_multimer['virtual_point']['scale'],
-           # self.config_multimer['virtual_point']['axis']
-        #)
-
-        #full_rmsd = prody.calcRMSD(true.select('resname REC'), pred.select('resname REC'))
 
         # Save aligned structures
         if save_pdb:
@@ -225,64 +289,7 @@ class TrainableFolding(pl.LightningModule):
 
         return rmsd
 
-    def validation_step(self, batch, _):
-        meta_info, features = batch
-        seed = meta_info['seed'].item()
-        sample_id = meta_info['sample_id'][0]
-
-        torch.manual_seed(seed)
-        output, loss_items = self.forward(features)
-        # self._get_predicted_structure(features, output, sample_name)
-        rmsd = self._align_structures(features, output, sample_id, seed, mode='val')
-        #normalised_rmsd, full_rmsd 
-
-        #loss_items['new_res_distance'] = distance
-        loss_items['second_chain_rmsd'] = rmsd
-        #loss_items['new_res_good_rmsd'] = (rmsd < 2.0) * 1.0
-        #loss_items['new_res_normalised_rmsd'] = normalised_rmsd
-        #loss_items['new_res_full_rmsd'] = full_rmsd
-
-        for k, v in loss_items.items():
-            self.log(f'val_{k}', v, on_step=False, on_epoch=True, logger=True)
-
-        return {'sample_id': sample_id, **loss_items}
-
-
-    def test_step(self, batch, batch_idx):
-        meta_info, features = batch
-        seed = meta_info['seed'].item()
-        sample_id = meta_info['sample_id'][0]
-        torch.manual_seed(seed)
-        output, loss_items = self.forward(features)
-        rmsd = self._align_structures(
-            features, output, sample_id, seed, mode=self.test_mode_name, save_pdb=True
-        )
-        #loss_items['new_res_distance'] = distance
-        loss_items['second_chain_rmsd'] = rmsd
-        #loss_items['new_res_good_rmsd'] = (rmsd < 2.0) * 1.0
-        #loss_items['new_res_normalised_rmsd'] = normalised_rmsd
-        #loss_items['new_res_full_rmsd'] = full_rmsd
-
-        metrics = {
-            'sample_id': sample_id,
-            'seed': seed,
-            **{
-                key: value.item() if isinstance(value, torch.Tensor) else value
-                for key, value in loss_items.items()
-            }
-        }
-        #self._get_predicted_structure(features, output, sample_name, seed, mode=self.test_mode_name)
-        #self._get_true_structure(features, output, sample_name, seed)
-        #self._get_masked_true_structure(features, sample_name, seed)
-        with open(f"{self.output_data_path}/json_metrics/{sample_id}_{seed:02d}.json", "w") as outfile:
-            outfile.write(json.dumps(metrics, indent=4))
-
-        #for k, v in loss_items.items():
-            #self.log(f'test_{k}', v, on_step=False, on_epoch=True, logger=True)
-
-        return {'sample_id': sample_id, **loss_items}
-
-
+    
     def _get_masked_true_structure(self, batch, sample_name, seed):
         # a temp solution for b_factors
         b_factors = np.ones((len(batch['aatype'][0]), residue_constants.atom_type_num)) * 100.0
@@ -480,6 +487,9 @@ if __name__ == '__main__':
         df = pd.DataFrame(list_of_dicts)
 
         df.to_csv(f'{args.output_data_path}/metrics.csv', index=False)
+        
+    elif args.step == 'predict':
+        trainer.predict(model, ckpt_path=args.resume_from_ckpt)
 
     else:
         print('Select "train" or "test" option for parameter "step"')

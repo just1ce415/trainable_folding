@@ -37,6 +37,8 @@
 #    --learning_rate 0.001 \
 #    --accumulate_grad_batches 1 \
 #    --step 'train'
+#    --pt_weights_path /home/kikodze/projects/phospho/output/step_one/model_states_${model_version}.pt \
+
 
 
 for model_version in {1..5}; do
@@ -45,8 +47,8 @@ for model_version in {1..5}; do
   project_dir="/home/averkova_nika/projects/phospho/";
   data_dir=/home/kikodze/projects/phospho/datasets/v2;
   project="phospho_nika_test";
-  run_name="step_one_${model_version}_${run}";
-  output_dir=$project_dir/output/$run_name/;
+  run_name="test_rmsd_bl_${model_version}_${run}";
+  output_dir=$project_dir/output_rmsd_baseline/$run_name/;
 
   mkdir -p $output_dir;
   python train_multi_gpu.py \
@@ -57,7 +59,6 @@ for model_version in {1..5}; do
           --wandb_name ${run_name} \
           --wandb_id ${run_name} \
           --model_weights_path /home/kikodze/projects/af_params/params_model_${model_version}_multimer_v2.npz \
-          --pt_weights_path /home/kikodze/projects/phospho/output/step_one/model_states_${model_version}.pt \
           --model_checkpoint_path $output_dir/checkpoints \
           --preprocessed_data_dir $data_dir/npz_data \
           --output_data_path $output_dir/data \
