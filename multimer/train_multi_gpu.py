@@ -11,16 +11,22 @@ import pandas as pd
 import pytorch_lightning as pl
 import torch
 from alphadock import residue_constants
-from multimer import config_multimer, load_param_multimer, modules_multimer, test_multimer
-from multimer.preprocess import find_mask_groups
+from multimer import (config_multimer, load_param_multimer, modules_multimer,
+                      test_multimer)
+from multimer.loss_multimer import lddt
+
 from pytorch_lightning.callbacks.lr_monitor import LearningRateMonitor
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 from torch.utils.data import Dataset
-from wandb import Molecule
+import prody
 
 import warnings
+
 warnings.filterwarnings("ignore", "None of the inputs have requires_grad=True. Gradients will be None")
+
+# Suppress output
+prody.confProDy(verbosity='none')
 
 class MultimerDataset(Dataset):
     def __init__(self, json_data, preprocessed_data_dir):
@@ -30,12 +36,14 @@ class MultimerDataset(Dataset):
     def __getitem__(self, idx):
         sample = self.data[idx]
         sample_id = sample['sample_id']
+        peptide_chain = sample['peptide_chain']
         features = dict(np.load(f'{self.preprocessed_data_dir}/{sample_id}.npz'))
         features = {k: torch.tensor(v) for k, v in features.items()}
         meta_info = {
             'sample_id': sample_id,
             'seed': sample['seed'],
-            'id': idx
+            'id': idx,
+            'peptide_chain': peptide_chain
         }
 
         return meta_info, features
@@ -96,6 +104,14 @@ class TrainableFolding(pl.LightningModule):
         )
         return torch.utils.data.DataLoader(mul_dataset, batch_size=self.batch_size, shuffle=False)
 
+    def predict_dataloader(self):
+        mul_dataset = MultimerDataset(
+            json_data=self.val_data,
+            preprocessed_data_dir=self.preprocessed_data_dir,
+        )
+        return torch.utils.data.DataLoader(mul_dataset, batch_size=self.batch_size, shuffle=False)
+
+
     def forward(self, batch):
         return self.model(batch, is_eval_mode=self.trainer.evaluating)
    
@@ -109,32 +125,28 @@ class TrainableFolding(pl.LightningModule):
     def validation_step(self, batch, _):
         meta_info, features = batch
         seed = meta_info['seed'].item()
+        sample_name = meta_info['sample_id'][0]
         torch.manual_seed(seed)
         output, loss_items = self.forward(features)
-        sample_name = meta_info['sample_id'][0]
-        # self._get_predicted_structure(features, output, sample_name)
-
+        
         for k, v in loss_items.items():
             self.log(f'val_{k}', v, on_step=False, on_epoch=True, logger=True)
 
         return {'sample_name': sample_name, **loss_items}
 
-    def test_step(self, batch, _):
+
+    def test_step(self, batch, batch_idx):
         meta_info, features = batch
         seed = meta_info['seed'].item()
-        torch.manual_seed(seed)
         sample_name = meta_info['sample_id'][0]
-
+        peptide_chain = meta_info['peptide_chain'][0]
+        torch.manual_seed(seed)
         output, loss_items = self.forward(features)
-
-        self._get_predicted_structure(features, output, sample_name, seed, mode=self.test_mode_name)
-        self._get_true_structure(features, output, sample_name, seed)
-        self._get_masked_true_structure(features, sample_name, seed)
-
-        for k, v in loss_items.items():
-            self.log(f'test_{k}', v, on_step=False, on_epoch=True, logger=True)
-
-
+        rmsd = self._align_structures(
+            features, output, peptide_chain, sample_name, seed, mode=self.test_mode_name,  save_pdb=True
+        )
+        loss_items['second_chain_rmsd'] = rmsd
+        
         metrics = {
             'sample_name': sample_name,
             'seed': seed,
@@ -143,11 +155,37 @@ class TrainableFolding(pl.LightningModule):
                 for key, value in loss_items.items()
             }
         }
-
-        with open(f"{self.output_data_path}/json_metrics/{sample_name}_{seed:02d}_rank_{self.global_rank}.json", "w") as outfile:
+        
+        with open(f"{self.output_data_path}/json_metrics/{sample_name}_{seed:02d}.json", "w") as outfile:
             outfile.write(json.dumps(metrics, indent=4))
 
         return {'sample_name': sample_name, **loss_items}
+
+    def predict_step(self, batch, batch_idx):
+        meta_info, features = batch
+        seed = meta_info['seed'].item()
+        sample_name = meta_info['sample_id'][0]
+        torch.manual_seed(seed)
+        output, loss_items = self.forward(features)
+        
+        pred_all_atom_pos = output['final_all_atom']
+        true_all_atom_pos = features['all_atom_positions']
+        all_atom_mask = features['all_atom_mask']
+        score = lddt(pred_all_atom_pos[..., 1, :], true_all_atom_pos[..., 1, :], all_atom_mask[..., 1:2])
+
+        filename = f"{self.output_data_path}/conf_data_val/{sample_name}"
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        
+        #TODO: fix the name
+        np.savez(filename, **{
+           'structure_module': output['structure_module'].detach().cpu().numpy(),
+            # 'final_all_atom': output['final_all_atom'].detach().cpu().numpy(),
+            # 'all_atom_positions': features['all_atom_positions'].detach().cpu().numpy(),
+            'all_atom_mask': features['all_atom_mask'].detach().cpu().numpy(),
+            # 'resolution': features['resolution'].detach().cpu().numpy(),
+           'lddt': score.detach().cpu().numpy(),
+        })
+
 
     def get_structure_state(self, batch, _):
         """
@@ -208,9 +246,47 @@ class TrainableFolding(pl.LightningModule):
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w') as f:
             f.write(pdb_out)
-
+            
         return filename
 
+    def _align_structures(self, batch, output, peptide_chain, sample_name, seed, mode='val', save_pdb=False):
+        pred_filename = self._get_predicted_structure(batch, output, sample_name, seed, mode=mode)
+        true_filename = self._get_true_structure(batch, output, sample_name, seed)
+        
+        # Load the PDB files using the parsePDB function
+        true = prody.parsePDB(true_filename)
+        pred = prody.parsePDB(pred_filename)
+
+        # Identify the second chain ID
+        second_chain_id_true = true.getChids()[-1]
+        second_chain_id_pred = pred.getChids()[-1]
+        
+        # Clean up pdbs:
+        os.remove(pred_filename)
+        os.remove(true_filename)
+
+        # Align the two structures
+        prody.superpose(true.select('calpha'), pred.select('calpha'))
+
+        #TODO better solution with peptide_chain exctracted from json file (dont work, chain_true = None)
+        #chain_true = true.select(f"chain {peptide_chain}")
+        #chain_pred = pred.select(f"chain {peptide_chain}")
+        
+        # Select residues from the second chain and calculate RMSD
+        chain_true = true.select(f'chain {second_chain_id_true}')
+        chain_pred = pred.select(f'chain {second_chain_id_pred}')
+        rmsd = prody.calcRMSD(chain_true, chain_pred)
+
+        # Save aligned structures
+        if save_pdb:
+            new_pred_filename = f"{self.output_data_path}/structures/{sample_name}/{mode}_{rmsd:0.2f}_s_{seed:02d}.pdb"
+            prody.writePDB(new_pred_filename, pred)
+            if seed == 0:
+                prody.writePDB(true_filename, true)
+
+        return rmsd
+
+    
     def _get_masked_true_structure(self, batch, sample_name, seed):
         # a temp solution for b_factors
         b_factors = np.ones((len(batch['aatype'][0]), residue_constants.atom_type_num)) * 100.0
@@ -274,6 +350,7 @@ if __name__ == '__main__':
     parser.add_argument("--val_json_path", type=str, default=None)
     parser.add_argument("--preprocessed_data_dir", type=str, default=None)
     parser.add_argument("--model_weights_path", type=str, default=None)
+    parser.add_argument("--pt_weights_path", type=str, default=None)
     parser.add_argument("--output_data_path", type=str, default=None)
     parser.add_argument("--accumulate_grad_batches", type=int, default=1)
     parser.add_argument("--n_layers_in_lr_group", type=int, default=None)
@@ -364,6 +441,12 @@ if __name__ == '__main__':
         strategy="deepspeed_stage_1",
         num_sanity_val_steps=0,
     )
+    if args.pt_weights_path is not None:
+        checkpoint = torch.load(args.pt_weights_path, map_location='cpu')['module']
+        new_weights = model.state_dict()
+        for k, v in checkpoint.items():
+            new_weights[k.replace("module.", "")] = v
+        model.load_state_dict(new_weights)
 
 
     # print([p[0] for p in model.named_modules()])
@@ -401,6 +484,9 @@ if __name__ == '__main__':
         df = pd.DataFrame(list_of_dicts)
 
         df.to_csv(f'{args.output_data_path}/metrics.csv', index=False)
+        
+    elif args.step == 'predict':
+        trainer.predict(model, ckpt_path=args.resume_from_ckpt)
 
     else:
         print('Select "train" or "test" option for parameter "step"')
