@@ -125,49 +125,46 @@ class TrainableFolding(pl.LightningModule):
     def validation_step(self, batch, _):
         meta_info, features = batch
         seed = meta_info['seed'].item()
-        sample_id = meta_info['sample_id'][0]
-        peptide_chain = meta_info['peptide_chain'][0]
+        sample_name = meta_info['sample_id'][0]
         torch.manual_seed(seed)
         output, loss_items = self.forward(features)
-        rmsd = self._align_structures(features, output, peptide_chain, sample_id, seed, mode='val')
-        loss_items['second_chain_rmsd'] = rmsd
         
         for k, v in loss_items.items():
             self.log(f'val_{k}', v, on_step=False, on_epoch=True, logger=True)
 
-        return {'sample_id': sample_id, **loss_items}
+        return {'sample_name': sample_name, **loss_items}
 
 
     def test_step(self, batch, batch_idx):
         meta_info, features = batch
         seed = meta_info['seed'].item()
-        sample_id = meta_info['sample_id'][0]
+        sample_name = meta_info['sample_id'][0]
         peptide_chain = meta_info['peptide_chain'][0]
         torch.manual_seed(seed)
         output, loss_items = self.forward(features)
         rmsd = self._align_structures(
-            features, output, peptide_chain, sample_id, seed, mode=self.test_mode_name,  save_pdb=True
+            features, output, peptide_chain, sample_name, seed, mode=self.test_mode_name,  save_pdb=True
         )
         loss_items['second_chain_rmsd'] = rmsd
         
         metrics = {
-            'sample_id': sample_id,
+            'sample_name': sample_name,
             'seed': seed,
             **{
-                key: value.item() if isinstance(value, torch.Tensor) else value
+                key: float(value.item()) if isinstance(value, torch.Tensor) else float(value)
                 for key, value in loss_items.items()
             }
         }
         
-        with open(f"{self.output_data_path}/json_metrics/{sample_id}_{seed:02d}.json", "w") as outfile:
+        with open(f"{self.output_data_path}/json_metrics/{sample_name}_{seed:02d}.json", "w") as outfile:
             outfile.write(json.dumps(metrics, indent=4))
 
-        return {'sample_id': sample_id, **loss_items}
+        return {'sample_name': sample_name, **loss_items}
 
     def predict_step(self, batch, batch_idx):
         meta_info, features = batch
         seed = meta_info['seed'].item()
-        sample_id = meta_info['sample_id'][0]
+        sample_name = meta_info['sample_id'][0]
         torch.manual_seed(seed)
         output, loss_items = self.forward(features)
         
@@ -176,16 +173,16 @@ class TrainableFolding(pl.LightningModule):
         all_atom_mask = features['all_atom_mask']
         score = lddt(pred_all_atom_pos[..., 1, :], true_all_atom_pos[..., 1, :], all_atom_mask[..., 1:2])
 
-        filename = f"{self.output_data_path}/conf_data"
+        filename = f"{self.output_data_path}/conf_data_val/{sample_name}"
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         
         #TODO: fix the name
         np.savez(filename, **{
            'structure_module': output['structure_module'].detach().cpu().numpy(),
-            'final_all_atom': output['final_all_atom'].detach().cpu().numpy(),
-            'all_atom_positions': features['all_atom_positions'].detach().cpu().numpy(),
+            # 'final_all_atom': output['final_all_atom'].detach().cpu().numpy(),
+            # 'all_atom_positions': features['all_atom_positions'].detach().cpu().numpy(),
             'all_atom_mask': features['all_atom_mask'].detach().cpu().numpy(),
-            'resolution': features['resolution'].detach().cpu().numpy(),
+            # 'resolution': features['resolution'].detach().cpu().numpy(),
            'lddt': score.detach().cpu().numpy(),
         })
 
@@ -252,9 +249,9 @@ class TrainableFolding(pl.LightningModule):
             
         return filename
 
-    def _align_structures(self, batch, output, peptide_chain, sample_id, seed, mode='val', save_pdb=False):
-        pred_filename = self._get_predicted_structure(batch, output, sample_id, seed, mode=mode)
-        true_filename = self._get_true_structure(batch, output, sample_id, seed)
+    def _align_structures(self, batch, output, peptide_chain, sample_name, seed, mode='val', save_pdb=False):
+        pred_filename = self._get_predicted_structure(batch, output, sample_name, seed, mode=mode)
+        true_filename = self._get_true_structure(batch, output, sample_name, seed)
         
         # Load the PDB files using the parsePDB function
         true = prody.parsePDB(true_filename)
@@ -271,18 +268,18 @@ class TrainableFolding(pl.LightningModule):
         # Align the two structures
         prody.superpose(true.select('calpha'), pred.select('calpha'))
 
-        #TODO better solution with peptide_chain exctracted from json file (dont work, res_true = None)
-        #res_true = true.select(f"chain {peptide_chain}")
-        #res_pred = pred.select(f"chain {peptide_chain}")
+        #TODO better solution with peptide_chain exctracted from json file (dont work, chain_true = None)
+        #chain_true = true.select(f"chain {peptide_chain}")
+        #chain_pred = pred.select(f"chain {peptide_chain}")
         
         # Select residues from the second chain and calculate RMSD
-        res_true = true.select(f'chain {second_chain_id_true}')
-        res_pred = pred.select(f'chain {second_chain_id_pred}')
-        rmsd = prody.calcRMSD(res_true, res_pred)
+        chain_true = true.select(f'chain {second_chain_id_true}')
+        chain_pred = pred.select(f'chain {second_chain_id_pred}')
+        rmsd = prody.calcRMSD(chain_true, chain_pred)
 
         # Save aligned structures
         if save_pdb:
-            new_pred_filename = f"{self.output_data_path}/structures/{sample_id}/{mode}_{rmsd:0.2f}_s_{seed:02d}.pdb"
+            new_pred_filename = f"{self.output_data_path}/structures/{sample_name}/{mode}_{rmsd:0.2f}_s_{seed:02d}.pdb"
             prody.writePDB(new_pred_filename, pred)
             if seed == 0:
                 prody.writePDB(true_filename, true)
