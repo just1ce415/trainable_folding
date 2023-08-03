@@ -1261,8 +1261,16 @@ class DockerIteration(nn.Module):
         pae_loss, pae_masked_loss = loss_multimer.tm_loss(pae_logits, pae_breaks, out['struct_out']['frames'][-1], gt_rigid, batch['loss_mask'], gt_affine_mask, batch['resolution'], self.global_config['model']['heads'])
         masked_msa_loss = loss_multimer.masked_msa_loss(out, batch)
         plddt = compute_plddt(self.PredictedLddt(out))
+        resolved_mask = (batch['all_atom_mask'].sum(axis=2) > 0) * 1.0
+        mean_plddt = ((plddt * resolved_mask).sum() / resolved_mask.sum())
+        mean_lddt = ((full_lddt * resolved_mask).sum() / resolved_mask.sum()) * 100
+        plddt_abs_err = (mean_plddt - mean_lddt).abs()
+        peptide_mask = batch['loss_mask'] * resolved_mask
 
-        mean_masked_plddt = ((plddt * batch['loss_mask']).sum() / batch['loss_mask'].sum())
+        mean_masked_plddt = ((plddt * peptide_mask).sum() / peptide_mask.sum())
+        mean_masked_lddt = ((full_lddt * peptide_mask).sum() / peptide_mask.sum()) * 100
+        masked_plddt_abs_err = (mean_masked_plddt - mean_masked_lddt).abs()
+
         loss = sum([
             0.05 * lddt_loss,
             0.01 * resolved_loss,
@@ -1296,9 +1304,13 @@ class DockerIteration(nn.Module):
             'pae_loss': pae_loss,
             'pae_masked_loss': pae_masked_loss,
             'masked_msa_loss': masked_msa_loss,
-            'masked_lddt': masked_lddt,
+            'mean_plddt': mean_plddt,
+            'mean_lddt': mean_lddt,
+            'mean_masked_plddt': mean_masked_plddt,
+            'mean_masked_lddt': mean_masked_lddt,
+            'plddt_abs_err': plddt_abs_err,
+            'masked_plddt_abs_err': masked_plddt_abs_err,
             'recycle_iter': float(recycle_iter),
-            'masked_plddt': mean_masked_plddt,
             'num_alignments': float(batch['num_alignments'].item()),
             # 'msa_act_loss': msa_act_loss,
             # 'pair_act_loss': pair_act_loss,
