@@ -1061,11 +1061,14 @@ class PredictedAlignedError(nn.Module):
         return logits, breaks
 
 class PredictedLddt(nn.Module):
-    def __init__(self, global_config):
+    def __init__(self, global_config, num_layers=0):
         super().__init__()
         self.input_layer_norm = nn.LayerNorm(global_config['model']['embeddings_and_evoformer']['seq_channel'])
         self.act_0 = nn.Linear(global_config['model']['embeddings_and_evoformer']['seq_channel'], global_config['model']['heads']['predicted_lddt']['num_channels'])
         self.act_1 = nn.Linear(global_config['model']['heads']['predicted_lddt']['num_channels'], global_config['model']['heads']['predicted_lddt']['num_channels'])
+        self.linear_layers = nn.ModuleList()
+        for i in range(num_layers):
+            self.linear_layers.append(nn.Linear(global_config['model']['heads']['predicted_lddt']['num_channels'], global_config['model']['heads']['predicted_lddt']['num_channels']))
         self.logits = nn.Linear(global_config['model']['heads']['predicted_lddt']['num_channels'], global_config['model']['heads']['predicted_lddt']['num_bins'])
 
     def forward(self, representations):
@@ -1073,6 +1076,10 @@ class PredictedLddt(nn.Module):
         act = self.input_layer_norm(act)
         act = self.act_0(act).relu_()
         act = self.act_1(act).relu_()
+
+        for linear_layer in self.linear_layers:
+            act = linear_layer(act).relu_()
+
         logits = self.logits(act)
         return logits
 
