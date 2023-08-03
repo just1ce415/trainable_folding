@@ -442,11 +442,8 @@ if __name__ == '__main__':
         num_sanity_val_steps=0,
     )
     if args.pt_weights_path is not None:
-        checkpoint = torch.load(args.pt_weights_path, map_location='cpu')['module']
-        new_weights = model.state_dict()
-        for k, v in checkpoint.items():
-            new_weights[k.replace("module.", "")] = v
-        model.load_state_dict(new_weights)
+        checkpoint = torch.load(args.pt_weights_path)
+        model.load_state_dict(checkpoint)
 
 
     # print([p[0] for p in model.named_modules()])
@@ -469,9 +466,13 @@ if __name__ == '__main__':
         trainer.fit(model, ckpt_path=args.resume_from_ckpt)
 
         if trainer.global_rank == 0:
-            best_model_path = checkpoint_callback.best_model_path
-            destination_path = f"{args.model_checkpoint_path}/best.ckpt"
-            shutil.copytree(best_model_path, destination_path)
+            best_model_path = f'{checkpoint_callback.best_model_path}/checkpoint/mp_rank_00_model_states.pt'
+            checkpoint = torch.load(best_model_path, map_location='cpu')['module']
+            new_state_dict = {}
+            for key, value in checkpoint.items():
+                new_key = key.replace('_forward_module.model.', '')
+                new_state_dict[new_key] = value
+            torch.save(new_state_dict, f'{args.model_checkpoint_path}/best_model_weights.pt')
 
     elif args.step == 'test':
         os.makedirs(f'{args.output_data_path}/json_metrics', exist_ok=True)
